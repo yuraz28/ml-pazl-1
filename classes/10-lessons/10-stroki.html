@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 10. Строки — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 10</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Строки</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Строка — цепочка символов</h3><p>Символы идут по порядку, у каждого свой номер.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Длина и номера</h3><p>len(word) считает символы, word[0] и word[-1] берут первый и последний.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Срезы</h3><p>Кусок строки, в том числе развёрнутый наоборот: word[::-1].</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Методы строк</h3><p>upper, count, replace, strip, find — каждый возвращает значение.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Строки и числа</h3><p>input() даёт строку; чтобы считать, нужен int().</p></div>
+      <div class="blk r" style="--d:370"><div class="num">Блок 6</div><h3>Сравнения</h3><p>Строки сравниваются по алфавиту и дают True или False.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Строка — цепочка символов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Строки</p>
+    <h2>Строка — это цепочка символов</h2>
+  </header>
+  <div class="body">
+    <svg class="ill r" style="--d:120" viewBox="0 0 1700 480" role="img" aria-label="Слово ПАЗЛ: у каждого символа два номера — сверху с нуля, снизу с конца">
+      <rect x="8" y="8" width="1684" height="464" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="340" y="86" font-size="30" font-family="monospace" fill="#38475A">word = 'ПАЗЛ'</text>
+      <text x="454" y="140" font-size="28" font-weight="700" text-anchor="middle" fill="#1E7EE8">0</text>
+      <text x="718" y="140" font-size="28" font-weight="700" text-anchor="middle" fill="#1E7EE8">1</text>
+      <text x="982" y="140" font-size="28" font-weight="700" text-anchor="middle" fill="#1E7EE8">2</text>
+      <text x="1246" y="140" font-size="28" font-weight="700" text-anchor="middle" fill="#1E7EE8">3</text>
+      <rect x="334" y="162" width="240" height="200" rx="22" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="3"/>
+      <rect x="598" y="162" width="240" height="200" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+      <rect x="862" y="162" width="240" height="200" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+      <rect x="1126" y="162" width="240" height="200" rx="22" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="3"/>
+      <text x="454" y="297" font-size="96" font-family="monospace" font-weight="700" text-anchor="middle" fill="#101A26">П</text>
+      <text x="718" y="297" font-size="96" font-family="monospace" font-weight="700" text-anchor="middle" fill="#101A26">А</text>
+      <text x="982" y="297" font-size="96" font-family="monospace" font-weight="700" text-anchor="middle" fill="#101A26">З</text>
+      <text x="1246" y="297" font-size="96" font-family="monospace" font-weight="700" text-anchor="middle" fill="#101A26">Л</text>
+      <text x="454" y="412" font-size="28" font-weight="700" text-anchor="middle" fill="#6E7E92">−4</text>
+      <text x="718" y="412" font-size="28" font-weight="700" text-anchor="middle" fill="#6E7E92">−3</text>
+      <text x="982" y="412" font-size="28" font-weight="700" text-anchor="middle" fill="#6E7E92">−2</text>
+      <text x="1246" y="412" font-size="28" font-weight="700" text-anchor="middle" fill="#6E7E92">−1</text>
+      <text x="454" y="452" font-size="26" font-family="monospace" font-weight="700" text-anchor="middle" fill="#1E7EE8">word[0]</text>
+      <text x="1246" y="452" font-size="26" font-family="monospace" font-weight="700" text-anchor="middle" fill="#1E7EE8">word[-1]</text>
+    </svg>
+    <div class="note r" style="--d:230">Нумерация начинается с нуля: у «ПАЗЛ» номера 0, 1, 2, 3. Тот же символ можно взять с конца — тогда он называется −1, −2, −3, −4.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Длина строки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Длина</p>
+    <h2>Сколько символов в строке</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="len" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="kot">Строка: кот</button>
+          <button class="chip" type="button" data-val="velo">Строка: велосипед</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Букв в слове:', len(word))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240"><b>len()</b> возвращает число — сколько символов внутри строки. Пробел, точка и запятая тоже считаются за символ.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Символ по номеру">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Индексы</p>
+    <h2>Символ по номеру</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="index" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="kot">Строка: кот</button>
+          <button class="chip" type="button" data-val="velo">Строка: велосипед</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print(word[0])</span><span class="ln" data-no="3">print(word[2])</span><span class="ln" data-no="4">print(word[-1])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">Номер пишут в квадратных скобках. <b>word[0]</b> — первый символ, <b>word[-1]</b> — всегда последний, сколько бы букв ни было в слове.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Срез: кусок строки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Срезы</p>
+    <h2>Срез: кусок строки</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="slice" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="telefon">Строка: телефон</button>
+          <button class="chip" type="button" data-val="baraban">Строка: барабан</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print(word[1:4])</span><span class="ln" data-no="3">print(word[:3])</span><span class="ln" data-no="4">print(word[3:])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">В срезе два номера через двоеточие: с какого начать и до какого дойти. <b>Правый номер в результат не входит.</b> Пустая сторона — значит «от начала» или «до конца».</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Срез наоборот">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Срез наоборот</p>
+    <h2>Срез наоборот</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="reverse" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="shalash">Строка: шалаш</button>
+          <button class="chip" type="button" data-val="kot">Строка: кот</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">back = word[::-1]</span><span class="ln" data-no="3">print(back)</span><span class="ln" data-no="4">print(back == word)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">Третий номер в срезе — шаг. Шаг <b>−1</b> идёт с конца к началу, поэтому <b>word[::-1]</b> — это то же слово задом наперёд.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Строку нельзя изменить">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Строка неизменяема</p>
+    <h2>Строку нельзя изменить</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="immut" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Пробуем изменить</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = 'кот'</span><span class="ln" data-no="2">word[0] = 'л'</span><span class="ln" data-no="3">print(word)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="notes r" style="--d:260">
+      <p class="note">Строка неизменяема: подставить символ по номеру нельзя, Python остановит программу.</p>      <p class="note">Вместо этого собирают новую строку: <b>word = word.replace('к', 'л')</b>.</p>      <p class="note">Переменная остаётся та же, а строка в ней — уже другая.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Номер за границей">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Осторожно</p>
+    <h2>Номер за границей строки</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="ierr" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Берём номер 3</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = 'кот'</span><span class="ln" data-no="2">print(word[3])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="notes r" style="--d:260">
+      <p class="note">В слове «кот» три символа с номерами 0, 1, 2. Номера 3 не существует — программа остановится с ошибкой.</p>      <p class="note">Поэтому и берут word[-1]: он работает для слова любой длины.</p>      <p class="note">А срез за границей ошибки не даёт: word[0:99] спокойно вернёт всё слово.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Склеивание и повторение">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Операции</p>
+    <h2>Склеивание и повторение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="concat" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Иван · Петров</button>
+          <button class="chip" type="button" data-val="b">Аня · Смирнова</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Имя: ')</span><span class="ln" data-no="2">surname = input('Фамилия: ')</span><span class="ln" data-no="3">print(name + ' ' + surname)</span><span class="ln" data-no="4">print('-' * 12)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">Плюс склеивает строки, звёздочка повторяет: 'да' * 3 — это 'дадада'. Ставить строку рядом с числом без пробела-разделителя нельзя, получится 'ИванПетров'.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Оператор in">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Поиск в строке</p>
+    <h2>Оператор in</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="member" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="baraban">Строка: барабан</button>
+          <button class="chip" type="button" data-val="ezhik">Строка: ёжик</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('а' in word)</span><span class="ln" data-no="3">print('ё' in word)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240"><b>in</b> отвечает True или False: есть ли такая часть внутри строки. Искать можно и целое слово: 'кот' in 'котёнок' — тоже True. Регистр важен: 'Аня' и 'аня' — разные строки.</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Методы строк">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Методы</p>
+    <h2>Методы строк</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="methods" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="baraban">Строка: барабан</button>
+          <button class="chip" type="button" data-val="kot">Строка: кот</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print(word.upper())</span><span class="ln" data-no="3">print(word.count('а'))</span><span class="ln" data-no="4">print(word.replace('а', 'о'))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">Метод вызывают через точку: слева строка, справа действие. В скобках — то, что методу нужно для работы. Строка при этом не меняется: метод возвращает новую.</div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Ещё методы">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Методы</p>
+    <h2>Ещё методы</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><h3>strip</h3><p>Убирает пробелы по краям — полезно сразу после input().</p><code>'  Аня  '.strip() → 'Аня'</code></div>
+      <div class="card r" style="--d:130"><h3>find</h3><p>Номер, с которого начинается подстрока. Если не нашлось — минус один.</p><code>'барабан'.find('раб') → 2</code></div>
+      <div class="card r" style="--d:190"><h3>startswith</h3><p>Проверяет начало строки и отвечает True или False.</p><code>'привет'.startswith('при') → True</code></div>
+    </div>
+    <div class="note r" style="--d:250">Все методы возвращают значение, поэтому их пишут либо внутри print(...), либо присваивают переменной: clean = word.strip().</div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Строка или число">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Строки и числа</p>
+    <h2>Строка или число</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="strnum" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Ввод: 12</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = input('Сколько лет? ')</span><span class="ln" data-no="2">print(age + 1)</span><span class="ln" data-no="3">print(int(age) + 1)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="notes r" style="--d:260">
+      <p class="note"><b>input()</b> всегда возвращает строку, даже если ввели цифры.</p>      <p class="note">Пока не применили int(), в переменной лежит текст, и складывать его с числом нельзя.</p>      <p class="note">А для строки len('123') честно вернёт 3: считаются символы, а не значение числа.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Как сравниваются строки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сравнения</p>
+    <h2>Как сравниваются строки</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="cmp" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Сравниваем строки</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('банан' &lt; 'вишня')</span><span class="ln" data-no="2">print('аня' &lt; 'Аня')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="notes r" style="--d:260">
+      <p class="note">Строки сравниваются по алфавиту: «б» идёт раньше «в», поэтому «банан» меньше.</p>      <p class="note">Заглавные буквы стоят раньше строчных, поэтому 'Аня' &lt; 'аня'.</p>      <p class="note">Значит 'Да' и 'да' — разные строки: в проверках пишите ответ ровно так, как его вводит пользователь.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">Задача 1</div><h3>Буквы слова</h3><p>Сколько в слове букв, какая буква первая и какая последняя.</p></div>
+      <div class="card r" style="--d:110"><div class="num">Задача 2</div><h3>Слово наоборот</h3><p>Разворачиваем слово срезом word[::-1].</p></div>
+      <div class="card r" style="--d:150"><div class="num">Задача 3</div><h3>Слово-перевёртыш</h3><p>Сравниваем слово с его перевёртышем: True или False.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Доп. задание</div><h3>Слова в обратном порядке</h3><p>Разворачиваем слова текста: срез [::-1] и метод join().</p></div>
+    </div>
+    <div class="note r" style="--d:250">Работаем в VS Code: файл <b>lesson10.py</b>.</div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно слово — его вводит пользователь.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Сколько в слове букв, а ещё первая и последняя буква.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Слово: шалаш</span><span class="ar">&#8594;</span><span class="out">Букв: 5, Первая буква: ш, Последняя буква: ш</span></div>
+          <div class="trow"><span class="in">Слово: кот</span><span class="ar">&#8594;</span><span class="out">Букв: 3, Первая буква: к, Последняя буква: т</span></div>
+          <div class="trow"><span class="in">Слово: велосипед</span><span class="ar">&#8594;</span><span class="out">Букв: 9, Первая буква: в, Последняя буква: д</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill r" style="--d:250" viewBox="0 0 700 520" role="img" aria-label="Слово шалаш: буквы, номера и длина">
+      <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Слово «шалаш»</text>
+      <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">len = 5</text>
+      <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+      <rect x="58" y="126" width="96" height="92" rx="14" fill="#E9F4FF"/>
+      <text x="106" y="188" text-anchor="middle" font-size="46" font-weight="700" fill="#0B3E7A">ш</text>
+      <rect x="180" y="126" width="96" height="92" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="228" y="188" text-anchor="middle" font-size="46" font-weight="700" fill="#38475A">а</text>
+      <rect x="302" y="126" width="96" height="92" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="350" y="188" text-anchor="middle" font-size="46" font-weight="700" fill="#38475A">л</text>
+      <rect x="424" y="126" width="96" height="92" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="472" y="188" text-anchor="middle" font-size="46" font-weight="700" fill="#38475A">а</text>
+      <rect x="546" y="126" width="96" height="92" rx="14" fill="#E9F4FF"/>
+      <text x="594" y="188" text-anchor="middle" font-size="46" font-weight="700" fill="#0B3E7A">ш</text>
+      <text x="106" y="248" text-anchor="middle" font-size="24" fill="#6E7E92">0</text>
+      <text x="228" y="248" text-anchor="middle" font-size="24" fill="#6E7E92">1</text>
+      <text x="350" y="248" text-anchor="middle" font-size="24" fill="#6E7E92">2</text>
+      <text x="472" y="248" text-anchor="middle" font-size="24" fill="#6E7E92">3</text>
+      <text x="594" y="248" text-anchor="middle" font-size="24" fill="#6E7E92">4</text>
+      <text x="106" y="282" text-anchor="middle" font-size="20" fill="#9AA9BC">−5</text>
+      <text x="228" y="282" text-anchor="middle" font-size="20" fill="#9AA9BC">−4</text>
+      <text x="350" y="282" text-anchor="middle" font-size="20" fill="#9AA9BC">−3</text>
+      <text x="472" y="282" text-anchor="middle" font-size="20" fill="#9AA9BC">−2</text>
+      <text x="594" y="282" text-anchor="middle" font-size="20" fill="#9AA9BC">−1</text>
+      <rect x="52" y="312" width="596" height="76" rx="18" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="76" y="348" font-size="23" font-weight="700" fill="#0B6B45">word[0] = «ш» и word[-1] = «ш»</text>
+      <text x="76" y="376" font-size="21" fill="#0B6B45">первая и последняя буква — длину знать не нужно</text>
+      <rect x="52" y="404" width="596" height="84" rx="20" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="440" font-size="23" font-weight="700" fill="#0B3E7A">len(word) = 5 — сколько символов</text>
+      <text x="76" y="470" font-size="21" fill="#38475A">первый номер 0, последний 4</text>
+    </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Считаем буквы</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70"><code>len(word)</code> даёт количество символов: пробелы и знаки тоже считаются.</div>
+    <div class="run r" data-run="w1a" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Считаем буквы: шалаш</button><button class="chip" type="button" data-val="b">Считаем буквы: кот</button><button class="chip" type="button" data-val="c">Считаем буквы: велосипед</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Букв в слове:', len(word))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
+    <h2>Берём буквы по номерам</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70"><code>word[0]</code> — первый символ, <code>word[-1]</code> — последний: минус один всегда означает «с конца».</div>
+    <div class="run r" data-run="w1b" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Края слова: кот</button><button class="chip" type="button" data-val="b">Края слова: шалаш</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Первая буква:', word[0])</span><span class="ln" data-no="3">print('Последняя буква:', word[-1])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Полное решение</p>
+    <h2>Вся программа целиком</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Четыре строки: ввод, длина и две буквы. Программа печатает их по порядку — сколько строк, столько и ответов.</div>
+    <div class="run r" data-run="w1" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слово: шалаш</button><button class="chip" type="button" data-val="b">Слово: кот</button><button class="chip" type="button" data-val="c">Слово: велосипед</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Букв:', len(word))</span><span class="ln" data-no="3">print('Первая буква:', word[0])</span><span class="ln" data-no="4">print('Последняя буква:', word[-1])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно слово.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>То же слово, прочитанное наоборот.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Слово: барабан</span><span class="ar">&#8594;</span><span class="out">Наоборот: набараб</span></div>
+          <div class="trow"><span class="in">Слово: шалаш</span><span class="ar">&#8594;</span><span class="out">Наоборот: шалаш</span></div>
+          <div class="trow"><span class="in">Слово: кот</span><span class="ar">&#8594;</span><span class="out">Наоборот: ток</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill r" style="--d:250" viewBox="0 0 700 520" role="img" aria-label="Срез с шагом минус один: слово барабан и оно же наоборот">
+      <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Слово наоборот</text>
+      <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">шаг −1</text>
+      <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="52" y="122" font-size="24" fill="#6E7E92">Слово «барабан»</text>
+      <rect x="61" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="98" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">б</text>
+      <rect x="145" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="182" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">а</text>
+      <rect x="229" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="266" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">р</text>
+      <rect x="313" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="350" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">а</text>
+      <rect x="397" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="434" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">б</text>
+      <rect x="481" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="518" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">а</text>
+      <rect x="565" y="132" width="74" height="80" rx="14" fill="#E9F4FF"/>
+      <text x="602" y="188" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">н</text>
+      <text x="52" y="262" font-size="24" fill="#6E7E92">Срез word[::-1]</text>
+      <rect x="61" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="98" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">н</text>
+      <rect x="145" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="182" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">а</text>
+      <rect x="229" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="266" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">б</text>
+      <rect x="313" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="350" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">а</text>
+      <rect x="397" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="434" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">р</text>
+      <rect x="481" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="518" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">а</text>
+      <rect x="565" y="272" width="74" height="80" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="602" y="328" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">б</text>
+      <rect x="52" y="376" width="596" height="112" rx="22" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="76" y="416" font-size="26" font-weight="700" fill="#0B6B45">back = «набараб»</text>
+      <text x="76" y="448" font-size="21" fill="#0B6B45">Шаг −1 идёт с конца к началу</text>
+      <text x="76" y="476" font-size="21" fill="#0B6B45">Срез создаёт новую строку: исходная не меняется</text>
+    </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Шаг 1</p>
+    <h2>Разворачиваем срезом</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Срез <code>word[::-1]</code> идёт с конца к началу: получается та же строка задом наперёд.</div>
+    <div class="run r" data-run="w2a" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">С конца: барабан</button><button class="chip" type="button" data-val="b">С конца: шалаш</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print(word[-1])</span><span class="ln" data-no="3">print(word[-3:])</span><span class="ln" data-no="4">print(word[::-1])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Полное решение</p>
+    <h2>Слово и его перевёртыш</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Развёрнутую строку сохраняем в переменную <code>back</code> — её можно напечатать с подписью и сравнить ещё раз.</div>
+    <div class="run r" data-run="w2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слово: барабан</button><button class="chip" type="button" data-val="b">Слово: шалаш</button><button class="chip" type="button" data-val="c">Слово: кот</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">back = word[::-1]</span><span class="ln" data-no="3">print('Наоборот:', back)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно слово.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Ответ <code>True</code>, если слово читается одинаково в обе стороны, иначе <code>False</code>.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Слово: шалаш</span><span class="ar">&#8594;</span><span class="out">Это перевёртыш? True</span></div>
+          <div class="trow"><span class="in">Слово: барабан</span><span class="ar">&#8594;</span><span class="out">Это перевёртыш? False</span></div>
+          <div class="trow"><span class="in">Слово: кот</span><span class="ar">&#8594;</span><span class="out">Это перевёртыш? False</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill r" style="--d:250" viewBox="0 0 700 520" role="img" aria-label="Сравнение слова и его перевёртыша: шалаш даёт True, кот даёт False">
+      <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Слово и перевёртыш</text>
+      <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">==</text>
+      <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+      <rect x="52" y="118" width="170" height="76" rx="16" fill="#E9F4FF"/>
+      <text x="137" y="166" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">шалаш</text>
+      <text x="246" y="166" font-size="30" fill="#6E7E92">==</text>
+      <rect x="290" y="118" width="170" height="76" rx="16" fill="#E9F4FF"/>
+      <text x="375" y="166" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">шалаш</text>
+      <rect x="492" y="118" width="156" height="76" rx="16" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="570" y="166" text-anchor="middle" font-size="26" font-weight="700" fill="#0B6B45">True</text>
+      <rect x="52" y="216" width="170" height="76" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="137" y="264" text-anchor="middle" font-size="30" font-weight="700" fill="#38475A">кот</text>
+      <text x="246" y="264" font-size="30" fill="#6E7E92">==</text>
+      <rect x="290" y="216" width="170" height="76" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="375" y="264" text-anchor="middle" font-size="30" font-weight="700" fill="#38475A">ток</text>
+      <rect x="492" y="216" width="156" height="76" rx="16" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+      <text x="570" y="264" text-anchor="middle" font-size="26" font-weight="700" fill="#8A4A00">False</text>
+      <rect x="52" y="318" width="596" height="76" rx="18" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="76" y="354" font-size="23" font-weight="700" fill="#0B6B45">Совпало — слово читается одинаково</text>
+      <text x="76" y="382" font-size="21" fill="#0B6B45">в обе стороны: шалаш, казак, топот</text>
+      <rect x="52" y="410" width="596" height="78" rx="20" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="446" font-size="23" font-weight="700" fill="#0B3E7A">Разные строки — сравнение даёт False</text>
+      <text x="76" y="474" font-size="21" fill="#38475A">Ответ программы — уже готовое True или False</text>
+    </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Шаг 1</p>
+    <h2>Сравниваем две строки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Сравнение строк даёт <code>True</code> или <code>False</code> — это уже готовый ответ программы.</div>
+    <div class="run r" data-run="w3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слово: шалаш</button><button class="chip" type="button" data-val="b">Слово: барабан</button><button class="chip" type="button" data-val="c">Слово: кот</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">back = word[::-1]</span><span class="ln" data-no="3">print('Это перевёртыш?', back == word)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Полное решение</p>
+    <h2>Разбор слова целиком</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Знакомая программа: длина, первая и последняя буквы, перевёртыш — и ответ про перевёртыш в последней строке.</div>
+    <div class="run r sm" data-run="full" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слово целиком: шалаш</button><button class="chip" type="button" data-val="b">Слово целиком: барабан</button><button class="chip" type="button" data-val="c">Слово целиком: кот</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Букв:', len(word))</span><span class="ln" data-no="3">print('Первая буква:', word[0])</span><span class="ln" data-no="4">print('Последняя буква:', word[-1])</span><span class="ln" data-no="5">print('Наоборот:', word[::-1])</span><span class="ln" data-no="6">print('Это перевёртыш?', word == word[::-1])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Строка текста — слова разделены пробелами.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Те же слова, но в обратном порядке — одной строкой.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Текст: Мама мыла раму</span><span class="ar">&#8594;</span><span class="out">раму мыла Мама</span></div>
+          <div class="trow"><span class="in">Текст: кот сидел на окне</span><span class="ar">&#8594;</span><span class="out">окне на сидел кот</span></div>
+          <div class="trow"><span class="in">Текст: привет</span><span class="ar">&#8594;</span><span class="out">привет</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill r" style="--d:250" viewBox="0 0 700 520" role="img" aria-label="Схема решения: разбить текст на слова, развернуть список срезом и собрать строку через join">
+      <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="52" y="66" font-size="28" font-weight="700" fill="#0B3E7A">Слова в обратном порядке</text>
+      <text x="648" y="66" text-anchor="end" font-size="22" fill="#6E7E92">Мама мыла раму</text>
+      <line x1="52" y1="88" x2="648" y2="88" stroke="#DEEAF7" stroke-width="2"/>
+      <rect x="52" y="100" width="596" height="54" rx="16" fill="#F1F7FF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="135" font-size="22" fill="#38475A">1. текст:  Мама мыла раму</text>
+      <rect x="52" y="166" width="596" height="54" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="201" font-size="22" fill="#38475A">2. text.split():</text>
+      <rect x="300" y="172" width="100" height="42" rx="12" fill="#E9F4FF"/>
+      <text x="350" y="201" text-anchor="middle" font-size="20" font-weight="700" fill="#0B3E7A">Мама</text>
+      <rect x="410" y="172" width="100" height="42" rx="12" fill="#E9F4FF"/>
+      <text x="460" y="201" text-anchor="middle" font-size="20" font-weight="700" fill="#0B3E7A">мыла</text>
+      <rect x="520" y="172" width="100" height="42" rx="12" fill="#E9F4FF"/>
+      <text x="570" y="201" text-anchor="middle" font-size="20" font-weight="700" fill="#0B3E7A">раму</text>
+      <text x="350" y="240" text-anchor="middle" font-size="18" fill="#6E7E92">0</text>
+      <text x="460" y="240" text-anchor="middle" font-size="18" fill="#6E7E92">1</text>
+      <text x="570" y="240" text-anchor="middle" font-size="18" fill="#6E7E92">2</text>
+      <rect x="52" y="256" width="596" height="54" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="291" font-size="22" fill="#38475A">3. words[::-1]:</text>
+      <rect x="300" y="262" width="100" height="42" rx="12" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="350" y="291" text-anchor="middle" font-size="20" font-weight="700" fill="#0B6B45">раму</text>
+      <rect x="410" y="262" width="100" height="42" rx="12" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="460" y="291" text-anchor="middle" font-size="20" font-weight="700" fill="#0B6B45">мыла</text>
+      <rect x="520" y="262" width="100" height="42" rx="12" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="570" y="291" text-anchor="middle" font-size="20" font-weight="700" fill="#0B6B45">Мама</text>
+      <rect x="52" y="346" width="596" height="60" rx="18" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+      <text x="76" y="384" font-size="22" font-weight="700" fill="#0B6B45">4. ' '.join(words):  раму мыла Мама</text>
+      <rect x="52" y="420" width="596" height="72" rx="20" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+      <text x="76" y="452" font-size="19" fill="#38475A">split() режет текст по пробелам и делает список слов.</text>
+      <text x="76" y="480" font-size="19" fill="#38475A">[::-1] разворачивает список, join(' ') склеивает в строку.</text>
+    </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 1</p>
+    <h2>Разбиваем текст на слова</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70"><code>text.split()</code> режет строку по пробелам и возвращает список слов — работать дальше будем с ним, а не с целым текстом. Печатаем список наглядно: словами через запятую.</div>
+    <div class="run r" data-run="d1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слова: Мама мыла раму</button><button class="chip" type="button" data-val="b">Слова: кот сидел на окне</button><button class="chip" type="button" data-val="c">Слова: привет</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">text = input('Введите текст: ')</span><span class="ln" data-no="2">words = text.split()</span><span class="ln" data-no="3">print('Слова:', ', '.join(words))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 29 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 2</p>
+    <h2>Разворачиваем список</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Срез <code>[::-1]</code> умеет работать не только с буквами: список слов он тоже разворачивает — последнее слово становится первым.</div>
+    <div class="run r" data-run="d2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Разворот: Мама мыла раму</button><button class="chip" type="button" data-val="b">Разворот: кот сидел на окне</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">text = input('Введите текст: ')</span><span class="ln" data-no="2">words = text.split()</span><span class="ln" data-no="3">print('Наоборот:', ', '.join(words[::-1]))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Полное решение</p>
+    <h2>Собираем строку обратно</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70"><code>' '.join(...)</code> склеивает слова в строку через пробел — ровно тот разделитель, по которому <code>split()</code> её разрезал.</div>
+    <div class="run r" data-run="d3" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Текст: Мама мыла раму</button><button class="chip" type="button" data-val="b">Текст: кот сидел на окне</button><button class="chip" type="button" data-val="c">Текст: привет</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">text = input('Введите текст: ')</span><span class="ln" data-no="2">words = text.split()</span><span class="ln" data-no="3">print(' '.join(words[::-1]))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 31 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Строка — это последовательность символов: у каждого свой номер, счёт начинается с нуля.</div>
+      <div>len(word) считает символы, word[0] берёт первый, word[−1] — последний.</div>
+      <div>Срез word[1:4] вырезает часть строки, а word[::-1] разворачивает её наоборот.</div>
+      <div>Строку нельзя изменить на месте: правкой занимаются методы, они возвращают новую строку.</div>
+      <div>Плюс склеивает строки, звёздочка повторяет, оператор in ищет подстроку.</div>
+      <div>upper, count, replace, strip и find — готовые действия над текстом.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">31</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    'len': [
+      { val:'kot', label:'Строка: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'Букв в слове: 3', kind:'p' } }
+      ]},
+      { val:'velo', label:'Строка: велосипед', steps:[
+        { ln:1, out:{ t:'word = велосипед' } },
+        { ln:2, out:{ t:'Букв в слове: 9', kind:'p' } }
+      ]}
+    ],
+    'index': [
+      { val:'kot', label:'Строка: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'к', kind:'p' } },
+        { ln:3, out:{ t:'т', kind:'p' } },
+        { ln:4, out:{ t:'т', kind:'p' } }
+      ]},
+      { val:'velo', label:'Строка: велосипед', steps:[
+        { ln:1, out:{ t:'word = велосипед' } },
+        { ln:2, out:{ t:'в', kind:'p' } },
+        { ln:3, out:{ t:'л', kind:'p' } },
+        { ln:4, out:{ t:'д', kind:'p' } }
+      ]}
+    ],
+    'slice': [
+      { val:'telefon', label:'Строка: телефон', steps:[
+        { ln:1, out:{ t:'word = телефон' } },
+        { ln:2, out:{ t:'еле', kind:'p' } },
+        { ln:3, out:{ t:'тел', kind:'p' } },
+        { ln:4, out:{ t:'ефон', kind:'p' } }
+      ]},
+      { val:'baraban', label:'Строка: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'ара', kind:'p' } },
+        { ln:3, out:{ t:'бар', kind:'p' } },
+        { ln:4, out:{ t:'абан', kind:'p' } }
+      ]}
+    ],
+    'reverse': [
+      { val:'shalash', label:'Строка: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  шалаш' } },
+        { ln:3, out:{ t:'шалаш', kind:'p' } },
+        { ln:4, out:{ t:'True', kind:'p' } }
+      ]},
+      { val:'kot', label:'Строка: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  ток' } },
+        { ln:3, out:{ t:'ток', kind:'p' } },
+        { ln:4, out:{ t:'False', kind:'p' } }
+      ]}
+    ],
+    'immut': [
+      { val:'a', label:'Пробуем изменить', skip:[3], steps:[
+        { ln:1, out:{ t:'word = \'кот\'  →  кот' } },
+        { ln:2, out:{ t:'TypeError: \'str\' object does not support item assignment', kind:'false' }, badge:'Ошибка: так программа не работает' }
+      ]}
+    ],
+    'ierr': [
+      { val:'a', label:'Берём номер 3', steps:[
+        { ln:1, out:{ t:'word = \'кот\'  →  кот' } },
+        { ln:2, out:{ t:'IndexError: string index out of range', kind:'false' }, badge:'Ошибка: так программа не работает' }
+      ]}
+    ],
+    'concat': [
+      { val:'a', label:'Иван · Петров', steps:[
+        { ln:1, out:{ t:'name = Иван' } },
+        { ln:2, out:{ t:'surname = Петров' } },
+        { ln:3, out:{ t:'Иван Петров', kind:'p' } },
+        { ln:4, out:{ t:'------------', kind:'p' } }
+      ]},
+      { val:'b', label:'Аня · Смирнова', steps:[
+        { ln:1, out:{ t:'name = Аня' } },
+        { ln:2, out:{ t:'surname = Смирнова' } },
+        { ln:3, out:{ t:'Аня Смирнова', kind:'p' } },
+        { ln:4, out:{ t:'------------', kind:'p' } }
+      ]}
+    ],
+    'member': [
+      { val:'baraban', label:'Строка: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'True', kind:'p' } },
+        { ln:3, out:{ t:'False', kind:'p' } }
+      ]},
+      { val:'ezhik', label:'Строка: ёжик', steps:[
+        { ln:1, out:{ t:'word = ёжик' } },
+        { ln:2, out:{ t:'False', kind:'p' } },
+        { ln:3, out:{ t:'True', kind:'p' } }
+      ]}
+    ],
+    'methods': [
+      { val:'baraban', label:'Строка: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'БАРАБАН', kind:'p' } },
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'боробон', kind:'p' } }
+      ]},
+      { val:'kot', label:'Строка: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'КОТ', kind:'p' } },
+        { ln:3, out:{ t:'0', kind:'p' } },
+        { ln:4, out:{ t:'кот', kind:'p' } }
+      ]}
+    ],
+    'strnum': [
+      { val:'a', label:'Ввод: 12', skip:[3], steps:[
+        { ln:1, out:{ t:'age = 12' } },
+        { ln:2, out:{ t:'TypeError: can only concatenate str (not "int") to str', kind:'false' }, badge:'Ошибка: так программа не работает' }
+      ]}
+    ],
+    'cmp': [
+      { val:'a', label:'Сравниваем строки', steps:[
+        { ln:1, out:{ t:'True', kind:'p' } },
+        { ln:2, out:{ t:'False', kind:'p' } }
+      ]}
+    ],
+    'w1a': [
+      { val:'a', label:'Считаем буквы: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'Букв в слове: 5', kind:'p' } }
+      ]},
+      { val:'b', label:'Считаем буквы: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'Букв в слове: 3', kind:'p' } }
+      ]},
+      { val:'c', label:'Считаем буквы: велосипед', steps:[
+        { ln:1, out:{ t:'word = велосипед' } },
+        { ln:2, out:{ t:'Букв в слове: 9', kind:'p' } }
+      ]}
+    ],
+    'w1b': [
+      { val:'a', label:'Края слова: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'Первая буква: к', kind:'p' } },
+        { ln:3, out:{ t:'Последняя буква: т', kind:'p' } }
+      ]},
+      { val:'b', label:'Края слова: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'Первая буква: ш', kind:'p' } },
+        { ln:3, out:{ t:'Последняя буква: ш', kind:'p' } }
+      ]}
+    ],
+    'w1': [
+      { val:'a', label:'Слово: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'Букв: 5', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: ш', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: ш', kind:'p' } }
+      ]},
+      { val:'b', label:'Слово: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'Букв: 3', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: к', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: т', kind:'p' } }
+      ]},
+      { val:'c', label:'Слово: велосипед', steps:[
+        { ln:1, out:{ t:'word = велосипед' } },
+        { ln:2, out:{ t:'Букв: 9', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: в', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: д', kind:'p' } }
+      ]}
+    ],
+    'w2a': [
+      { val:'a', label:'С конца: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'н', kind:'p' } },
+        { ln:3, out:{ t:'бан', kind:'p' } },
+        { ln:4, out:{ t:'набараб', kind:'p' } }
+      ]},
+      { val:'b', label:'С конца: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'ш', kind:'p' } },
+        { ln:3, out:{ t:'лаш', kind:'p' } },
+        { ln:4, out:{ t:'шалаш', kind:'p' } }
+      ]}
+    ],
+    'w2': [
+      { val:'a', label:'Слово: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  набараб' } },
+        { ln:3, out:{ t:'Наоборот: набараб', kind:'p' } }
+      ]},
+      { val:'b', label:'Слово: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  шалаш' } },
+        { ln:3, out:{ t:'Наоборот: шалаш', kind:'p' } }
+      ]},
+      { val:'c', label:'Слово: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  ток' } },
+        { ln:3, out:{ t:'Наоборот: ток', kind:'p' } }
+      ]}
+    ],
+    'w3': [
+      { val:'a', label:'Слово: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  шалаш' } },
+        { ln:3, out:{ t:'Это перевёртыш? True', kind:'p' } }
+      ]},
+      { val:'b', label:'Слово: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  набараб' } },
+        { ln:3, out:{ t:'Это перевёртыш? False', kind:'p' } }
+      ]},
+      { val:'c', label:'Слово: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'back = word[::-1]  →  ток' } },
+        { ln:3, out:{ t:'Это перевёртыш? False', kind:'p' } }
+      ]}
+    ],
+    'full': [
+      { val:'a', label:'Слово целиком: шалаш', steps:[
+        { ln:1, out:{ t:'word = шалаш' } },
+        { ln:2, out:{ t:'Букв: 5', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: ш', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: ш', kind:'p' } },
+        { ln:5, out:{ t:'Наоборот: шалаш', kind:'p' } },
+        { ln:6, out:{ t:'Это перевёртыш? True', kind:'p' } }
+      ]},
+      { val:'b', label:'Слово целиком: барабан', steps:[
+        { ln:1, out:{ t:'word = барабан' } },
+        { ln:2, out:{ t:'Букв: 7', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: б', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: н', kind:'p' } },
+        { ln:5, out:{ t:'Наоборот: набараб', kind:'p' } },
+        { ln:6, out:{ t:'Это перевёртыш? False', kind:'p' } }
+      ]},
+      { val:'c', label:'Слово целиком: кот', steps:[
+        { ln:1, out:{ t:'word = кот' } },
+        { ln:2, out:{ t:'Букв: 3', kind:'p' } },
+        { ln:3, out:{ t:'Первая буква: к', kind:'p' } },
+        { ln:4, out:{ t:'Последняя буква: т', kind:'p' } },
+        { ln:5, out:{ t:'Наоборот: ток', kind:'p' } },
+        { ln:6, out:{ t:'Это перевёртыш? False', kind:'p' } }
+      ]}
+    ],
+    'd1': [
+      { val:'a', label:'Слова: Мама мыла раму', steps:[
+        { ln:1, out:{ t:'text = Мама мыла раму' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'Мама\', \'мыла\', \'раму\']' } },
+        { ln:3, out:{ t:'Слова: Мама, мыла, раму', kind:'p' } }
+      ]},
+      { val:'b', label:'Слова: кот сидел на окне', steps:[
+        { ln:1, out:{ t:'text = кот сидел на окне' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'кот\', \'сидел\', \'на\', \'окне\']' } },
+        { ln:3, out:{ t:'Слова: кот, сидел, на, окне', kind:'p' } }
+      ]},
+      { val:'c', label:'Слова: привет', steps:[
+        { ln:1, out:{ t:'text = привет' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'привет\']' } },
+        { ln:3, out:{ t:'Слова: привет', kind:'p' } }
+      ]},
+    ],
+    'd2': [
+      { val:'a', label:'Разворот: Мама мыла раму', steps:[
+        { ln:1, out:{ t:'text = Мама мыла раму' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'Мама\', \'мыла\', \'раму\']' } },
+        { ln:3, out:{ t:'Наоборот: раму, мыла, Мама', kind:'p' } }
+      ]},
+      { val:'b', label:'Разворот: кот сидел на окне', steps:[
+        { ln:1, out:{ t:'text = кот сидел на окне' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'кот\', \'сидел\', \'на\', \'окне\']' } },
+        { ln:3, out:{ t:'Наоборот: окне, на, сидел, кот', kind:'p' } }
+      ]},
+    ],
+    'd3': [
+      { val:'a', label:'Текст: Мама мыла раму', steps:[
+        { ln:1, out:{ t:'text = Мама мыла раму' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'Мама\', \'мыла\', \'раму\']' } },
+        { ln:3, out:{ t:'раму мыла Мама', kind:'p' } }
+      ]},
+      { val:'b', label:'Текст: кот сидел на окне', steps:[
+        { ln:1, out:{ t:'text = кот сидел на окне' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'кот\', \'сидел\', \'на\', \'окне\']' } },
+        { ln:3, out:{ t:'окне на сидел кот', kind:'p' } }
+      ]},
+      { val:'c', label:'Текст: привет', steps:[
+        { ln:1, out:{ t:'text = привет' } },
+        { ln:2, out:{ t:'words = text.split()  →  [\'привет\']' } },
+        { ln:3, out:{ t:'привет', kind:'p' } }
+      ]},
+    ],
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+</body>
+</html>

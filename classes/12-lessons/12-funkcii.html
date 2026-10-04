@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 12. Функции — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 12</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Функции</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Зачем нужны функции</h3><p>Один раз описываем действие — потом вызываем его по имени, а не копируем код.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Объявление и вызов</h3><p>def объявляет функцию, скобки рядом с именем — вызывают её.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Параметры и аргументы</h3><p>В скобках функция получает значения — их передаёт вызов.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>return</h3><p>return отдаёт результат обратно, а функция без return возвращает None.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Область видимости</h3><p>Переменные внутри функции — локальные. Общий список меняем, а не создаём заново.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Зачем нужны функции">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Зачем нужны функции</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><h3>Код короче</h3><p>Повторяющийся кусок записан один раз, а не скопирован пять раз.</p></div>
+      <div class="card r" style="--d:130"><h3>Понятнее</h3><p>По имени сразу видно, что делает эта часть программы.</p></div>
+      <div class="card r" style="--d:190"><h3>Правки в одном месте</h3><p>Поменяли размер — обновилось везде, где функция вызывается.</p></div>
+    </div>
+    <div class="acc-o r" style="--d:250">Готовыми функциями пользуемся с четвёртого занятия: print(), input(), int(), len(). Теперь пишем свои.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Функция вместо копий">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Функция вместо копий</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="box" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="two">Два вызова</button>
+          <button class="chip" type="button" data-val="none">Только объявили</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def draw_box():</span><span class="ln" data-no="2">    for _ in range(5):</span><span class="ln" data-no="3">        print('*' * 7)</span><span class="ln" data-no="4">draw_box()</span><span class="ln" data-no="5">print()</span><span class="ln" data-no="6">draw_box()</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Прямоугольники одинаковые, а код написан один раз — внутри функции. Понадобится другой размер — правим только строки 2 и 3.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Объявление и вызов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Объявление и вызов</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Функцию создают словом <b>def</b>: дальше имя, круглые скобки и двоеточие.</p>
+        <p class="note r" style="--d:130">Тело функции пишут с отступом в <b>4 пробела</b> — как блок у if.</p>
+        <p class="note r" style="--d:190">Объявление функцию не запускает. Нужен <b>вызов</b>: имя и скобки.</p>
+        <p class="note r" style="--d:250">Пока вызова нет, внутри функции не выполнится ни одна строка.</p>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 480" role="img" aria-label="Объявление функции и два её вызова">
+        <rect x="8" y="8" width="684" height="464" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="34" y="72" font-size="23" fill="#6E7E92">два вызова — тело выполнится дважды</text>
+        <rect x="34" y="128" width="212" height="56" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="60" y="165" font-size="24" font-family="monospace" fill="#101A26">say_hello()</text>
+        <rect x="34" y="212" width="212" height="56" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="60" y="249" font-size="24" font-family="monospace" fill="#101A26">say_hello()</text>
+        <text x="248" y="146" font-size="21" font-weight="700" fill="#1E7EE8">вызов</text>
+        <line x1="250" y1="156" x2="300" y2="156" stroke="#1E7EE8" stroke-width="3"/>
+        <path d="M306 156 l-14 -8 v16 z" fill="#1E7EE8"/>
+        <line x1="250" y1="240" x2="300" y2="240" stroke="#1E7EE8" stroke-width="3"/>
+        <path d="M306 240 l-14 -8 v16 z" fill="#1E7EE8"/>
+        <rect x="314" y="90" width="352" height="300" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+        <text x="340" y="142" font-size="24" font-family="monospace" font-weight="700" fill="#0B3E7A">def say_hello():</text>
+        <rect x="356" y="156" width="284" height="92" rx="16" fill="none" stroke="#1E7EE8" stroke-width="2" stroke-dasharray="9 8"/>
+        <text x="372" y="190" font-size="22" font-family="monospace" fill="#38475A">print('Привет!')</text>
+        <text x="372" y="226" font-size="22" font-family="monospace" fill="#38475A">print('Как дела?')</text>
+        <text x="340" y="296" font-size="22" fill="#6E7E92">тело функции,</text>
+        <text x="340" y="326" font-size="22" fill="#6E7E92">отступ 4 пробела</text>
+        <text x="340" y="364" font-size="22" font-weight="700" fill="#1E7EE8">блок функции</text>
+        <rect x="34" y="404" width="632" height="52" rx="18" fill="#E9F4FF"/>
+        <text x="58" y="438" font-size="22" font-weight="700" fill="#0B3E7A">Объявление не запускает — запускает вызов</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Имя функции и её вызовы">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Имя функции и её вызовы</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <pre class="snip">def say_hello():
+    print('Привет!')
+    print('Как дела?')
+
+say_hello()      <span class="c"># первый вызов</span>
+say_hello()      <span class="c"># второй вызов</span></pre>
+      </div>
+      <div class="notes r" style="--d:140">
+        <p class="note">Имя функции — как имя переменной: латинские буквы, цифры и знак _, регистр важен.</p>
+        <p class="note">Принято писать маленькими буквами с подчёркиваниями и начинать с глагола: <b>draw_box</b>, <b>show_tasks</b>, <b>add_task</b>.</p>
+        <p class="note">Функцию объявляют <b>раньше</b>, чем вызывают. Если меню стоит выше функции, Python ответит NameError.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Два вызова — приветствие напечатается дважды. Тело функции выполняется заново каждый раз.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Параметры и аргументы">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Параметры и аргументы</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70"><b>Параметры</b> — переменные в скобках при объявлении. Функция получает в них значения.</p>
+        <p class="note r" style="--d:130"><b>Аргументы</b> — то, что мы передаём при вызове: <b>draw_box(3, 5)</b>.</p>
+        <p class="note r" style="--d:190">Аргументы встают в параметры <b>по порядку</b>: первый — в height, второй — в width.</p>
+        <p class="note r" style="--d:250">Сколько параметров, столько и аргументов: <b>draw_box(3)</b> даст TypeError.</p>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 480" role="img" aria-label="Аргументы попадают в параметры функции">
+        <rect x="8" y="8" width="684" height="464" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="40" y="66" font-size="21" font-weight="700" fill="#6E7E92">АРГУМЕНТЫ ПРИ ВЫЗОВЕ</text>
+        <text x="40" y="106" font-size="26" font-family="monospace" fill="#101A26">draw_box(3, 5)</text>
+        <line x1="42" y1="186" x2="224" y2="186" stroke="#1E7EE8" stroke-width="3"/>
+        <path d="M230 186 l-14 -8 v16 z" fill="#1E7EE8"/>
+        <text x="112" y="176" font-size="24" font-weight="700" fill="#1E7EE8">3</text>
+        <text x="42" y="216" font-size="21" fill="#6E7E92">встанет в height</text>
+        <line x1="42" y1="286" x2="224" y2="286" stroke="#1E7EE8" stroke-width="3"/>
+        <path d="M230 286 l-14 -8 v16 z" fill="#1E7EE8"/>
+        <text x="112" y="276" font-size="24" font-weight="700" fill="#1E7EE8">5</text>
+        <text x="42" y="316" font-size="21" fill="#6E7E92">встанет в width</text>
+        <rect x="236" y="120" width="430" height="250" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+        <text x="260" y="172" font-size="23" font-family="monospace" font-weight="700" fill="#0B3E7A">def draw_box(height, width):</text>
+        <text x="290" y="222" font-size="22" font-family="monospace" fill="#38475A">for _ in range(height):</text>
+        <text x="314" y="258" font-size="22" font-family="monospace" fill="#38475A">print('*' * width)</text>
+        <text x="290" y="320" font-size="21" fill="#6E7E92">height, width — параметры</text>
+        <rect x="40" y="394" width="620" height="62" rx="20" fill="#E9F4FF"/>
+        <text x="64" y="424" font-size="23" font-weight="700" fill="#0B3E7A">Сколько параметров — столько аргументов</text>
+        <text x="64" y="450" font-size="21" fill="#6E7E92">draw_box(3) → TypeError: не хватает width</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Размеры задаёт вызов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Размеры задаёт вызов</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="params" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="3x5">draw_box(3, 5)</button>
+          <button class="chip" type="button" data-val="2x10">draw_box(2, 10)</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def draw_box(height, width):</span><span class="ln" data-no="2">    for _ in range(height):</span><span class="ln" data-no="3">        print('*' * width)</span><span class="ln" data-no="4">draw_box(3, 5)</span><span class="ln" data-no="5">draw_box(2, 10)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Одна функция — два разных прямоугольника. Меняются только аргументы в вызове.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Что возвращает функция">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Что возвращает функция</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>return отдаёт результат</h3>
+        <pre class="snip">def square(x):
+    return x * x
+
+result = square(5)
+print(result)          <span class="c"># 25</span>
+print(square(3) + 1)   <span class="c"># 10</span></pre>
+      </div>
+      <div class="card r" style="--d:140">
+        <h3>print только печатает</h3>
+        <pre class="snip">def show_sum(a, b):
+    print(a + b)       <span class="c"># печатает 5</span>
+
+x = show_sum(2, 3)
+print(x)               <span class="c"># None</span></pre>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">return сразу завершает работу функции. Если return нет, функция возвращает <b>None</b> — «ничего».</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="return и None">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>return и None</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="ret" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="ret">Функция с return</button>
+          <button class="chip" type="button" data-val="none">Функция без return</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def square(x):</span><span class="ln" data-no="2">    return x * x</span><span class="ln" data-no="3">def show_sum(a, b):</span><span class="ln" data-no="4">    print(a + b)</span><span class="ln" data-no="5">result = square(5)</span><span class="ln" data-no="6">print(result)</span><span class="ln" data-no="7">print(show_sum(2, 3))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">square вернула число, и его напечатал print. show_sum ничего не вернула — печатать оказалось нечего, кроме None.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Функция-проверка">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Функция может отвечать True или False</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="even" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="4">is_even(4)</button>
+          <button class="chip" type="button" data-val="7">is_even(7)</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def is_even(n):</span><span class="ln" data-no="2">    return n % 2 == 0</span><span class="ln" data-no="3">if is_even(4):</span><span class="ln" data-no="4">    print('Чётное')</span><span class="ln" data-no="5">else:</span><span class="ln" data-no="6">    print('Нечётное')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Функция вернула True или False — и условие if пользуется этим результатом, как обычным сравнением.</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Локальные переменные">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Локальные переменные</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="age" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="inside">Вызов show_age()</button>
+          <button class="chip" type="button" data-val="outside">print(age) снаружи</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def show_age():</span><span class="ln" data-no="2">    age = 15</span><span class="ln" data-no="3">    print(age)</span><span class="ln" data-no="4">show_age()</span><span class="ln" data-no="5">print(age)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">age существует только внутри функции. Снаружи такого имени нет — и программа останавливается с ошибкой.</div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Общий список и функция">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Общий список и функция</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>Список меняется</h3>
+        <pre class="snip">numbers = []          <span class="c"># глобальный список</span>
+
+def add_number(x):
+    numbers.append(x)
+
+add_number(5)
+print(numbers)        <span class="c"># [5]</span></pre>
+      </div>
+      <div class="card r" style="--d:140">
+        <h3>Так список не меняется</h3>
+        <pre class="snip">numbers = [1, 2]
+
+def clear_numbers():
+    numbers = []      <span class="c"># новая локальная</span>
+
+clear_numbers()
+print(numbers)        <span class="c"># [1, 2]</span></pre>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Список, созданный вне функций, — <b>глобальный</b>. Функция может его читать, а менять — методами append() и pop(). Так и будет работать список задач.</div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Частые ошибки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Частые ошибки</p>
+    <h2>Частые ошибки</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">ошибка 1</div><h3>Скобки забыли</h3><p>show_tasks без скобок — это просто имя. Ничего не вызовется.</p></div>
+      <div class="card r" style="--d:130"><div class="num">ошибка 2</div><h3>Функция ниже вызова</h3><p>Вызвали раньше, чем объявили, — получите NameError.</p></div>
+      <div class="card r" style="--d:190"><div class="num">ошибка 3</div><h3>Забыли аргумент</h3><p>add_task() без текста — TypeError: не хватает одного аргумента.</p></div>
+      <div class="card r" style="--d:250"><div class="num">ошибка 4</div><h3>tasks = [] внутри функции</h3><p>Появится новая локальная переменная, а общий список не изменится.</p></div>
+      <div class="card r" style="--d:310"><div class="num">ошибка 5</div><h3>Номер и индекс</h3><p>Задачи считаем с 1, элементы списка с 0 — внутри функций пишем number - 1.</p></div>
+    </div>
+    <div class="note r" style="--d:360">Сообщение об ошибке называет строку. Читаем её и правим ровно это место.</div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Проверь себя">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Проверь себя</p>
+    <h2>Проверь себя</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">дана функция 1</div>
+        <h3>hello(name)</h3>
+        <pre class="snip">def hello(name):
+    print('Привет,', name)</pre>
+      </div>
+      <div class="card r" style="--d:130">
+        <div class="num">дана функция 2</div>
+        <h3>double(x)</h3>
+        <pre class="snip">def double(x):
+    return x * 2</pre>
+      </div>
+    </div>
+    <div class="cards c4" style="margin-top:26px">
+      <div class="card r quiz" style="--d:190"><div class="num">вариант 1</div><h3>hello('Аня')</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">Привет, Аня</code></div>
+      <div class="card r quiz" style="--d:230"><div class="num">вариант 2</div><h3>hello</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">это имя функции, вызова нет — ничего не напечатается</code></div>
+      <div class="card r quiz" style="--d:270"><div class="num">вариант 3</div><h3>double(5)</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">10</code></div>
+      <div class="card r quiz" style="--d:310"><div class="num">вариант 4</div><h3>double(5) + 1</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">11</code></div>
+    </div>
+    <div class="note r" style="--d:360">Что напечатает каждый вызов? Считаем в уме, а потом нажимаем на карточку и проверяем себя.</div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c3" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Список задач</h3><p>Список и две функции: добавить задачу и показать все задачи с номерами.</p></div>
+      <div class="card r" style="--d:150"><div class="num">задача 2</div><h3>Отметить и удалить</h3><p>Функции, которые меняют общий список: пометить выполненную и удалить задачу.</p></div>
+      <div class="card r" style="--d:230"><div class="num">задача 3</div><h3>Меню программы</h3><p>Цикл while True спрашивает, что делать, и вызывает нужную функцию.</p></div>
+    </div>
+    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson12.py</b>.</div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div style="display:flex; flex-direction:column; gap:16px">
+    <div class="io-row r" style="--d:70"><div class="k">Задание</div><p>Создадим программу для списка дел. Она умеет добавлять задачу, показывать все задачи, отмечать задачу выполненной и удалять её по номеру. Каждое действие оформим отдельной функцией, а выбирать действие будем через меню. Список задач будет храниться в переменной <b>tasks</b>.</p></div>
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:130"><div class="k">Что на вход</div><p>Список задач <b>tasks</b> — сначала он пустой, а задачи в него добавляет функция.</p></div>
+        <div class="io-row r" style="--d:190"><div class="k">Что на выход</div><p>Нумерованный список задач — каждая на своей строке. Если задач нет, печатается «Список пуст».</p></div>
+        <div class="tlist r" style="--d:250">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">добавили две задачи</span><span class="ar">&#8594;</span><span class="out">Задача добавлена, 1 - Сделать уроки, 2 - Купить хлеб</span></div>
+          <div class="trow"><span class="in">список пуст — ничего не добавляли</span><span class="ar">&#8594;</span><span class="out">Список пуст</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="В списке две задачи — Сделать уроки и Купить хлеб; программа печатает их с номерами">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="76" font-size="30" font-weight="700" fill="#0B3E7A">Список задач</text>
+          <text x="648" y="76" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">2 задачи</text>
+          <line x1="52" y1="98" x2="648" y2="98" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="126" width="270" height="120" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="172" font-size="22" fill="#6E7E92">задача 1</text>
+          <text x="72" y="214" font-size="24" font-weight="700" fill="#0B3E7A">Сделать уроки</text>
+          <rect x="378" y="126" width="270" height="120" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="398" y="172" font-size="22" fill="#6E7E92">задача 2</text>
+          <text x="398" y="214" font-size="24" font-weight="700" fill="#0B3E7A">Купить хлеб</text>
+          <rect x="52" y="272" width="596" height="196" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="318" font-size="24" font-weight="700" fill="#0B3E7A">Что печатает программа</text>
+          <text x="76" y="364" font-size="23" fill="#0B3E7A">1 - Сделать уроки</text>
+          <text x="76" y="402" font-size="23" fill="#0B3E7A">2 - Купить хлеб</text>
+          <text x="76" y="444" font-size="21" fill="#6E7E92">если задач в списке нет — печатается «Список пуст»</text>
+        </svg>
+      </div>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Задача 1: шаг 1</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>add_task(text)</h3>
+        <pre class="snip">tasks = []
+
+def add_task(text):
+    tasks.append(text)
+    print('Задача добавлена')</pre>
+      </div>
+      <div class="card r" style="--d:140">
+        <h3>show_tasks()</h3>
+        <pre class="snip">def show_tasks():
+    if len(tasks) == 0:
+        print('Список пуст')
+    else:
+        for i in range(len(tasks)):
+            print(i + 1, '-', tasks[i])</pre>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Задачи — обычные строки. show_tasks() печатает номер <b>i + 1</b>: детям и взрослым привычнее считать с единицы.</div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Задача 1: полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="step1" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="two">Две задачи</button>
+          <button class="chip" type="button" data-val="empty">Список пуст</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">tasks = []</span><span class="ln" data-no="2">def add_task(text):</span><span class="ln" data-no="3">    tasks.append(text)</span><span class="ln" data-no="4">    print('Задача добавлена')</span><span class="ln" data-no="5">def show_tasks():</span><span class="ln" data-no="6">    if len(tasks) == 0:</span><span class="ln" data-no="7">        print('Список пуст')</span><span class="ln" data-no="8">    else:</span><span class="ln" data-no="9">        for i in range(len(tasks)):</span><span class="ln" data-no="10">            print(i + 1, '-', tasks[i])</span><span class="ln" data-no="11">add_task('Сделать уроки')</span><span class="ln" data-no="12">add_task('Купить хлеб')</span><span class="ln" data-no="13">show_tasks()</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Номер задачи, который ввёл пользователь. Задачи считаем с единицы: 1, 2, 3…</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Строка «Задача отмечена» и изменённый список — либо «Нет задачи с таким номером», если номер не подходит.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">complete_task(1)</span><span class="ar">&#8594;</span><span class="out">Задача отмечена, ['Сделать уроки (выполнено)', 'Купить хлеб']</span></div>
+          <div class="trow"><span class="in">complete_task(5)</span><span class="ar">&#8594;</span><span class="out">Нет задачи с таким номером, ['Сделать уроки', 'Купить хлеб']</span></div>
+          <div class="trow"><span class="in">remove_task(1)</span><span class="ar">&#8594;</span><span class="out">Задача удалена, ['Купить хлеб']</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Пользователь ввёл номер 1, и первая задача списка получает пометку «выполнено»">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="76" font-size="30" font-weight="700" fill="#0B3E7A">Отмечаем задачу по номеру</text>
+          <line x1="52" y1="98" x2="648" y2="98" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="126" width="596" height="74" rx="18" fill="#FFF3E2"/>
+          <text x="76" y="174" font-size="23" font-weight="700" fill="#8A4A00">Пользователь ввёл номер 1</text>
+          <rect x="52" y="226" width="596" height="74" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="274" font-size="23" font-weight="700" fill="#0B3E7A">Какая задача стоит в списке под номером 1?</text>
+          <rect x="52" y="326" width="596" height="130" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="76" y="372" font-size="23" fill="#38475A">1 - Сделать уроки <tspan font-weight="700" fill="#0B3E7A">(выполнено)</tspan></text>
+          <text x="76" y="410" font-size="23" fill="#38475A">2 - Купить хлеб</text>
+          <text x="76" y="442" font-size="21" fill="#6E7E92">остальные задачи списка остаются как были</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: шаг 1</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>complete_task(number)</h3>
+        <pre class="snip">def complete_task(number):
+    if 1 &lt;= number &lt;= len(tasks):
+        tasks[number - 1] += ' (выполнено)'
+        print('Задача отмечена')
+    else:
+        print('Нет задачи с таким номером')</pre>
+      </div>
+      <div class="card r" style="--d:140">
+        <h3>remove_task(number)</h3>
+        <pre class="snip">def remove_task(number):
+    if 1 &lt;= number &lt;= len(tasks):
+        tasks.pop(number - 1)
+        print('Задача удалена')
+    else:
+        print('Нет задачи с таким номером')</pre>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Пользователь считает задачи с 1, а в списке они лежат с 0: поэтому внутри функций пишем <b>number - 1</b>. Сначала проверяем, что задача есть.</div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Задача 2: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: шаг 2</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="complete" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="1">complete_task(1)</button>
+          <button class="chip" type="button" data-val="5">complete_task(5)</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">tasks = ['Сделать уроки', 'Купить хлеб']</span><span class="ln" data-no="2">def complete_task(number):</span><span class="ln" data-no="3">    if 1 &lt;= number &lt;= len(tasks):</span><span class="ln" data-no="4">        tasks[number - 1] += ' (выполнено)'</span><span class="ln" data-no="5">        print('Задача отмечена')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Нет задачи с таким номером')</span><span class="ln" data-no="8">complete_task(1)</span><span class="ln" data-no="9">print(tasks)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Проверка <b>1 &lt;= number &lt;= len(tasks)</b> не пускает функцию к несуществующей задаче.</div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="remove" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="1">remove_task(1)</button>
+          <button class="chip" type="button" data-val="5">remove_task(5)</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">tasks = ['Сделать уроки', 'Купить хлеб']</span><span class="ln" data-no="2">def remove_task(number):</span><span class="ln" data-no="3">    if 1 &lt;= number &lt;= len(tasks):</span><span class="ln" data-no="4">        tasks.pop(number - 1)</span><span class="ln" data-no="5">        print('Задача удалена')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Нет задачи с таким номером')</span><span class="ln" data-no="8">remove_task(1)</span><span class="ln" data-no="9">print(tasks)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">pop(индекс) убирает элемент из списка. Перепутаете номер и индекс — удалите не ту задачу.</div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Выбор пункта меню: 1, 2, 3, 4 или 0 — команда выхода.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Пять строк меню, потом действие выбранного пункта. После действия меню показывается снова; при выборе 0 печатается «До свидания!».</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">пункт 1 — добавить</span><span class="ar">&#8594;</span><span class="out">1 - Добавить задачу, 2 - Показать задачи, 3 - Отметить выполненной, 4 - Удалить задачу, 0 - Выход</span></div>
+          <div class="trow"><span class="in">пункт 0 — выход</span><span class="ar">&#8594;</span><span class="out">1 - Добавить задачу, 2 - Показать задачи, 3 - Отметить выполненной, 4 - Удалить задачу, 0 - Выход, До свидания!</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Меню из пяти пунктов: 1 — добавить задачу, 2 — показать задачи, 3 — отметить выполненной, 4 — удалить задачу, 0 — выход">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="76" font-size="30" font-weight="700" fill="#0B3E7A">Что печатает меню</text>
+          <text x="648" y="76" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">5 пунктов</text>
+          <line x1="52" y1="98" x2="648" y2="98" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="126" width="596" height="212" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="168" font-size="23" font-weight="700" fill="#0B3E7A">1 - Добавить задачу</text>
+          <text x="76" y="204" font-size="23" font-weight="700" fill="#0B3E7A">2 - Показать задачи</text>
+          <text x="76" y="240" font-size="23" font-weight="700" fill="#0B3E7A">3 - Отметить выполненной</text>
+          <text x="76" y="276" font-size="23" font-weight="700" fill="#0B3E7A">4 - Удалить задачу</text>
+          <text x="76" y="312" font-size="23" font-weight="700" fill="#0B3E7A">0 - Выход</text>
+          <rect x="52" y="358" width="596" height="110" rx="18" fill="#FFF3E2"/>
+          <text x="76" y="400" font-size="21" fill="#8A4A00">Пункт 0 — печатаем «До свидания!» и выходим</text>
+          <text x="76" y="438" font-size="21" fill="#8A4A00">Другой пункт — и меню показывается снова</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Задача 3: шаг 1</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>Печатаем пункты и читаем выбор</h3>
+        <pre class="snip">while True:
+    print()
+    print('1 - Добавить задачу')
+    print('2 - Показать задачи')
+    print('3 - Отметить выполненной')
+    print('4 - Удалить задачу')
+    print('0 - Выход')
+    choice = input('Выберите действие: ')</pre>
+      </div>
+      <div class="card r" style="--d:140">
+        <h3>Условия вызывают нужную функцию</h3>
+        <pre class="snip">    if choice == '1':
+        text = input('Введите задачу: ')
+        add_task(text)
+    elif choice == '2':
+        show_tasks()
+    elif choice == '3':
+        number = int(input('Номер задачи: '))
+        complete_task(number)
+    elif choice == '4':
+        number = int(input('Номер задачи: '))
+        remove_task(number)
+    elif choice == '0':
+        print('До свидания!')
+        break
+    else:
+        print('Такого пункта нет')</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Задача 3: полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="menu" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="add">Пункт 1 — добавить</button>
+          <button class="chip" type="button" data-val="exit">Пункт 0 — выход</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">while True:</span><span class="ln" data-no="2">    print()</span><span class="ln" data-no="3">    print('1 - Добавить задачу')</span><span class="ln" data-no="4">    print('2 - Показать задачи')</span><span class="ln" data-no="5">    print('3 - Отметить выполненной')</span><span class="ln" data-no="6">    print('4 - Удалить задачу')</span><span class="ln" data-no="7">    print('0 - Выход')</span><span class="ln" data-no="8">    choice = input('Выберите действие: ')</span><span class="ln" data-no="9">    if choice == '1':</span><span class="ln" data-no="10">        add_task(input('Введите задачу: '))</span><span class="ln" data-no="11">    elif choice == '0':</span><span class="ln" data-no="12">        print('До свидания!')</span><span class="ln" data-no="13">        break</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Дополнительное задание">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Дополнительное задание</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">задание 1</div><h3>Отменить отметку</h3><p>Функция uncomplete_task(number) убирает пометку «(выполнено)» у задачи. Подсказка: метод replace(' (выполнено)', '').</p></div>
+      <div class="card r" style="--d:140"><div class="num">задание 2</div><h3>Сколько дел осталось</h3><p>Функция count_left() возвращает число невыполненных задач, а меню печатает его. Здесь пригодится return.</p></div>
+    </div>
+    <div class="note r" style="--d:200">После проверки временные вызовы вроде add_task('Сделать уроки') и print(tasks) можно удалить — программа останется рабочей.</div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Функция — именованный блок кода: пишем один раз, вызываем сколько нужно.</div>
+      <div>Функцию объявляют словом def, вызывают по имени и со скобками. Объявление само код не запускает.</div>
+      <div>Параметры — переменные в объявлении, аргументы — значения при вызове; они встают по порядку.</div>
+      <div>return отдаёт результат и сразу завершает функцию. Без return функция возвращает None.</div>
+      <div>Переменные внутри функции локальные, снаружи их не видно. Общий список меняем методами append() и pop().</div>
+      <div>В программе «Список задач» каждая операция — своя функция, а меню на while True выбирает, какую вызвать.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">28</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    /* 1. Своя функция: один код — два вызова */
+    'box': [
+      { val:'two', label:'два вызова', steps:[
+        { ln:1, out:{ t:'def draw_box(): функция создана' }, badge:'Тело функции запишем, а выполнится оно при вызове' },
+        { ln:4, out:{ t:'вызов draw_box() — строка 4' } },
+        { ln:2, out:{ t:'повторяем 5 раз' } },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:320 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:5, out:{ t:'&#160;', kind:'p' } },
+        { ln:6, out:{ t:'вызов draw_box() — строка 6' } },
+        { ln:2, out:{ t:'повторяем 5 раз' } },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:320 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*******', kind:'p' }, wait:260 }
+      ]},
+      { val:'none', label:'только объявили', skip:[4,5,6], steps:[
+        { ln:1, out:{ t:'def draw_box(): функция создана' }, badge:'Вызова нет — программа ничего не напечатала' }
+      ]}
+    ],
+
+    /* 2. Параметры */
+    'params': [
+      { val:'3x5', label:'draw_box(3, 5)', skip:[5], steps:[
+        { ln:1, out:{ t:'def draw_box(height, width): функция создана' } },
+        { ln:4, out:{ t:'вызов draw_box(3, 5)  →  height = 3, width = 5' } },
+        { ln:2, out:{ t:'повторяем height = 3 раза' } },
+        { ln:3, out:{ t:'*****', kind:'p' }, wait:320 },
+        { ln:3, out:{ t:'*****', kind:'p' }, wait:260 },
+        { ln:3, out:{ t:'*****', kind:'p' }, wait:260 }
+      ]},
+      { val:'2x10', label:'draw_box(2, 10)', skip:[4], steps:[
+        { ln:1, out:{ t:'def draw_box(height, width): функция создана' } },
+        { ln:5, out:{ t:'вызов draw_box(2, 10)  →  height = 2, width = 10' } },
+        { ln:2, out:{ t:'повторяем height = 2 раза' } },
+        { ln:3, out:{ t:'**********', kind:'p' }, wait:320 },
+        { ln:3, out:{ t:'**********', kind:'p' }, wait:260 }
+      ]}
+    ],
+
+    /* 3–4. return */
+    'ret': [
+      { val:'ret', label:'с return', skip:[3,4,7], steps:[
+        { ln:1, out:{ t:'def square(x): функция создана' } },
+        { ln:2, out:{ t:'return x * x — тело функции' }, badge:'Вернёт 25, когда вызовем с x = 5' },
+        { ln:5, out:{ t:'вызов square(5)  →  x = 5' } },
+        { ln:6, out:{ t:'25', kind:'p' }, badge:'Значение вернулось в программу, и его напечатал print' }
+      ]},
+      { val:'none', label:'без return', skip:[1,2,5,6], steps:[
+        { ln:3, out:{ t:'def show_sum(a, b): функция создана' } },
+        { ln:4, out:{ t:'5', kind:'p' }, badge:'Вызов show_sum(2, 3)  →  a = 2, b = 3 (функция печатает сама)' },
+        { ln:7, out:{ t:'None', kind:'p' }, badge:'Нет return — функция вернула None' }
+      ]}
+    ],
+
+    /* 5. Возвращаем True или False */
+    'even': [
+      { val:'4', label:'is_even(4)', skip:[5,6], steps:[
+        { ln:1, out:{ t:'def is_even(n): функция создана' } },
+        { ln:2, out:{ t:'return n % 2 == 0 — вернёт True или False' }, badge:'Вызов is_even(4)  →  n = 4' },
+        { ln:3, out:{ t:'is_even(4)  →  True', kind:'true' } },
+        { ln:4, out:{ t:'Чётное', kind:'p' } }
+      ]},
+      { val:'7', label:'is_even(7)', skip:[4], steps:[
+        { ln:1, out:{ t:'def is_even(n): функция создана' } },
+        { ln:2, out:{ t:'return n % 2 == 0 — вернёт True или False' }, badge:'Вызов is_even(7)  →  n = 7' },
+        { ln:3, out:{ t:'is_even(7)  →  False', kind:'false' } },
+        { ln:6, out:{ t:'Нечётное', kind:'p' } }
+      ]}
+    ],
+
+    /* 6. Локальные переменные */
+    'age': [
+      { val:'inside', label:'внутри функции', skip:[5], steps:[
+        { ln:1, out:{ t:'def show_age(): функция создана' } },
+        { ln:2, out:{ t:'age = 15 — переменная появилась внутри функции' }, badge:'Вызов show_age(): тело функции — строки 2 и 3' },
+        { ln:3, out:{ t:'15', kind:'p' } },
+        { ln:4, out:{ t:'show_age() — вызов из программы' } }
+      ]},
+      { val:'outside', label:'снаружи', skip:[4], steps:[
+        { ln:1, out:{ t:'def show_age(): функция создана' } },
+        { ln:5, out:{ t:'print(age) — а такой переменной в программе нет' } },
+        { ln:5, out:{ t:"NameError: name 'age' is not defined", kind:'false' }, badge:'Локальная переменная живёт только внутри функции' }
+      ]}
+    ],
+
+    /* 7. Шаг 1 и 2: добавить и показать */
+    'step1': [
+      { val:'two', label:'две задачи', skip:[7], steps:[
+        { ln:1, out:{ t:'tasks = [] — пока пусто' } },
+        { ln:2, out:{ t:'def add_task(text): функция создана' } },
+        { ln:3, out:{ t:'tasks = [Сделать уроки]' }, badge:"Вызов add_task('Сделать уроки') — строка 11" },
+        { ln:4, out:{ t:'Задача добавлена', kind:'p' }, badge:"Строка 12: второй вызов — add_task('Купить хлеб')" },
+        { ln:5, out:{ t:'def show_tasks(): функция создана' } },
+        { ln:6, out:{ t:'len(tasks) == 0  →  False', kind:'false' }, badge:'Вызов show_tasks() — строка 13' },
+        { ln:9, out:{ t:'i = 0' }, badge:'Цикл for перебирает задачи по номерам' },
+        { ln:10, out:{ t:'1 - Сделать уроки', kind:'p' }, wait:320 },
+        { ln:9, out:{ t:'i = 1' } },
+        { ln:10, out:{ t:'2 - Купить хлеб', kind:'p' } }
+      ]},
+      { val:'empty', label:'список пуст', skip:[8,9,10,11,12], steps:[
+        { ln:1, out:{ t:'tasks = [] — пока пусто' } },
+        { ln:2, out:{ t:'def add_task(text): функция создана' } },
+        { ln:5, out:{ t:'def show_tasks(): функция создана' } },
+        { ln:6, out:{ t:'len(tasks) == 0  →  True', kind:'true' }, badge:'Вызов show_tasks() — строка 13' },
+        { ln:7, out:{ t:'Список пуст', kind:'p' } }
+      ]}
+    ],
+
+    /* 8. Отметить выполненной */
+    'complete': [
+      { val:'1', label:'complete_task(1)', skip:[6,7], steps:[
+        { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
+        { ln:2, out:{ t:'def complete_task(number): функция создана' } },
+        { ln:3, out:{ t:'1 &lt;= 1 &lt;= 2  →  True', kind:'true' }, badge:'Вызов complete_task(1) — строка 8: number = 1' },
+        { ln:4, out:{ t:"tasks[0] += ' (выполнено)'" } },
+        { ln:5, out:{ t:'Задача отмечена', kind:'p' } },
+        { ln:9, out:{ t:"['Сделать уроки (выполнено)', 'Купить хлеб']", kind:'p' } }
+      ]},
+      { val:'5', label:'complete_task(5)', skip:[4,5], steps:[
+        { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
+        { ln:2, out:{ t:'def complete_task(number): функция создана' } },
+        { ln:3, out:{ t:'1 &lt;= 5 &lt;= 2  →  False', kind:'false' }, badge:'Вызов complete_task(5) — строка 8: number = 5' },
+        { ln:7, out:{ t:'Нет задачи с таким номером', kind:'p' } },
+        { ln:9, out:{ t:"['Сделать уроки', 'Купить хлеб']", kind:'p' } }
+      ]}
+    ],
+
+    /* 9. Удалить задачу */
+    'remove': [
+      { val:'1', label:'remove_task(1)', skip:[6,7], steps:[
+        { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
+        { ln:2, out:{ t:'def remove_task(number): функция создана' } },
+        { ln:3, out:{ t:'1 &lt;= 1 &lt;= 2  →  True', kind:'true' }, badge:'Вызов remove_task(1) — строка 8: number = 1' },
+        { ln:4, out:{ t:'tasks.pop(0) — убрали первый элемент' } },
+        { ln:5, out:{ t:'Задача удалена', kind:'p' } },
+        { ln:9, out:{ t:"['Купить хлеб']", kind:'p' } }
+      ]},
+      { val:'5', label:'remove_task(5)', skip:[4,5], steps:[
+        { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
+        { ln:2, out:{ t:'def remove_task(number): функция создана' } },
+        { ln:3, out:{ t:'1 &lt;= 5 &lt;= 2  →  False', kind:'false' }, badge:'Вызов remove_task(5) — строка 8: number = 5' },
+        { ln:7, out:{ t:'Нет задачи с таким номером', kind:'p' } },
+        { ln:9, out:{ t:"['Сделать уроки', 'Купить хлеб']", kind:'p' } }
+      ]}
+    ],
+
+    /* 10. Меню */
+    'menu': [
+      { val:'add', label:'пункт 1 — добавить', skip:[11,12,13], steps:[
+        { ln:1, out:{ t:'while True: после действия меню показывается заново' } },
+        { ln:2, out:{ t:'&#160;', kind:'p' } },
+        { ln:3, out:{ t:'1 - Добавить задачу', kind:'p' } },
+        { ln:4, out:{ t:'2 - Показать задачи', kind:'p' } },
+        { ln:5, out:{ t:'3 - Отметить выполненной', kind:'p' } },
+        { ln:6, out:{ t:'4 - Удалить задачу', kind:'p' } },
+        { ln:7, out:{ t:'0 - Выход', kind:'p' } },
+        { ln:8, out:{ t:'выбрали 1' } },
+        { ln:9, out:{ t:"'1' == '1'  →  True", kind:'true' } },
+        { ln:10, out:{ t:'add_task() получает текст задачи' } },
+        { ln:10, out:{ t:'Задача добавлена', kind:'p' }, badge:'while True не закончился — меню вернётся к началу' }
+      ]},
+      { val:'exit', label:'пункт 0 — выход', skip:[9,10], steps:[
+        { ln:1, out:{ t:'while True: спрашиваем, пока не выберут выход' } },
+        { ln:2, out:{ t:'&#160;', kind:'p' } },
+        { ln:3, out:{ t:'1 - Добавить задачу', kind:'p' } },
+        { ln:4, out:{ t:'2 - Показать задачи', kind:'p' } },
+        { ln:5, out:{ t:'3 - Отметить выполненной', kind:'p' } },
+        { ln:6, out:{ t:'4 - Удалить задачу', kind:'p' } },
+        { ln:7, out:{ t:'0 - Выход', kind:'p' } },
+        { ln:8, out:{ t:'выбрали 0' } },
+        { ln:11, out:{ t:"'0' == '0'  →  True", kind:'true' } },
+        { ln:12, out:{ t:'До свидания!', kind:'p' } },
+        { ln:13, out:{ t:'break — выходим из цикла' }, badge:'Программа закончилась' }
+      ]}
+    ]
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+/* светофор: подсвечиваем лампу под выбранный сигнал (слайд «Светофор») */
+(function () {
+  var run = document.querySelector('.run[data-run="light"]');
+  var box = document.getElementById('traffic-light');
+  if (!run || !box) return;
+  var names = {'красный': 'red', 'жёлтый': 'yellow', 'зелёный': 'green'};
+  function paint(value) {
+    var lit = names[String(value).trim()];
+    ['red', 'yellow', 'green'].forEach(function (name) {
+      var lamp = box.querySelector('[data-lamp="' + name + '"]');
+      if (!lamp) return;
+      var on = (name === lit);
+      lamp.setAttribute('fill', on ? lamp.getAttribute('data-on') : '#FFFFFF');
+      lamp.setAttribute('stroke', on ? '#FFFFFF' : '#DEEAF7');
+    });
+  }
+  Array.prototype.forEach.call(run.querySelectorAll('.chip'), function (chip) {
+    chip.addEventListener('click', function () { paint(chip.getAttribute('data-val') || chip.textContent); });
+  });
+  var first = run.querySelector('.chip.on') || run.querySelector('.chip');
+  if (first) paint(first.getAttribute('data-val') || first.textContent);
+})();
+
+(function(){
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+</body>
+</html>

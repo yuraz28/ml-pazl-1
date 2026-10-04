@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 3. Первые шаги в Python — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+</style>
+<style>
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+
+<!-- 1 -->
+
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 3</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Первые шаги в Python</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Язык и программа</h3><p>Программа — это список команд: Python читает файл строка за строкой. Компилируемые языки переводят весь файл заранее, интерпретируемые — на ходу.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Откуда взялся Python</h3><p>Название пришло с комедийного шоу, а не от змеи. Ветки Python 2 и Python 3 несовместимы, работаем на третьей.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Зачем нужен Python</h3><p>Понятный синтаксис и огромная библиотека готовых модулей: сайты, данные, автоматизация.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Первая программа</h3><p>Печатаем текст через print(), сохраняем файл и запускаем. Отступы в Python — часть синтаксиса, а не украшение.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Переменные и типы</h3><p>Переменная — имя для значения. Четырёх основных типов хватает для начала, type() показывает тип.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Программа — это список команд">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Программа</p>
+    <h2>Программа — это список команд</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">Компьютерная программа — это список команд для компьютера.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:140">
+        <h3>Команды бывают разными</h3>
+        <p>Считать данные с клавиатуры, выполнить вычисления, вывести результат на экран.</p>
+      </div>
+      <div class="card r" style="--d:200">
+        <h3>Программа — это не только код</h3>
+        <p>Браузер, мессенджер и сама операционная система тоже программы.</p>
+      </div>
+      <div class="card r" style="--d:260">
+        <h3>Язык программирования</h3>
+        <p>Набор правил, по которым компьютер понимает команды. Текст программы называется программным кодом.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:320">Правила записи команд у каждого языка свои. Дальше — про то, как программа превращается в работу компьютера.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Компилируемые и интерпретируемые языки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Языки</p>
+    <h2>Два вида языков</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70">
+        <h3>Компилируемые: C, C++, Pascal</h3>
+        <p>Программу сначала целиком проверяют на ошибки и переводят в машинный код специальной программой — компилятором. И только потом запускают.</p>
+      </div>
+      <div class="card pick r" style="--d:130">
+        <h3>Интерпретируемые: Python, PHP, Ruby</h3>
+        <p>Программу целиком в машинный код не переводят. Вместо этого интерпретатор идёт по коду и выполняет команды одну за другой.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Python — интерпретируемый язык. Именно интерпретатор выполняет наши команды, когда мы нажимаем «Запустить».</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Откуда взялось название">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Python</p>
+    <h2>Откуда взялся Python</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">Python разработал голландский программист Гвидо ван Россум, первая версия вышла в 1991 году.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:140">
+        <h3>Кто создал</h3>
+        <p>Голландский программист Гвидо ван Россум.</p>
+      </div>
+      <div class="card r" style="--d:200">
+        <h3>Когда</h3>
+        <p>Первая версия языка вышла в 1991 году.</p>
+      </div>
+      <div class="card r" style="--d:260">
+        <h3>Откуда имя</h3>
+        <p>От британского комедийного шоу «Монти Пайтон», которое Гвидо любил. К змее название отношения не имеет.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:320">Запомнить легко: язык назван в честь шоу, а не в честь змеи.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Python 2 и Python 3">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Версии</p>
+    <h2>Python 2 и Python 3</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70">
+        <h3>Python 2 — устарел</h3>
+        <p>Поддержку второй версии прекратили в 2020 году.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <h3>Python 3 — современный</h3>
+        <p>Он не совместим со второй версией полностью, а на Python 2 написано много программ, которые непросто переписать.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Полностью отказаться от Python 2 не получилось — поэтому у языка две версии. В нашем курсе мы работаем только с Python 3.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Сильные стороны Python">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Плюсы</p>
+    <h2>Почему Python выбирают</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70">
+        <h3>Интерпретируемый</h3>
+        <p>Программа запускается прямо из исходного кода, отдельная компиляция не нужна.</p>
+      </div>
+      <div class="card r" style="--d:120">
+        <h3>Высокоуровневый</h3>
+        <p>Код близок к человеческому языку, а многие технические детали скрыты.</p>
+      </div>
+      <div class="card r" style="--d:170">
+        <h3>Платформонезависимый</h3>
+        <p>Программы пишут и запускают в Windows, macOS и Linux.</p>
+      </div>
+      <div class="card r" style="--d:220">
+        <h3>Открытый исходный код</h3>
+        <p>Распространяется бесплатно.</p>
+      </div>
+      <div class="card r" style="--d:270">
+        <h3>Простой в изучении</h3>
+        <p>Поэтому его часто выбирают первым языком.</p>
+      </div>
+      <div class="card r" style="--d:320">
+        <h3>Динамический</h3>
+        <p>Тип переменной определяется автоматически по значению.</p>
+      </div>
+      <div class="card r" style="--d:370">
+        <h3>Много библиотек</h3>
+        <p>Готовые библиотеки на любые задачи — их огромное количество.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Слабые стороны Python">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Минусы</p>
+    <h2>И два недостатка</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70">
+        <h3>Работает медленнее</h3>
+        <p>Программа на Python выполняется медленнее, чем программа на C или C++.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <h3>Динамическая типизация</h3>
+        <p>В небольших программах помогает, а в сложных проектах становится проблемой: ошибки с типами проявляются только при запуске.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:200">Для учебных программ и небольших проектов оба минуса незаметны.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Где используется Python">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Применение</p>
+    <h2>Где используется Python</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <h3>Системное программирование</h3>
+        <p>Скрипты, которые работают с файлами и операционной системой.</p>
+      </div>
+      <div class="card r" style="--d:120">
+        <h3>Графические приложения</h3>
+        <p>Программы с окнами и кнопками.</p>
+      </div>
+      <div class="card r" style="--d:170">
+        <h3>Веб-приложения</h3>
+        <p>Сайты и сервисы на фреймворках Django и Flask.</p>
+      </div>
+      <div class="card r" style="--d:220">
+        <h3>Сеть и базы данных</h3>
+        <p>Python обращается к интернету и ко всем основным базам данных.</p>
+      </div>
+      <div class="card r" style="--d:270">
+        <h3>Интеграция</h3>
+        <p>Связывает между собой другие системы и компоненты.</p>
+      </div>
+      <div class="card pick r" style="--d:320">
+        <h3>Анализ данных, ML и AI</h3>
+        <p>Одно из главных направлений, и Python для него — основной язык.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:380">Python используют технологические компании, банки и научные организации: части поисковых систем и видеосервисов, тестирование оборудования, прогноз финансовых рынков. Для нашего курса важнее всего машинное обучение — его мы изучаем на Python, и языковые модели тоже.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Первый файл: hello.py">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Первый файл</p>
+    <h2>Первый файл: hello.py</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="hello" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="dbl">Двойные кавычки</button>
+          <button class="chip" type="button" data-val="sgl">Одинарные кавычки</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1"># Первая программа</span><span class="ln" data-no="2">print("Привет, мир!")</span><span class="ln" data-no="3">print('Привет, мир!')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Программы на Python хранятся в файлах с расширением <b>.py</b>: создаём hello.py в VS Code. Запускаем кнопкой запуска или командой <b>python hello.py</b> в терминале.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Особенности синтаксиса">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Синтаксис</p>
+    <h2>Особенности синтаксиса</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70">
+        <h3>Одна команда — одна строка</h3>
+        <p>Точка с запятой в конце не нужна.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <h3>Кавычки</h3>
+        <p>Текст в программе (строки) записываем в кавычках — одинарных или двойных.</p>
+      </div>
+      <div class="card r" style="--d:190">
+        <h3>Комментарий</h3>
+        <p>Начинается с символа #. Интерпретатор его не выполняет.</p>
+      </div>
+      <div class="card r" style="--d:250">
+        <h3>Регистр важен</h3>
+        <p>name и Name — это разные имена.</p>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:320">Блоки кода выделяются отступами, а не фигурными скобками. Обычно используют 4 пробела — это понадобится нам в условиях и циклах.</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Переменная — это имя для значения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Переменные</p>
+    <h2>Переменная — это имя для значения</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div>
+        <div class="acc r" style="--d:70">Переменная — это имя, под которым в памяти компьютера хранится значение.</div>
+        <div class="note r" style="--d:150" >Её можно сравнить с подписанной коробкой: на коробке написано имя, а внутри лежит значение.</div>
+        <div class="note r" style="--d:210">Переменную создают с помощью присваивания. Знак <b>=</b> в Python означает «положить значение в переменную», а не равенство, как в математике. Тип значения указывать не нужно — Python определяет его сам.</div>
+      </div>
+      <svg class="ill r" style="--d:270" viewBox="0 0 700 560" aria-hidden="true">
+        <rect x="40" y="120" width="620" height="180" rx="28" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="4"/>
+        <rect x="76" y="150" width="190" height="58" rx="16" fill="#1E7EE8"/>
+        <text x="171" y="187" text-anchor="middle" font-family="var(--mono)" font-size="30" font-weight="700" fill="#FFFFFF">name</text>
+        <text x="310" y="196" font-family="var(--sans)" font-size="46" font-weight="800" fill="#0B3E7A">Даша</text>
+        <text x="76" y="268" font-family="var(--sans)" font-size="26" fill="#6E7E92">имя переменной — на коробке</text>
+        <rect x="40" y="330" width="620" height="180" rx="28" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="4"/>
+        <rect x="76" y="360" width="190" height="58" rx="16" fill="#1E7EE8"/>
+        <text x="171" y="397" text-anchor="middle" font-family="var(--mono)" font-size="30" font-weight="700" fill="#FFFFFF">age</text>
+        <text x="310" y="406" font-family="var(--sans)" font-size="46" font-weight="800" fill="#0B3E7A">25</text>
+        <text x="76" y="478" font-family="var(--sans)" font-size="26" fill="#6E7E92">значение — внутри</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Создаём переменную">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Присваивание</p>
+    <h2>Создаём переменную</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="vars" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="join">Два значения сразу</button>
+          <button class="chip" type="button" data-val="label">С подписью</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = "Даша"</span><span class="ln" data-no="2">age = 25</span><span class="ln" data-no="3">print(name, age)</span><span class="ln" data-no="4">print("Возраст:", age)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Функция print() умеет выводить несколько значений сразу, если перечислить их через запятую.</div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Значение переменной можно менять">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Присваивание</p>
+    <h2>Значение можно менять</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="change" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="before">До изменения</button>
+          <button class="chip" type="button" data-val="after">После изменения</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">print(age)</span><span class="ln" data-no="3">age = 26</span><span class="ln" data-no="4">print(age)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Если написать age = 26, в переменной будет храниться уже новое значение, а старое исчезнет.</div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Правила имён переменных">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Имена</p>
+    <h2>Правила имён переменных</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <h3>Буквы, цифры, подчёркивание</h3>
+        <p>Имя может содержать только эти символы.</p>
+      </div>
+      <div class="card r" style="--d:120">
+        <h3>Не начинается с цифры</h3>
+        <p>2name — ошибка.</p>
+      </div>
+      <div class="card r" style="--d:170">
+        <h3>Без пробелов</h3>
+        <p>Вместо пробела ставят подчёркивание: user_age.</p>
+      </div>
+      <div class="card r" style="--d:220">
+        <h3>Нельзя занятые слова</h3>
+        <p>if, for, while, True — Python уже занял их для себя.</p>
+      </div>
+      <div class="card r" style="--d:270">
+        <h3>Регистр важен</h3>
+        <p>age и Age — две разные переменные.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:320">Кроме правил есть договорённости, которых придерживаются программисты (стандарт PEP 8): имена пишут строчными буквами, слова разделяют подчёркиванием, а сами имена делают понятными — user_age лучше, чем x.</div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Четыре основных типа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Типы данных</p>
+    <h2>Четыре основных типа</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70">
+        <div class="num">int</div>
+        <h3>Целые числа</h3>
+        <p>Например, 25, 0 или -3.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <div class="num">float</div>
+        <h3>Дробные числа</h3>
+        <p>Например, 1.75. Разделитель — точка, а не запятая.</p>
+      </div>
+      <div class="card r" style="--d:190">
+        <div class="num">str</div>
+        <h3>Строки</h3>
+        <p>Текст в кавычках, например "Мира".</p>
+      </div>
+      <div class="card pick r" style="--d:250">
+        <div class="num">bool</div>
+        <h3>Логический тип</h3>
+        <p>Только True (истина) и False (ложь), с заглавной буквы.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:320">Тип определяется значением: 25 — это число, а "25" в кавычках — уже строка. Подробнее о типах и о преобразовании между ними поговорим на следующих занятиях.</div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Функция type()">
+  <header class="sh r">
+    <p class="eyebrow">Теория · type()</p>
+    <h2>Тип значения показывает type()</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="types" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="int">age = 25</button>
+          <button class="chip" type="button" data-val="float">height = 1.75</button>
+          <button class="chip" type="button" data-val="str">name = "Мира"</button>
+          <button class="chip" type="button" data-val="bool">is_online = True</button>
+          <button class="chip" type="button" data-val="all">Все четыре</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">height = 1.75</span><span class="ln" data-no="3">name = "Мира"</span><span class="ln" data-no="4">is_online = True</span><span class="ln" data-no="5">print(type(age))</span><span class="ln" data-no="6">print(type(height))</span><span class="ln" data-no="7">print(type(name))</span><span class="ln" data-no="8">print(type(is_online))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Узнать тип значения можно с помощью функции type(): в скобках пишем имя переменной. Тип определяется значением, а не именем.</div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Частые ошибки">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Ошибки</p>
+    <h2>Четыре частые ошибки</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="err" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="quotes">Забыли кавычки</button>
+          <button class="chip" type="button" data-val="comma">Запятая вместо точки</button>
+          <button class="chip" type="button" data-val="space">Пробел в имени</button>
+          <button class="chip" type="button" data-val="case">Перепутали регистр</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">city = Москва</span><span class="ln" data-no="2">height = 1,68</span><span class="ln" data-no="3">user age = 25</span><span class="ln" data-no="4">Name = "Мира"</span><span class="ln" data-no="5">print(name)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Каждая строка в примере сломана по-своему: выбирайте ошибку чипом. Python останавливается на первой ошибке и сам пишет её название и номер строки.</div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Карточка персонажа</h3><p>Заводим четыре переменные, печатаем карточку, меняем значения и проверяем типы через type().</p></div>
+      <div class="card r" style="--d:130"><div class="num">доп. задание</div><h3>Число или строка</h3><p>Сравниваем 25 и "25": одинаково на вид, но типы разные.</p></div>
+    </div>
+    <div class="note r" style="--d:190">Работаем в VS Code: файл <b>lesson3.py</b>.</div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Четыре значения для персонажа: имя, возраст, рост и статус «в сети» — <code>True</code> или <code>False</code>. Ввод с клавиатуры не нужен: значения задаём прямо в коде.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Четыре строки карточки, затем типы имени и возраста, а в конце — обновлённый возраст после смены значения.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Даша · 25 · 1.68 · в сети</span><span class="ar">&#8594;</span><span class="out">Имя: Даша, Возраст: 25, Рост: 1.68, Жив: True, &lt;class 'str'&gt;, &lt;class 'int'&gt;, Новый возраст: 26</span></div>
+          <div class="trow"><span class="in">Тимур · 31 · 1.82 · не в сети</span><span class="ar">&#8594;</span><span class="out">Имя: Тимур, Возраст: 31, Рост: 1.82, Жив: False, &lt;class 'str'&gt;, &lt;class 'int'&gt;, Новый возраст: 32</span></div>
+          <div class="trow"><span class="in">Аня · 8 · 2.0 · не в сети</span><span class="ar">&#8594;</span><span class="out">Имя: Аня, Возраст: 8, Рост: 2.0, Жив: False, &lt;class 'str'&gt;, &lt;class 'int'&gt;, Новый возраст: 9</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 460" role="img" aria-label="Карточка персонажа: имя Даша — строка, возраст 25 — целое, рост 1.68 — дробное, статус в сети True — логический">
+          <rect x="20" y="16" width="660" height="428" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Карточка персонажа</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="64" rx="14" fill="#E9F4FF"/>
+          <text x="76" y="153" font-size="24" fill="#38475A">имя</text>
+          <text x="556" y="153" text-anchor="end" font-size="26" font-weight="700" fill="#0B3E7A">Даша</text>
+          <rect x="576" y="122" width="60" height="44" rx="12" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="606" y="151" text-anchor="middle" font-size="22" font-weight="700" fill="#8A4A00">str</text>
+          <rect x="52" y="188" width="596" height="64" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="76" y="229" font-size="24" fill="#38475A">возраст</text>
+          <text x="556" y="229" text-anchor="end" font-size="26" font-weight="700" fill="#0B3E7A">25</text>
+          <rect x="576" y="198" width="60" height="44" rx="12" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="606" y="227" text-anchor="middle" font-size="22" font-weight="700" fill="#8A4A00">int</text>
+          <rect x="52" y="264" width="596" height="64" rx="14" fill="#E9F4FF"/>
+          <text x="76" y="305" font-size="24" fill="#38475A">рост</text>
+          <text x="556" y="305" text-anchor="end" font-size="26" font-weight="700" fill="#0B3E7A">1.68</text>
+          <rect x="576" y="274" width="60" height="44" rx="12" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="606" y="303" text-anchor="middle" font-size="22" font-weight="700" fill="#8A4A00">float</text>
+          <rect x="52" y="340" width="596" height="64" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="76" y="381" font-size="24" fill="#38475A">в сети</text>
+          <text x="556" y="381" text-anchor="end" font-size="26" font-weight="700" fill="#0B3E7A">True</text>
+          <rect x="576" y="350" width="60" height="44" rx="12" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="606" y="379" text-anchor="middle" font-size="22" font-weight="700" fill="#8A4A00">bool</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Создаём четыре переменные</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Каждое значение кладём в свою переменную. Запустите программу и убедитесь, что кавычки стоят только у имени.</div>
+    <div class="run r" data-run="card1" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="all">Все четыре</button>
+          <button class="chip" type="button" data-val="short">Без роста и статуса</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = "Даша"</span><span class="ln" data-no="2">age = 25</span><span class="ln" data-no="3">height = 1.68</span><span class="ln" data-no="4">is_online = True</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
+    <h2>Печатаем карточку</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">print() с двумя аргументами печатает подпись и значение через пробел. Карточка — четыре таких строки.</div>
+    <div class="run r" data-run="card2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="all">Вся карточка</button>
+          <button class="chip" type="button" data-val="short">Только имя и возраст</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print("Имя:", name)</span><span class="ln" data-no="2">print("Возраст:", age)</span><span class="ln" data-no="3">print("Рост:", height)</span><span class="ln" data-no="4">print("Жив:", is_online)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Задача 1: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 3</p>
+    <h2>Меняем значения</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Переменная помнит последнее значение: после присваивания печать покажет новое.</div>
+    <div class="run r" data-run="card3" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="age">Меняем возраст</button>
+          <button class="chip" type="button" data-val="status">Меняем статус</button>
+          <button class="chip" type="button" data-val="both">Меняем оба</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 26</span><span class="ln" data-no="2">is_online = False</span><span class="ln" data-no="3">print("Возраст:", age)</span><span class="ln" data-no="4">print("Жив:", is_online)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Задача 1: шаг 4">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 4</p>
+    <h2>Проверяем типы</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">type() показывает тип значения. Сравните, что выйдет для имени, возраста, роста и статуса.</div>
+    <div class="run r" data-run="card4" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="all">Все четыре</button>
+          <button class="chip" type="button" data-val="first">Только имя и возраст</button>
+          <button class="chip" type="button" data-val="last">Только рост и статус</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(type(name))</span><span class="ln" data-no="2">print(type(age))</span><span class="ln" data-no="3">print(type(height))</span><span class="ln" data-no="4">print(type(is_online))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Та же программа целиком: четыре переменные, карточка, смена возраста и проверка типов.</div>
+    <div class="run r sm" data-run="cardfull" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Даша">Даша · 25 · 1.68 · в сети</button><button class="chip" type="button" data-val="Тимур">Тимур · 31 · 1.82 · не в сети</button><button class="chip" type="button" data-val="Аня">Аня · 8 · 2.0 · не в сети</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = "Даша"</span><span class="ln" data-no="2">age = 25</span><span class="ln" data-no="3">height = 1.68</span><span class="ln" data-no="4">is_online = True</span><span class="ln" data-no="5">print("Имя:", name)</span><span class="ln" data-no="6">print("Возраст:", age)</span><span class="ln" data-no="7">print("Рост:", height)</span><span class="ln" data-no="8">print("Жив:", is_online)</span><span class="ln" data-no="9">print(type(name))</span><span class="ln" data-no="10">print(type(age))</span><span class="ln" data-no="11">age = age + 1</span><span class="ln" data-no="12">print("Новый возраст:", age)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Число <code>25</code> и такая же запись в кавычках — <code>"25"</code>. Значения задаём прямо в коде.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Три строки: тип первого значения, тип второго и оба значения, напечатанные через запятую.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Число 25</span><span class="ar">&#8594;</span><span class="out">&lt;class 'int'&gt;, &lt;class 'str'&gt;, 25 25</span></div>
+          <div class="trow"><span class="in">Число 31</span><span class="ar">&#8594;</span><span class="out">&lt;class 'int'&gt;, &lt;class 'str'&gt;, 31 31</span></div>
+          <div class="trow"><span class="in">Число 8</span><span class="ar">&#8594;</span><span class="out">&lt;class 'int'&gt;, &lt;class 'str'&gt;, 8 8</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 400" role="img" aria-label="Число 25 с типом int и запись в кавычках 25 с типом str: на вид одинаково, типы разные">
+          <text x="30" y="52" font-size="26" font-weight="700" fill="#0B3E7A">Число и строка</text>
+          <rect x="30" y="80" width="300" height="160" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="180" y="160" text-anchor="middle" font-size="54" font-weight="700" fill="#0B3E7A">25</text>
+          <text x="180" y="206" text-anchor="middle" font-size="24" fill="#6E7E92">тип int — можно считать</text>
+          <rect x="370" y="80" width="300" height="160" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="520" y="160" text-anchor="middle" font-size="54" font-weight="700" fill="#8A4A00">"25"</text>
+          <text x="520" y="206" text-anchor="middle" font-size="24" fill="#95622C">тип str — это текст</text>
+          <rect x="30" y="272" width="640" height="88" rx="20" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="54" y="324" font-size="25" fill="#38475A">Кавычки меняют тип: сравниваем 25 и "25"</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 1</p>
+    <h2>Число или строка</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Заводим два значения: одно число, второе — тот же набор цифр, но в кавычках.</div>
+    <div class="run r" data-run="d1" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Даша">Значения: 25</button><button class="chip" type="button" data-val="Тимур">Значения: 31</button><button class="chip" type="button" data-val="Аня">Значения: 8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">age_text = "25"</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 2</p>
+    <h2>Сравниваем типы</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Дописываем печать: сначала типы, потом оба значения одной строкой.</div>
+    <div class="run r" data-run="d2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Даша">Типы значений: 25</button><button class="chip" type="button" data-val="Тимур">Типы значений: 31</button><button class="chip" type="button" data-val="Аня">Типы значений: 8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">age_text = "25"</span><span class="ln" data-no="3">print(type(age))</span><span class="ln" data-no="4">print(type(age_text))</span><span class="ln" data-no="5">print(age, age_text)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 29 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Итоговая программа: имя, число, строка с цифрами и три строки печати.</div>
+    <div class="run r" data-run="dfull" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Даша">Число 25</button><button class="chip" type="button" data-val="Тимур">Число 31</button><button class="chip" type="button" data-val="Аня">Число 8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">age_text = "25"</span><span class="ln" data-no="3">print(type(age))</span><span class="ln" data-no="4">print(type(age_text))</span><span class="ln" data-no="5">print(age, age_text)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check">
+      <div class="r" style="--d:70">Программа — это список команд для компьютера, а язык программирования — правила, по которым он их понимает</div>
+      <div class="r" style="--d:110">Python создал Гвидо ван Россум в 1991 году; название — от шоу «Монти Пайтон». В курсе мы работаем только с Python 3</div>
+      <div class="r" style="--d:150">Python — интерпретируемый язык: программа запускается прямо из исходного кода, отдельная компиляция не нужна</div>
+      <div class="r" style="--d:190">Программы хранятся в файлах .py, а блоки кода выделяются отступами, а не фигурными скобками</div>
+      <div class="r" style="--d:230">Переменная хранит значение, создаётся присваиванием, и её значение можно менять</div>
+      <div class="r" style="--d:270">Основные типы данных: int, float, str и bool. Тип значения показывает функция type()</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">30</span></div>
+</div>
+
+  <script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+    var RUNS = {
+    'hello': [
+      { val:'dbl', label:'Двойные кавычки', skip:[], steps:[
+        { ln:1, out:{ t:'# — комментарий, интерпретатор его не выполняет', kind:'io' } },
+        { ln:2, out:{ t:'Привет, мир!', kind:'p' }, badge:'print() вывел текст на экран' }
+      ]},
+      { val:'sgl', label:'Одинарные кавычки', skip:[1,2], steps:[
+        { ln:3, out:{ t:'Привет, мир!', kind:'p' }, badge:'Одинарные кавычки дали тот же результат' }
+      ]}
+    ],
+    'vars': [
+      { val:'join', label:'Два значения сразу', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша', kind:'p' } },
+        { ln:2, out:{ t:'age = 25', kind:'p' } },
+        { ln:3, out:{ t:'Даша 25', kind:'p' }, badge:'print() вывел оба значения через пробел' }
+      ]},
+      { val:'label', label:'С подписью', skip:[3], steps:[
+        { ln:1, out:{ t:'name = Даша', kind:'p' } },
+        { ln:2, out:{ t:'age = 25', kind:'p' } },
+        { ln:4, out:{ t:'Возраст: 25', kind:'p' }, badge:'Текст и значение можно вывести вместе' }
+      ]}
+    ],
+    'change': [
+      { val:'before', label:'До изменения', skip:[3,4], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:2, out:{ t:'25', kind:'p' }, badge:'В переменной лежит 25' }
+      ]},
+      { val:'after', label:'После изменения', skip:[], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:2, out:{ t:'25', kind:'p' } },
+        { ln:3, out:{ t:'age = 26 — старое значение исчезло', kind:'io' } },
+        { ln:4, out:{ t:'26', kind:'p' }, badge:'Теперь в переменной 26' }
+      ]}
+    ],
+    'types': [
+      { val:'int', label:'age = 25', skip:[2,3,4,6,7,8], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:5, out:{ t:"&lt;class 'int'&gt;", kind:'p' }, badge:'Целое число' }
+      ]},
+      { val:'float', label:'height = 1.75', skip:[1,3,4,5,7,8], steps:[
+        { ln:2, out:{ t:'height = 1.75', kind:'p' } },
+        { ln:6, out:{ t:"&lt;class 'float'&gt;", kind:'p' }, badge:'Дробное число' }
+      ]},
+      { val:'str', label:'name = ', skip:[1,2,4,5,6,8], steps:[
+        { ln:3, out:{ t:'name = Мира', kind:'p' } },
+        { ln:7, out:{ t:"&lt;class 'str'&gt;", kind:'p' }, badge:'Строка' }
+      ]},
+      { val:'bool', label:'is_online = True', skip:[1,2,3,5,6,7], steps:[
+        { ln:4, out:{ t:'is_online = True', kind:'p' } },
+        { ln:8, out:{ t:"&lt;class 'bool'&gt;", kind:'p' }, badge:'Логическое значение' }
+      ]},
+      { val:'all', label:'Все четыре', skip:[], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:2, out:{ t:'height = 1.75', kind:'p' } },
+        { ln:3, out:{ t:'name = Мира', kind:'p' } },
+        { ln:4, out:{ t:'is_online = True', kind:'p' } },
+        { ln:5, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:6, out:{ t:"&lt;class 'float'&gt;", kind:'p' } },
+        { ln:7, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:8, out:{ t:"&lt;class 'bool'&gt;", kind:'p' }, badge:'Четыре значения — четыре типа' }
+      ]}
+    ],
+    'err': [
+      { val:'quotes', label:'Забыли кавычки', skip:[2,3,4,5], steps:[
+        { ln:1, out:{ t:"NameError: name 'Москва' is not defined", kind:'false' }, badge:'Python принял Москву за имя переменной' }
+      ]},
+      { val:'comma', label:'Запятая вместо точки', skip:[1,3,4,5], steps:[
+        { ln:2, out:{ t:'height = (1, 68) — это два значения, а не число', kind:'false' }, badge:'Для дробного числа нужна точка: 1.68' }
+      ]},
+      { val:'space', label:'Пробел в имени', skip:[1,2,4,5], steps:[
+        { ln:3, out:{ t:'SyntaxError: invalid syntax', kind:'false' }, badge:'В имени переменной не может быть пробела' }
+      ]},
+      { val:'case', label:'Перепутали регистр', skip:[1,2,3], steps:[
+        { ln:4, out:{ t:'Name = Мира — это отдельная переменная', kind:'io' } },
+        { ln:5, out:{ t:"NameError: name 'name' is not defined", kind:'false' }, badge:'name и Name — разные имена' }
+      ]}
+    ],
+    'card1': [
+      { val:'all', label:'Все четыре', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша' } },
+        { ln:2, out:{ t:'age = 25' } },
+        { ln:3, out:{ t:'height = 1.68' } },
+        { ln:4, out:{ t:'is_online = True' }, badge:'Четыре переменные созданы' }
+      ]},
+      { val:'short', label:'Без роста и статуса', skip:[3,4], steps:[
+        { ln:1, out:{ t:'name = Даша' } },
+        { ln:2, out:{ t:'age = 25' }, badge:'Рост и статус добавим следом' }
+      ]}
+    ],
+    'card2': [
+      { val:'all', label:'Вся карточка', skip:[], steps:[
+        { ln:1, out:{ t:'Имя: Даша', kind:'p' } },
+        { ln:2, out:{ t:'Возраст: 25', kind:'p' } },
+        { ln:3, out:{ t:'Рост: 1.68', kind:'p' } },
+        { ln:4, out:{ t:'Жив: True', kind:'p' }, badge:'Карточка готова' }
+      ]},
+      { val:'short', label:'Только имя и возраст', skip:[3,4], steps:[
+        { ln:1, out:{ t:'Имя: Даша', kind:'p' } },
+        { ln:2, out:{ t:'Возраст: 25', kind:'p' }, badge:'Печатаем только две строки карточки' }
+      ]}
+    ],
+    'card3': [
+      { val:'age', label:'Меняем возраст', skip:[2,4], steps:[
+        { ln:1, out:{ t:'age = 26', kind:'p' } },
+        { ln:3, out:{ t:'Возраст: 26', kind:'p' }, badge:'В переменной age теперь 26' }
+      ]},
+      { val:'status', label:'Меняем статус', skip:[1,3], steps:[
+        { ln:2, out:{ t:'is_online = False', kind:'p' } },
+        { ln:4, out:{ t:'Жив: False', kind:'p' }, badge:'Теперь персонаж не в сети' }
+      ]},
+      { val:'both', label:'Меняем оба', skip:[], steps:[
+        { ln:1, out:{ t:'age = 26', kind:'p' } },
+        { ln:2, out:{ t:'is_online = False', kind:'p' } },
+        { ln:3, out:{ t:'Возраст: 26', kind:'p' } },
+        { ln:4, out:{ t:'Жив: False', kind:'p' }, badge:'Карточка изменилась целиком' }
+      ]}
+    ],
+    'card4': [
+      { val:'all', label:'Все четыре', skip:[], steps:[
+        { ln:1, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:2, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:3, out:{ t:"&lt;class 'float'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'bool'&gt;", kind:'p' }, badge:'Все типы совпали с ожиданиями' }
+      ]},
+      { val:'first', label:'Только имя и возраст', skip:[3,4], steps:[
+        { ln:1, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:2, out:{ t:"&lt;class 'int'&gt;", kind:'p' }, badge:'name — строка, age — целое' }
+      ]},
+      { val:'last', label:'Только рост и статус', skip:[1,2], steps:[
+        { ln:3, out:{ t:"&lt;class 'float'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'bool'&gt;", kind:'p' }, badge:'height — дробное, is_online — логическое' }
+      ]}
+    ],
+    'cardfull': [
+      { val:'Даша', label:'Даша · 25 · 1.68 · в сети', skip:[], steps:[
+        { ln:1, out:{ t:'name = "Даша"' } },
+        { ln:2, out:{ t:'age = 25' } },
+        { ln:3, out:{ t:'height = 1.68' } },
+        { ln:4, out:{ t:'is_online = True' } },
+        { ln:5, out:{ t:'Имя: Даша', kind:'p' } },
+        { ln:6, out:{ t:'Возраст: 25', kind:'p' } },
+        { ln:7, out:{ t:'Рост: 1.68', kind:'p' } },
+        { ln:8, out:{ t:'Жив: True', kind:'p' } },
+        { ln:9, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:10, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:11, out:{ t:'age = age + 1' } },
+        { ln:12, out:{ t:'Новый возраст: 26', kind:'p' }, badge:'Карточка собрана: печать, смена значения и проверка типов' }
+      ]},
+      { val:'Тимур', label:'Тимур · 31 · 1.82 · не в сети', skip:[], steps:[
+        { ln:1, out:{ t:'name = "Тимур"' } },
+        { ln:2, out:{ t:'age = 31' } },
+        { ln:3, out:{ t:'height = 1.82' } },
+        { ln:4, out:{ t:'is_online = False' } },
+        { ln:5, out:{ t:'Имя: Тимур', kind:'p' } },
+        { ln:6, out:{ t:'Возраст: 31', kind:'p' } },
+        { ln:7, out:{ t:'Рост: 1.82', kind:'p' } },
+        { ln:8, out:{ t:'Жив: False', kind:'p' } },
+        { ln:9, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:10, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:11, out:{ t:'age = age + 1' } },
+        { ln:12, out:{ t:'Новый возраст: 32', kind:'p' }, badge:'Значения другие — программа та же' }
+      ]},
+      { val:'Аня', label:'Аня · 8 · 2.0 · не в сети', skip:[], steps:[
+        { ln:1, out:{ t:'name = "Аня"' } },
+        { ln:2, out:{ t:'age = 8' } },
+        { ln:3, out:{ t:'height = 2.0' } },
+        { ln:4, out:{ t:'is_online = False' } },
+        { ln:5, out:{ t:'Имя: Аня', kind:'p' } },
+        { ln:6, out:{ t:'Возраст: 8', kind:'p' } },
+        { ln:7, out:{ t:'Рост: 2.0', kind:'p' } },
+        { ln:8, out:{ t:'Жив: False', kind:'p' } },
+        { ln:9, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:10, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:11, out:{ t:'age = age + 1' } },
+        { ln:12, out:{ t:'Новый возраст: 9', kind:'p' }, badge:'Рост без дробной части всё равно float' }
+      ]}
+    ],
+    'd1': [
+      { val:'Даша', label:'Значения: 25', skip:[], steps:[
+        { ln:1, out:{ t:'age = 25' } },
+        { ln:2, out:{ t:'age_text = "25"' }, badge:'В кавычках — строка, а не число' }
+      ]},
+      { val:'Тимур', label:'Значения: 31', skip:[], steps:[
+        { ln:1, out:{ t:'age = 31' } },
+        { ln:2, out:{ t:'age_text = "31"' }, badge:'Цифры те же, тип другой' }
+      ]},
+      { val:'Аня', label:'Значения: 8', skip:[], steps:[
+        { ln:1, out:{ t:'age = 8' } },
+        { ln:2, out:{ t:'age_text = "8"' }, badge:'Строку с цифрами нельзя складывать с числом' }
+      ]}
+    ],
+    'd2': [
+      { val:'Даша', label:'Типы значений: 25', skip:[], steps:[
+        { ln:1, out:{ t:'age = 25' } },
+        { ln:2, out:{ t:'age_text = "25"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'25 25', kind:'p' }, badge:'Внутри разные типы, а на экране одно и то же' }
+      ]},
+      { val:'Тимур', label:'Типы значений: 31', skip:[], steps:[
+        { ln:1, out:{ t:'age = 31' } },
+        { ln:2, out:{ t:'age_text = "31"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'31 31', kind:'p' }, badge:'Считать можно только с первым значением' }
+      ]},
+      { val:'Аня', label:'Типы значений: 8', skip:[], steps:[
+        { ln:1, out:{ t:'age = 8' } },
+        { ln:2, out:{ t:'age_text = "8"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'8 8', kind:'p' }, badge:'Короткое число — тоже int' }
+      ]}
+    ],
+    'dfull': [
+      { val:'Даша', label:'Число 25', skip:[], steps:[
+        { ln:1, out:{ t:'age = 25' } },
+        { ln:2, out:{ t:'age_text = "25"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'25 25', kind:'p' }, badge:'Одно и то же число, но один раз как int, другой — как str' }
+      ]},
+      { val:'Тимур', label:'Число 31', skip:[], steps:[
+        { ln:1, out:{ t:'age = 31' } },
+        { ln:2, out:{ t:'age_text = "31"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'31 31', kind:'p' }, badge:'Считать можно только со значением без кавычек' }
+      ]},
+      { val:'Аня', label:'Число 8', skip:[], steps:[
+        { ln:1, out:{ t:'age = 8' } },
+        { ln:2, out:{ t:'age_text = "8"' } },
+        { ln:3, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'str'&gt;", kind:'p' } },
+        { ln:5, out:{ t:'8 8', kind:'p' }, badge:'Короткое число ведёт себя так же' }
+      ]}
+    ]
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+</body>
+</html>

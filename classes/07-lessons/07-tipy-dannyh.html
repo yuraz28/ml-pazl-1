@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 7. Типы данных — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+
+  /* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 7</p>
+  </header>
+  <div class="body"><h1 class="r" style="--d:120">Типы данных</h1></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Четыре типа</h3><p>int — целое, float — дробное, str — строка, bool — True или False.</p></div>
+      <div class="blk r" style="--d:140"><div class="num">Блок 2</div><h3>type()</h3><p>Показывает тип значения: type(17) → int, type('17') → str.</p></div>
+      <div class="blk r" style="--d:210"><div class="num">Блок 3</div><h3>Преобразования</h3><p>Неявные Python делает сам, явные — через int(), float() и str().</p></div>
+      <div class="blk r" style="--d:280"><div class="num">Блок 4</div><h3>Ошибки</h3><p>TypeError — перепутали типы, ValueError — строку не удалось превратить в число.</p></div>
+    </div>
+    <div class="note r" style="--d:340">17 и '17' — разные значения: с первым можно считать, второе годится только для текста.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Четыре типа значений">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Типы</p>
+    <h2>Четыре типа значений</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">целые числа</div><h3>int</h3><p>17, −5, 0. Размер целого числа в Python не ограничен.</p></div>
+      <div class="card r" style="--d:110"><div class="num">дробные числа</div><h3>float</h3><p>3.14, −0.5, 2.0. Дробная часть отделяется точкой, а не запятой.</p></div>
+      <div class="card r" style="--d:150"><div class="num">текст</div><h3>str</h3><p>'Python', "17", ''. Строку можно сцеплять, повторять и измерять.</p></div>
+      <div class="card r" style="--d:190"><div class="num">логика</div><h3>bool</h3><p>True и False. Так выглядит результат сравнения 5 &gt; 3.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Тип решает, что со значением можно делать. Число 17 и строка '17' — разные значения, хотя выглядят почти одинаково.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="17 и '17' — разные значения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Типы</p>
+    <h2>17 и '17' — разные значения</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="diff" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">17 + 3</button>
+          <button class="chip" type="button" data-val="b">'17' + '3'</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(17 + 3)</span><span class="ln" data-no="2">print('17' + '3')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">С числом считают, а со строкой — нет: знак + у строк означает сцепку. Оба примера выглядят похоже, а делают разное.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Функция type()">
+  <header class="sh r">
+    <p class="eyebrow">Теория · type()</p>
+    <h2>Функция type()</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="typec" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">17, 3.14 и '17'</button>
+          <button class="chip" type="button" data-val="b">5 &gt; 3 и 4 / 2</button>
+          <button class="chip" type="button" data-val="c">input()</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(type(17))</span><span class="ln" data-no="2">print(type(3.14))</span><span class="ln" data-no="3">print(type('17'))</span><span class="ln" data-no="4">print(type(5 &gt; 3))</span><span class="ln" data-no="5">print(type(4 / 2))</span><span class="ln" data-no="6">print(type(input()))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">type() отвечает одну строку: к какому классу относится значение. Видно и скобки, и кавычки — по ним легко найти расхождение.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Неявные преобразования">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразования</p>
+    <h2>Неявные преобразования</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="implicit" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">2 + 1.5</button>
+          <button class="chip" type="button" data-val="b">10 / 2</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(2 + 1.5)</span><span class="ln" data-no="2">print(type(2 + 1.5))</span><span class="ln" data-no="3">print(10 / 2)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Главное правило: целое число автоматически становится дробным, если рядом с ним оказался float.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Что Python делает сам, а что нет">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразования</p>
+    <h2>Что Python делает сам</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><h3>int → float</h3><p>2 + 1.5 даёт 3.5: рядом float, и целое подтянулось.</p></div>
+      <div class="card r" style="--d:120"><h3>деление → float</h3><p>10 / 2 даёт 5.0. Обычное деление всегда возвращает дробное.</p></div>
+      <div class="card r" style="--d:170"><h3>строка + число</h3><p>Python не угадывает, сложить или сцепить. Здесь он бессилен.</p></div>
+      <div class="card r" style="--d:220"><h3>float → int</h3><p>Дробное число в целое само не превращается — тоже вручную.</p></div>
+    </div>
+    <div class="note r" style="--d:280">Неявное преобразование Python делает за нас. В остальных случаях нужно <b>явное</b> — иначе ошибка.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Явные преобразования">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразования</p>
+    <h2>Явные преобразования</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="explicit" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Из строки в число</button>
+          <button class="chip" type="button" data-val="b">Из целого в дробное</button>
+          <button class="chip" type="button" data-val="c">Из числа в строку</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(int('123'))</span><span class="ln" data-no="2">print(float('1.5'))</span><span class="ln" data-no="3">print(float(3))</span><span class="ln" data-no="4">print(str(17))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Явное преобразование выполняем сами: <b>int()</b>, <b>float()</b> и <b>str()</b> превращают значение в нужный тип.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="int() отбрасывает дробную часть">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразования</p>
+    <h2>int() не округляет</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="intfrac" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">17.89 и −1.7</button>
+          <button class="chip" type="button" data-val="b">3.99</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(int(17.89))</span><span class="ln" data-no="2">print(int(-1.7))</span><span class="ln" data-no="3">print(int(3.99))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:220">int(3.99) — это 3, а не 4. Функция отбрасывает дробную часть, а не округляет число.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Строку с точкой — через float">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразования</p>
+    <h2>Строку с точкой — через float</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="floatstr" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">int('2.5')</button>
+          <button class="chip" type="button" data-val="b">int(float('2.5'))</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int('2.5')</span><span class="ln" data-no="2">n = int(float('2.5'))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Если строку нельзя превратить в число, возникает <b>ValueError</b>. Строку с точкой сначала пропускают через float().</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Ошибка: строка и число вместе">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ошибки с типами</p>
+    <h2>Строка и число вместе</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="plusnum" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Как сломано</button>
+          <button class="chip" type="button" data-val="b">Через str(15)</button>
+          <button class="chip" type="button" data-val="c">Через запятую</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('Мне ' + 15 + ' лет')</span><span class="ln" data-no="2">print('Мне ' + str(15) + ' лет')</span><span class="ln" data-no="3">print('Мне', 15, 'лет')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220"><b>TypeError</b> — самая частая ошибка с типами: строка и число оказались в одной операции «плюс».</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Ошибка: забыли преобразовать ввод">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ошибки с типами</p>
+    <h2>Забыли преобразовать ввод</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="inputfix" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Без int()</button>
+          <button class="chip" type="button" data-val="b">С int()</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = input()</span><span class="ln" data-no="2">print(age + 1)</span><span class="ln" data-no="3">age = int(input())</span><span class="ln" data-no="4">print(age + 1)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">input() всегда отдаёт строку, даже если ввели цифры. Целое число из неё делает int().</div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Ошибка: неправильная запись числа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ошибки с типами</p>
+    <h2>Неправильная запись числа</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="numwrite" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Запятая в числе</button>
+          <button class="chip" type="button" data-val="b">Точка вместо запятой</button>
+          <button class="chip" type="button" data-val="c">Буквы в строке</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">x = float('2,5')</span><span class="ln" data-no="2">x = float('2.5')</span><span class="ln" data-no="3">n = int('abc')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220"><b>ValueError</b>: строка не похожа на число. Нужна точка вместо запятой — и цифры, а не буквы.</div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Ошибка: умножение строки на строку">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ошибки с типами</p>
+    <h2>Умножение строки на строку</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="strmul" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">'3' * '4'</button>
+          <button class="chip" type="button" data-val="b">'3' * 4</button>
+          <button class="chip" type="button" data-val="c">3 * 4</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('3' * '4')</span><span class="ln" data-no="2">print('3' * 4)</span><span class="ln" data-no="3">print(3 * 4)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Знак * означает разное в зависимости от типа: строка повторяется, число умножается. Две строки так перемножить нельзя.</div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Проверь себя: часть 1">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Проверь себя</p>
+    <h2>Определи тип: часть 1</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r quiz" style="--d:70"><div class="num">выражение 1</div><h3>7 / 2</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">float</code></div>
+      <div class="card r quiz" style="--d:110"><div class="num">выражение 2</div><h3>7 // 2</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">int</code></div>
+      <div class="card r quiz" style="--d:150"><div class="num">выражение 3</div><h3>'7' * 2</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">str — '77'</code></div>
+      <div class="card r quiz" style="--d:190"><div class="num">выражение 4</div><h3>2 + 3.0</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">float — 5.0</code></div>
+    </div>
+    <div class="note r" style="--d:250">Решаем по виду выражения, не запуская программу. Ответ спрятан — нажмите на карточку, чтобы проверить себя.</div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Проверь себя: часть 2">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Проверь себя</p>
+    <h2>Определи тип: часть 2</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r quiz" style="--d:70"><div class="num">выражение 5</div><h3>len('abc')</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">int — 3</code></div>
+      <div class="card r quiz" style="--d:110"><div class="num">выражение 6</div><h3>4 &gt; 3</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">bool — True</code></div>
+      <div class="card r quiz" style="--d:150"><div class="num">выражение 7</div><h3>int('12') + 1</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">int — 13</code></div>
+      <div class="card r quiz" style="--d:190"><div class="num">выражение 8</div><h3>str(12) + '1'</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">str — '121'</code></div>
+    </div>
+    <div class="note r" style="--d:250">Восемь выражений — восемь ответов, все спрятаны. Открываем нажатием на карточку, а если разошлось — проверяем себя через <b>type()</b>.</div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Возраст через год</h3><p>Имя и возраст с клавиатуры — и программа говорит, сколько будет через год.</p></div>
+      <div class="card r" style="--d:140"><div class="num">задача 2</div><h3>Результат Ани</h3><p>Имя и баллы складываем в одну строку: число превращаем в текст через str().</p></div>
+      <div class="card r" style="--d:210"><div class="num">задача 3</div><h3>Средний балл</h3><p>Три оценки, средний балл и целая часть — считаем и печатаем.</p></div>
+      <div class="card r" style="--d:280"><div class="num">доп. задание</div><h3>Калькулятор считает числами</h3><p>Цена, количество и итог: программа должна считать, а не склеивать текст.</p></div>
+    </div>
+    <div class="note r" style="--d:340">Работаем в VS Code: файл <b>lesson7.py</b>.</div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Имя и возраст — две строки. Имя читаем как есть, а возраст сразу превращаем в число: <code>age = int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одна строка: имя и сколько лет будет через год.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+<div class="trow"><span class="in">Аня · 14</span><span class="ar">&#8594;</span><span class="out">Аня, через год тебе будет 15 лет</span></div><div class="trow"><span class="in">Тимур · 9</span><span class="ar">&#8594;</span><span class="out">Тимур, через год тебе будет 10 лет</span></div><div class="trow"><span class="in">Маша · 99</span><span class="ar">&#8594;</span><span class="out">Маша, через год тебе будет 100 лет</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Возраст 14 лет и через год 15 лет">
+          <rect x="20" y="40" width="290" height="150" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="165" y="100" text-anchor="middle" font-size="26" fill="#6E7E92">Аня сегодня</text>
+          <text x="165" y="155" text-anchor="middle" font-size="46" font-weight="700" fill="#0B3E7A">14 лет</text>
+          <path d="M330 115 H400" stroke="#FF8E00" stroke-width="6" fill="none"/>
+          <path d="M388 98 L414 115 L388 132 Z" fill="#FF8E00"/>
+          <text x="362" y="92" text-anchor="middle" font-size="24" fill="#8A4A00">+1</text>
+          <rect x="430" y="40" width="250" height="150" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="555" y="100" text-anchor="middle" font-size="26" fill="#8A4A00">через год</text>
+          <text x="555" y="155" text-anchor="middle" font-size="46" font-weight="700" fill="#8A4A00">15 лет</text>
+          <rect x="20" y="250" width="660" height="230" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="350" y="305" text-anchor="middle" font-size="30" fill="#0B3E7A">age = 14</text>
+          <text x="350" y="355" text-anchor="middle" font-size="30" fill="#0B3E7A">next_age = age + 1</text>
+          <text x="350" y="425" text-anchor="middle" font-size="34" font-weight="700" fill="#8A4A00">14 + 1 = 15</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 1</p>
+    <h2>Считаем данные с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">input() всегда отдаёт строку, поэтому возраст превращаем в число через int(). Имя оставляем строкой.</div>
+    <div class="run r" data-run="t1s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 14">Аня · 14</button><button class="chip" type="button" data-val="Тимур · 9">Тимур · 9</button><button class="chip" type="button" data-val="Маша · 99">Маша · 99</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как тебя зовут? ')</span><span class="ln" data-no="2">age = int(input('Сколько тебе лет? '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 2</p>
+    <h2>Считаем возраст через год</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">f-строка подставляет значения переменных прямо в текст: имя и новый возраст.</div>
+    <div class="run r" data-run="t1s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 14">Аня · 14</button><button class="chip" type="button" data-val="Тимур · 9">Тимур · 9</button><button class="chip" type="button" data-val="Маша · 99">Маша · 99</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">next_age = age + 1</span><span class="ln" data-no="2">print(f'{name}, через год тебе будет {next_age} лет')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Полное решение</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t1full" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 14">Аня · 14</button><button class="chip" type="button" data-val="Тимур · 9">Тимур · 9</button><button class="chip" type="button" data-val="Маша · 99">Маша · 99</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как тебя зовут? ')</span><span class="ln" data-no="2">age = int(input('Сколько тебе лет? '))</span><span class="ln" data-no="3">next_age = age + 1</span><span class="ln" data-no="4">print(f'{name}, через год тебе будет {next_age} лет')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Имя и баллы — две строки. Баллы превращаем в число через <code>int()</code>, а в текст они возвращаются через str()</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одна строка: слово «Результат», имя и баллы.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+<div class="trow"><span class="in">Аня · 95</span><span class="ar">&#8594;</span><span class="out">Результат Аня: 95</span></div><div class="trow"><span class="in">Тимур · 7</span><span class="ar">&#8594;</span><span class="out">Результат Тимур: 7</span></div><div class="trow"><span class="in">Маша · 100</span><span class="ar">&#8594;</span><span class="out">Результат Маша: 100</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Из кусков собирается строка: Результат Аня 95">
+          <rect x="20" y="40" width="160" height="90" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="100" y="95" text-anchor="middle" font-size="26" fill="#0B3E7A">'Результат '</text>
+          <rect x="195" y="40" width="140" height="90" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="265" y="95" text-anchor="middle" font-size="26" fill="#8A4A00">name</text>
+          <rect x="350" y="40" width="120" height="90" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="410" y="95" text-anchor="middle" font-size="26" fill="#0B3E7A">': '</text>
+          <rect x="485" y="40" width="195" height="90" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="582" y="95" text-anchor="middle" font-size="26" fill="#8A4A00">str(score)</text>
+          <path d="M350 165 V205" stroke="#CDE5FF" stroke-width="6" fill="none"/>
+          <path d="M334 192 L350 218 L366 192 Z" fill="#CDE5FF"/>
+          <rect x="20" y="230" width="660" height="90" rx="22" fill="#E9F4FF" stroke="#0B3E7A" stroke-width="3"/>
+          <text x="350" y="288" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">Результат Аня: 95</text>
+          <rect x="20" y="350" width="660" height="140" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="350" y="400" text-anchor="middle" font-size="24" fill="#8A4A00">'Результат ' + name + ': ' + str(score)</text>
+          <text x="350" y="450" text-anchor="middle" font-size="24" fill="#6E7E92">строка + строка = одна строка</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 1</p>
+    <h2>Считаем данные с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Баллы нужны числом — их превращаем через int(). Имя и так строка.</div>
+    <div class="run r" data-run="t2s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 95">Аня · 95</button><button class="chip" type="button" data-val="Тимур · 7">Тимур · 7</button><button class="chip" type="button" data-val="Маша · 100">Маша · 100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как тебя зовут? ')</span><span class="ln" data-no="2">score = int(input('Сколько баллов? '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Задача 2: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 2</p>
+    <h2>Склеиваем строку и печатаем</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Складывать строку с числом нельзя: число сначала превращаем в текст через str(), потом склеиваем через +.</div>
+    <div class="run r" data-run="t2s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 95">Аня · 95</button><button class="chip" type="button" data-val="Тимур · 7">Тимур · 7</button><button class="chip" type="button" data-val="Маша · 100">Маша · 100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">line = 'Результат ' + name + ': ' + str(score)</span><span class="ln" data-no="2">print(line)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Полное решение</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t2full" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="Аня · 95">Аня · 95</button><button class="chip" type="button" data-val="Тимур · 7">Тимур · 7</button><button class="chip" type="button" data-val="Маша · 100">Маша · 100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как тебя зовут? ')</span><span class="ln" data-no="2">score = int(input('Сколько баллов? '))</span><span class="ln" data-no="3">line = 'Результат ' + name + ': ' + str(score)</span><span class="ln" data-no="4">print(line)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Три целых числа — оценки. Каждую читаем через <code>int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Две строки: средний балл (дробное число) и его целая часть.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+<div class="trow"><span class="in">5 · 4 · 4</span><span class="ar">&#8594;</span><span class="out">Средний балл: 4.333333333333333, Целая часть: 4</span></div><div class="trow"><span class="in">5 · 5 · 5</span><span class="ar">&#8594;</span><span class="out">Средний балл: 5.0, Целая часть: 5</span></div><div class="trow"><span class="in">3 · 4 · 4</span><span class="ar">&#8594;</span><span class="out">Средний балл: 3.6666666666666665, Целая часть: 3</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Три оценки 5, 4, 4 и средний балл 4.333333">
+          <circle cx="120" cy="90" r="58" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="120" y="112" text-anchor="middle" font-size="52" font-weight="700" fill="#0B3E7A">5</text>
+          <circle cx="290" cy="90" r="58" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="290" y="112" text-anchor="middle" font-size="52" font-weight="700" fill="#0B3E7A">4</text>
+          <circle cx="460" cy="90" r="58" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="460" y="112" text-anchor="middle" font-size="52" font-weight="700" fill="#0B3E7A">4</text>
+          <text x="590" y="105" text-anchor="middle" font-size="42" fill="#6E7E92">/ 3</text>
+          <path d="M290 178 V218" stroke="#CDE5FF" stroke-width="6" fill="none"/>
+          <path d="M274 205 L290 231 L306 205 Z" fill="#CDE5FF"/>
+          <rect x="20" y="245" width="660" height="230" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="350" y="305" text-anchor="middle" font-size="26" fill="#8A4A00">(5 + 4 + 4) / 3</text>
+          <text x="350" y="375" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">4.333333333333333</text>
+          <text x="350" y="440" text-anchor="middle" font-size="30" fill="#6E7E92">int(avg) = 4</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Шаг 1</p>
+    <h2>Считаем три оценки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Оценки — целые числа. Заводим три переменные: a, b и c.</div>
+    <div class="run r" data-run="t3s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="5 · 4 · 4">5 · 4 · 4</button><button class="chip" type="button" data-val="5 · 5 · 5">5 · 5 · 5</button><button class="chip" type="button" data-val="3 · 4 · 4">3 · 4 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">a = int(input('Первая оценка: '))</span><span class="ln" data-no="2">b = int(input('Вторая оценка: '))</span><span class="ln" data-no="3">c = int(input('Третья оценка: '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Задача 3: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Шаг 2</p>
+    <h2>Средний балл и целая часть</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Деление / всегда даёт дробное число — это и есть средний балл. int() отбрасывает дробную часть: получается целая часть балла.</div>
+    <div class="run r" data-run="t3s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="5 · 4 · 4">5 · 4 · 4</button><button class="chip" type="button" data-val="5 · 5 · 5">5 · 5 · 5</button><button class="chip" type="button" data-val="3 · 4 · 4">3 · 4 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">avg = (a + b + c) / 3</span><span class="ln" data-no="2">print('Средний балл:', avg)</span><span class="ln" data-no="3">print('Целая часть:', int(avg))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 29 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Полное решение</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t3full" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="5 · 4 · 4">5 · 4 · 4</button><button class="chip" type="button" data-val="5 · 5 · 5">5 · 5 · 5</button><button class="chip" type="button" data-val="3 · 4 · 4">3 · 4 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">a = int(input('Первая оценка: '))</span><span class="ln" data-no="2">b = int(input('Вторая оценка: '))</span><span class="ln" data-no="3">c = int(input('Третья оценка: '))</span><span class="ln" data-no="4">avg = (a + b + c) / 3</span><span class="ln" data-no="5">print('Средний балл:', avg)</span><span class="ln" data-no="6">print('Целая часть:', int(avg))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Цена (может быть дробной) и количество. Цену читаем через <code>float(input())</code>, количество — через <code>int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одна строка: слово «Итого:», сумма и «руб.».</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+<div class="trow"><span class="in">12.5 · 3</span><span class="ar">&#8594;</span><span class="out">Итого: 37.5 руб.</span></div><div class="trow"><span class="in">99.9 · 1</span><span class="ar">&#8594;</span><span class="out">Итого: 99.9 руб.</span></div><div class="trow"><span class="in">250 · 4</span><span class="ar">&#8594;</span><span class="out">Итого: 1000.0 руб.</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Цена умножить на количество равно итог">
+          <rect x="20" y="40" width="300" height="140" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="170" y="100" text-anchor="middle" font-size="26" fill="#6E7E92">цена</text>
+          <text x="170" y="152" text-anchor="middle" font-size="42" font-weight="700" fill="#0B3E7A">12.5</text>
+          <text x="350" y="140" text-anchor="middle" font-size="52" fill="#6E7E92">&#215;</text>
+          <rect x="380" y="40" width="300" height="140" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="530" y="100" text-anchor="middle" font-size="26" fill="#6E7E92">количество</text>
+          <text x="530" y="152" text-anchor="middle" font-size="42" font-weight="700" fill="#0B3E7A">3</text>
+          <path d="M350 215 V255" stroke="#CDE5FF" stroke-width="6" fill="none"/>
+          <path d="M334 242 L350 268 L366 242 Z" fill="#CDE5FF"/>
+          <rect x="20" y="285" width="660" height="190" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="350" y="335" text-anchor="middle" font-size="26" fill="#8A4A00">total = price * count</text>
+          <text x="350" y="405" text-anchor="middle" font-size="42" font-weight="700" fill="#8A4A00">Итого: 37.5 руб.</text>
+          <text x="350" y="452" text-anchor="middle" font-size="26" fill="#6E7E92">число &#215; число = число</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 31 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 1</p>
+    <h2>Цена и количество</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Цена бывает дробной, поэтому её читаем через float(). Количество — целое, ему хватает int().</div>
+    <div class="run r" data-run="t4s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="12.5 · 3">12.5 · 3</button><button class="chip" type="button" data-val="99.9 · 1">99.9 · 1</button><button class="chip" type="button" data-val="250 · 4">250 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">price = float(input('Цена: '))</span><span class="ln" data-no="2">count = int(input('Сколько штук? '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 32 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 2</p>
+    <h2>Считаем итог</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Умножаем число на число — получаем число, а не склейку текста. Печатаем оба значения через запятую.</div>
+    <div class="run r" data-run="t4s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="12.5 · 3">12.5 · 3</button><button class="chip" type="button" data-val="99.9 · 1">99.9 · 1</button><button class="chip" type="button" data-val="250 · 4">250 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">total = price * count</span><span class="ln" data-no="2">print('Итого:', total, 'руб.')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 33 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Полное решение</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t4full" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="12.5 · 3">12.5 · 3</button><button class="chip" type="button" data-val="99.9 · 1">99.9 · 1</button><button class="chip" type="button" data-val="250 · 4">250 · 4</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">price = float(input('Цена: '))</span><span class="ln" data-no="2">count = int(input('Сколько штук? '))</span><span class="ln" data-no="3">total = price * count</span><span class="ln" data-no="4">print('Итого:', total, 'руб.')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>  </div>
+</section>
+
+<!-- 34 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Простые типы Python — int, float, str и bool. Тип значения показывает type().</div>
+      <div>input() всегда возвращает строку, а обычное деление / всегда даёт float.</div>
+      <div>Неявно Python превращает int в float, но строку и число вместе не объединяет.</div>
+      <div>int(), float() и str() преобразуют значение руками; int() отбрасывает дробную часть, а не округляет.</div>
+      <div>TypeError — строка и число в одной операции. ValueError — строку не превратить в число.</div>
+      <div>Ошибки типов лечатся преобразованием: int(input()), str(score), float(price).</div>
+    </div>
+  </div>
+</section>
+
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">34</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+    var RUNS = {
+    'diff': [
+      { val:'a', label:'17 + 3', skip:[2], steps:[
+        { ln:1, out:{ t:'20', kind:'p' }, badge:'число плюс число — обычная арифметика' }
+      ]},
+      { val:'b', label:"'17' + '3'", skip:[1], steps:[
+        { ln:2, out:{ t:"'173'", kind:'p' }, badge:'строка плюс строка — сцепка' }
+      ]}
+    ],
+
+    'typec': [
+      { val:'a', label:"17, 3.14 и '17'", skip:[4,5,6], steps:[
+        { ln:1, out:{ t:"&lt;class 'int'&gt;", kind:'p' } },
+        { ln:2, out:{ t:"&lt;class 'float'&gt;", kind:'p' } },
+        { ln:3, out:{ t:"&lt;class 'str'&gt;", kind:'p' }, badge:'строка — это текст в кавычках' }
+      ]},
+      { val:'b', label:'5 > 3 и 4 / 2', skip:[1,2,3,6], steps:[
+        { ln:4, out:{ t:"&lt;class 'bool'&gt;", kind:'p' }, badge:'сравнение даёт True или False' },
+        { ln:5, out:{ t:"&lt;class 'float'&gt;", kind:'p' }, badge:'деление / всегда даёт float' }
+      ]},
+      { val:'c', label:'input()', skip:[1,2,3,4,5], steps:[
+        { ln:6, out:{ t:"ввели 17 → &lt;class 'str'&gt;", kind:'p' }, badge:'input() отдаёт строку всегда' }
+      ]}
+    ],
+
+    'implicit': [
+      { val:'a', label:'2 + 1.5', skip:[3], steps:[
+        { ln:1, out:{ t:'3.5', kind:'p' } },
+        { ln:2, out:{ t:"&lt;class 'float'&gt;", kind:'p' }, badge:'int сам стал float' }
+      ]},
+      { val:'b', label:'10 / 2', skip:[1,2], steps:[
+        { ln:3, out:{ t:'5.0', kind:'p' }, badge:'деление даёт float' }
+      ]}
+    ],
+
+    'explicit': [
+      { val:'a', label:"int('123') и float('1.5')", skip:[3,4], steps:[
+        { ln:1, out:{ t:'123', kind:'p' } },
+        { ln:2, out:{ t:'1.5', kind:'p' }, badge:'строку превратили в число' }
+      ]},
+      { val:'b', label:'float(3)', skip:[1,2,4], steps:[
+        { ln:3, out:{ t:'3.0', kind:'p' }, badge:'целое стало дробным' }
+      ]},
+      { val:'c', label:'str(17)', skip:[1,2,3], steps:[
+        { ln:4, out:{ t:"'17'", kind:'p' }, badge:'теперь это строка' }
+      ]}
+    ],
+
+    'intfrac': [
+      { val:'a', label:'int(17.89) и int(−1.7)', skip:[3], steps:[
+        { ln:1, out:{ t:'17', kind:'p' } },
+        { ln:2, out:{ t:'−1', kind:'p' }, badge:'дробная часть отброшена, в сторону нуля' }
+      ]},
+      { val:'b', label:'int(3.99)', skip:[1,2], steps:[
+        { ln:3, out:{ t:'3', kind:'p' }, badge:'это 3, а не 4 — int() не округляет' }
+      ]}
+    ],
+
+    'floatstr': [
+      { val:'a', label:"int('2.5')", skip:[2], steps:[
+        { ln:1, out:{ t:'ValueError', kind:'false' }, badge:'строку с точкой int() не берёт' }
+      ]},
+      { val:'b', label:"int(float('2.5'))", skip:[1], steps:[
+        { ln:2, out:{ t:'n = 2', kind:'p' }, badge:'сначала float, потом int' }
+      ]}
+    ],
+
+    'plusnum': [
+      { val:'a', label:'как сломано', skip:[2,3], steps:[
+        { ln:1, out:{ t:'TypeError', kind:'false' }, badge:'сцепить строку с числом нельзя' }
+      ]},
+      { val:'b', label:'через str(15)', skip:[1,3], steps:[
+        { ln:2, out:{ t:'Мне 15 лет', kind:'p' } }
+      ]},
+      { val:'c', label:'через запятую', skip:[1,2], steps:[
+        { ln:3, out:{ t:'Мне 15 лет', kind:'p' }, badge:'print сам поставит пробелы' }
+      ]}
+    ],
+
+    'inputfix': [
+      { val:'a', label:'без int(), ввод 14', skip:[3,4], steps:[
+        { ln:1, out:{ t:"age = '14' — это строка" } },
+        { ln:2, out:{ t:'TypeError', kind:'false' }, badge:'к строке единицу не прибавить' }
+      ]},
+      { val:'b', label:'с int(), ввод 14', skip:[1,2], steps:[
+        { ln:3, out:{ t:'age = 14' } },
+        { ln:4, out:{ t:'15', kind:'p' } }
+      ]}
+    ],
+
+    'numwrite': [
+      { val:'a', label:"float('2,5')", skip:[2,3], steps:[
+        { ln:1, out:{ t:'ValueError', kind:'false' }, badge:'нужна точка, а не запятая' }
+      ]},
+      { val:'b', label:"float('2.5')", skip:[1,3], steps:[
+        { ln:2, out:{ t:'x = 2.5', kind:'p' } }
+      ]},
+      { val:'c', label:"int('abc')", skip:[1,2], steps:[
+        { ln:3, out:{ t:'ValueError', kind:'false' }, badge:'в строке нет числа' }
+      ]}
+    ],
+
+    'strmul': [
+      { val:'a', label:"'3' * '4'", skip:[2,3], steps:[
+        { ln:1, out:{ t:'TypeError', kind:'false' }, badge:'строку умножают только на число' }
+      ]},
+      { val:'b', label:"'3' * 4", skip:[1,3], steps:[
+        { ln:2, out:{ t:'3333', kind:'p' }, badge:'строка повторилась четыре раза' }
+      ]},
+      { val:'c', label:'3 * 4', skip:[1,2], steps:[
+        { ln:3, out:{ t:'12', kind:'p' } }
+      ]}
+    ],
+
+    't1s1': [
+      { val:'Аня · 14', label:'Аня · 14', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Аня'" } },
+        { ln:2, out:{ t:'age = 14  →  тип int' }, badge:'Возраст прочитан — можно считать' }
+      ]},
+      { val:'Тимур · 9', label:'Тимур · 9', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Тимур'" } },
+        { ln:2, out:{ t:'age = 9  →  тип int' }, badge:'Возраст прочитан — можно считать' }
+      ]},
+      { val:'Маша · 99', label:'Маша · 99', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Маша'" } },
+        { ln:2, out:{ t:'age = 99  →  тип int' }, badge:'Возраст прочитан — можно считать' }
+      ]}
+    ],
+
+    't1s2': [
+      { val:'Аня · 14', label:'Аня · 14', skip:[], steps:[
+        { ln:1, out:{ t:'next_age = 14 + 1  →  15' } },
+        { ln:2, out:{ t:'Аня, через год тебе будет 15 лет', kind:'p' }, badge:'Тест Аня · 14 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Тимур · 9', label:'Тимур · 9', skip:[], steps:[
+        { ln:1, out:{ t:'next_age = 9 + 1  →  10' } },
+        { ln:2, out:{ t:'Тимур, через год тебе будет 10 лет', kind:'p' }, badge:'Тест Тимур · 9 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Маша · 99', label:'Маша · 99', skip:[], steps:[
+        { ln:1, out:{ t:'next_age = 99 + 1  →  100' } },
+        { ln:2, out:{ t:'Маша, через год тебе будет 100 лет', kind:'p' }, badge:'Тест Маша · 99 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't1full': [
+      { val:'Аня · 14', label:'Аня · 14', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Аня'  →  тип str" } },
+        { ln:2, out:{ t:'age = 14  →  тип int' } },
+        { ln:3, out:{ t:'next_age = 14 + 1  →  15' } },
+        { ln:4, out:{ t:'Аня, через год тебе будет 15 лет', kind:'p' }, badge:'Тест Аня · 14 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Тимур · 9', label:'Тимур · 9', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Тимур'  →  тип str" } },
+        { ln:2, out:{ t:'age = 9  →  тип int' } },
+        { ln:3, out:{ t:'next_age = 9 + 1  →  10' } },
+        { ln:4, out:{ t:'Тимур, через год тебе будет 10 лет', kind:'p' }, badge:'Тест Тимур · 9 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Маша · 99', label:'Маша · 99', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Маша'  →  тип str" } },
+        { ln:2, out:{ t:'age = 99  →  тип int' } },
+        { ln:3, out:{ t:'next_age = 99 + 1  →  100' } },
+        { ln:4, out:{ t:'Маша, через год тебе будет 100 лет', kind:'p' }, badge:'Тест Маша · 99 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't2s1': [
+      { val:'Аня · 95', label:'Аня · 95', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Аня'" } },
+        { ln:2, out:{ t:'score = 95  →  тип int' }, badge:'Данные прочитаны — можно собирать строку' }
+      ]},
+      { val:'Тимур · 7', label:'Тимур · 7', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Тимур'" } },
+        { ln:2, out:{ t:'score = 7  →  тип int' }, badge:'Данные прочитаны — можно собирать строку' }
+      ]},
+      { val:'Маша · 100', label:'Маша · 100', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Маша'" } },
+        { ln:2, out:{ t:'score = 100  →  тип int' }, badge:'Данные прочитаны — можно собирать строку' }
+      ]}
+    ],
+
+    't2s2': [
+      { val:'Аня · 95', label:'Аня · 95', skip:[], steps:[
+        { ln:1, out:{ t:"line = 'Результат ' + 'Аня' + ': ' + str(95)" }, badge:'str(score) превратил число в строку' },
+        { ln:2, out:{ t:'Результат Аня: 95', kind:'p' }, badge:'Тест Аня · 95 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Тимур · 7', label:'Тимур · 7', skip:[], steps:[
+        { ln:1, out:{ t:"line = 'Результат ' + 'Тимур' + ': ' + str(7)" }, badge:'str(score) превратил число в строку' },
+        { ln:2, out:{ t:'Результат Тимур: 7', kind:'p' }, badge:'Тест Тимур · 7 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Маша · 100', label:'Маша · 100', skip:[], steps:[
+        { ln:1, out:{ t:"line = 'Результат ' + 'Маша' + ': ' + str(100)" }, badge:'str(score) превратил число в строку' },
+        { ln:2, out:{ t:'Результат Маша: 100', kind:'p' }, badge:'Тест Маша · 100 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't2full': [
+      { val:'Аня · 95', label:'Аня · 95', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Аня'  →  тип str" } },
+        { ln:2, out:{ t:'score = 95  →  тип int' } },
+        { ln:3, out:{ t:"line = 'Результат ' + 'Аня' + ': ' + str(95)" } },
+        { ln:4, out:{ t:'Результат Аня: 95', kind:'p' }, badge:'Тест Аня · 95 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Тимур · 7', label:'Тимур · 7', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Тимур'  →  тип str" } },
+        { ln:2, out:{ t:'score = 7  →  тип int' } },
+        { ln:3, out:{ t:"line = 'Результат ' + 'Тимур' + ': ' + str(7)" } },
+        { ln:4, out:{ t:'Результат Тимур: 7', kind:'p' }, badge:'Тест Тимур · 7 пройден: вывод совпал с условием' }
+      ]},
+      { val:'Маша · 100', label:'Маша · 100', skip:[], steps:[
+        { ln:1, out:{ t:"name = 'Маша'  →  тип str" } },
+        { ln:2, out:{ t:'score = 100  →  тип int' } },
+        { ln:3, out:{ t:"line = 'Результат ' + 'Маша' + ': ' + str(100)" } },
+        { ln:4, out:{ t:'Результат Маша: 100', kind:'p' }, badge:'Тест Маша · 100 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't3s1': [
+      { val:'5 · 4 · 4', label:'5 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'a = 5  →  тип int' } },
+        { ln:2, out:{ t:'b = 4  →  тип int' } },
+        { ln:3, out:{ t:'c = 4  →  тип int' }, badge:'Три оценки прочитаны' }
+      ]},
+      { val:'5 · 5 · 5', label:'5 · 5 · 5', skip:[], steps:[
+        { ln:1, out:{ t:'a = 5  →  тип int' } },
+        { ln:2, out:{ t:'b = 5  →  тип int' } },
+        { ln:3, out:{ t:'c = 5  →  тип int' }, badge:'Три оценки прочитаны' }
+      ]},
+      { val:'3 · 4 · 4', label:'3 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'a = 3  →  тип int' } },
+        { ln:2, out:{ t:'b = 4  →  тип int' } },
+        { ln:3, out:{ t:'c = 4  →  тип int' }, badge:'Три оценки прочитаны' }
+      ]}
+    ],
+
+    't3s2': [
+      { val:'5 · 4 · 4', label:'5 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'avg = (5 + 4 + 4) / 3  →  4.333333333333333' }, badge:'деление / всегда даёт float — тип float' },
+        { ln:2, out:{ t:'Средний балл: 4.333333333333333', kind:'p' } },
+        { ln:3, out:{ t:'Целая часть: 4', kind:'p' }, badge:'Тест 5 · 4 · 4 пройден: вывод совпал с условием' }
+      ]},
+      { val:'5 · 5 · 5', label:'5 · 5 · 5', skip:[], steps:[
+        { ln:1, out:{ t:'avg = (5 + 5 + 5) / 3  →  5.0' }, badge:'деление / всегда даёт float — тип float' },
+        { ln:2, out:{ t:'Средний балл: 5.0', kind:'p' } },
+        { ln:3, out:{ t:'Целая часть: 5', kind:'p' }, badge:'Тест 5 · 5 · 5 пройден: вывод совпал с условием' }
+      ]},
+      { val:'3 · 4 · 4', label:'3 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'avg = (3 + 4 + 4) / 3  →  3.6666666666666665' }, badge:'деление / всегда даёт float — тип float' },
+        { ln:2, out:{ t:'Средний балл: 3.6666666666666665', kind:'p' } },
+        { ln:3, out:{ t:'Целая часть: 3', kind:'p' }, badge:'Тест 3 · 4 · 4 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't3full': [
+      { val:'5 · 4 · 4', label:'5 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'a = 5  →  тип int' } },
+        { ln:2, out:{ t:'b = 4  →  тип int' } },
+        { ln:3, out:{ t:'c = 4  →  тип int' } },
+        { ln:4, out:{ t:'avg = (5 + 4 + 4) / 3  →  4.333333333333333' } },
+        { ln:5, out:{ t:'Средний балл: 4.333333333333333', kind:'p' } },
+        { ln:6, out:{ t:'Целая часть: 4', kind:'p' }, badge:'Тест 5 · 4 · 4 пройден: вывод совпал с условием' }
+      ]},
+      { val:'5 · 5 · 5', label:'5 · 5 · 5', skip:[], steps:[
+        { ln:1, out:{ t:'a = 5  →  тип int' } },
+        { ln:2, out:{ t:'b = 5  →  тип int' } },
+        { ln:3, out:{ t:'c = 5  →  тип int' } },
+        { ln:4, out:{ t:'avg = (5 + 5 + 5) / 3  →  5.0' } },
+        { ln:5, out:{ t:'Средний балл: 5.0', kind:'p' } },
+        { ln:6, out:{ t:'Целая часть: 5', kind:'p' }, badge:'Тест 5 · 5 · 5 пройден: вывод совпал с условием' }
+      ]},
+      { val:'3 · 4 · 4', label:'3 · 4 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'a = 3  →  тип int' } },
+        { ln:2, out:{ t:'b = 4  →  тип int' } },
+        { ln:3, out:{ t:'c = 4  →  тип int' } },
+        { ln:4, out:{ t:'avg = (3 + 4 + 4) / 3  →  3.6666666666666665' } },
+        { ln:5, out:{ t:'Средний балл: 3.6666666666666665', kind:'p' } },
+        { ln:6, out:{ t:'Целая часть: 3', kind:'p' }, badge:'Тест 3 · 4 · 4 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't4s1': [
+      { val:'12.5 · 3', label:'12.5 · 3', skip:[], steps:[
+        { ln:1, out:{ t:'price = 12.5  →  тип float' }, badge:'float() читает дробное число' },
+        { ln:2, out:{ t:'count = 3  →  тип int' }, badge:'Оба числа на месте — можно считать' }
+      ]},
+      { val:'99.9 · 1', label:'99.9 · 1', skip:[], steps:[
+        { ln:1, out:{ t:'price = 99.9  →  тип float' }, badge:'float() читает дробное число' },
+        { ln:2, out:{ t:'count = 1  →  тип int' }, badge:'Оба числа на месте — можно считать' }
+      ]},
+      { val:'250 · 4', label:'250 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'price = 250.0  →  тип float' }, badge:'float() читает дробное число' },
+        { ln:2, out:{ t:'count = 4  →  тип int' }, badge:'Оба числа на месте — можно считать' }
+      ]}
+    ],
+
+    't4s2': [
+      { val:'12.5 · 3', label:'12.5 · 3', skip:[], steps:[
+        { ln:1, out:{ t:'total = 12.5 * 3  →  37.5' }, badge:'число * число = число' },
+        { ln:2, out:{ t:'Итого: 37.5 руб.', kind:'p' }, badge:'Тест 12.5 · 3 пройден: вывод совпал с условием' }
+      ]},
+      { val:'99.9 · 1', label:'99.9 · 1', skip:[], steps:[
+        { ln:1, out:{ t:'total = 99.9 * 1  →  99.9' }, badge:'число * число = число' },
+        { ln:2, out:{ t:'Итого: 99.9 руб.', kind:'p' }, badge:'Тест 99.9 · 1 пройден: вывод совпал с условием' }
+      ]},
+      { val:'250 · 4', label:'250 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'total = 250.0 * 4  →  1000.0' }, badge:'число * число = число' },
+        { ln:2, out:{ t:'Итого: 1000.0 руб.', kind:'p' }, badge:'Тест 250 · 4 пройден: вывод совпал с условием' }
+      ]}
+    ],
+
+    't4full': [
+      { val:'12.5 · 3', label:'12.5 · 3', skip:[], steps:[
+        { ln:1, out:{ t:'price = 12.5  →  тип float' } },
+        { ln:2, out:{ t:'count = 3  →  тип int' } },
+        { ln:3, out:{ t:'total = 12.5 * 3  →  37.5' } },
+        { ln:4, out:{ t:'Итого: 37.5 руб.', kind:'p' }, badge:'Тест 12.5 · 3 пройден: вывод совпал с условием' }
+      ]},
+      { val:'99.9 · 1', label:'99.9 · 1', skip:[], steps:[
+        { ln:1, out:{ t:'price = 99.9  →  тип float' } },
+        { ln:2, out:{ t:'count = 1  →  тип int' } },
+        { ln:3, out:{ t:'total = 99.9 * 1  →  99.9' } },
+        { ln:4, out:{ t:'Итого: 99.9 руб.', kind:'p' }, badge:'Тест 99.9 · 1 пройден: вывод совпал с условием' }
+      ]},
+      { val:'250 · 4', label:'250 · 4', skip:[], steps:[
+        { ln:1, out:{ t:'price = 250.0  →  тип float' } },
+        { ln:2, out:{ t:'count = 4  →  тип int' } },
+        { ln:3, out:{ t:'total = 250.0 * 4  →  1000.0' } },
+        { ln:4, out:{ t:'Итого: 1000.0 руб.', kind:'p' }, badge:'Тест 250 · 4 пройден: вывод совпал с условием' }
+      ]}
+    ]
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+/* ===== ОТВЕТЫ В ЗАДАЧАХ =====
+   Карточка .quiz: ответ в <code class="ans"> спрятан, пока не нажали.
+   Нажатие на карточку открывает её ответ и не листает деку.
+   ============================ */
+(function(){
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+</body>
+</html>

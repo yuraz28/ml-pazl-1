@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 6. Условный оператор — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 6</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Условный оператор</h1>
+  </div>
+</section>
+<!-- 2 -->
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Ветвление</h3><p>if и else решают, какие строки выполнить. Блок задают двоеточие и отступ в 4 пробела.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Сравнения</h3><p>Шесть операторов сравнения дают True или False, а сравнения объединяются в цепочки.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Логика</h3><p>and, or, not соединяют условия. Приоритет: not, затем and, затем or.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Вложенность</h3><p>Условие внутри условия. Два вложенных if без else — то же самое, что одно условие с and.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Каскад</h3><p>if — elif — else выбирает один вариант из многих: сработает первая истинная ветка.</p></div>
+    </div>
+  </div>
+</section>
+<!-- 3 -->
+<!-- 4 -->
+<section class="slide" data-title="Ветвление: программа выбирает путь">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ветвление</p>
+    <h2>Программа выбирает путь</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="if" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="20">Возраст 20</button>
+          <button class="chip" type="button" data-val="14">Возраст 14</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = int(input('Сколько вам лет? '))</span><span class="ln" data-no="2">if age &gt;= 18:</span><span class="ln" data-no="3">    print('Доступ разрешён')</span><span class="ln" data-no="4">    print('Добро пожаловать!')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Раньше код выполнялся строго сверху вниз. <b>Ветвление</b> — это проверка условия и выбор: выполнить блок или пропустить его.</div>
+  </div>
+</section>
+<!-- 4 -->
+<!-- 5 -->
+<section class="slide" data-title="Двоеточие, отступ и блок">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ветвление</p>
+    <h2>Блок задают отступы</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Двоеточие в конце строки с <b>if</b> говорит Python: дальше идёт блок команд.</p>
+        <p class="note r" style="--d:140">В блок входят все строки с отступом под if — до первой строки без отступа.</p>
+        <p class="note r" style="--d:210">PEP 8 советует отступ в <b>4 пробела</b>. VS Code ставит их сам после двоеточия и Enter.</p>
+        <p class="note r" style="--d:280">Строка без отступа уже вне блока. Она выполнится в любом случае.</p>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 480" role="img" aria-label="Блок кода и отступ в четыре пробела">
+        <rect x="8" y="8" width="684" height="464" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="46" y="88" font-size="25" fill="#101A26" font-family="monospace">if age &gt;= 18:</text>
+        <text x="108" y="140" font-size="25" fill="#38475A" font-family="monospace">print('Доступ разрешён')</text>
+        <text x="108" y="192" font-size="25" fill="#38475A" font-family="monospace">print('Добро пожаловать!')</text>
+        <rect x="88" y="100" width="566" height="122" rx="16" fill="none" stroke="#1E7EE8" stroke-width="2" stroke-dasharray="9 8"/>
+        <text x="470" y="205" font-size="23" font-weight="700" fill="#1E7EE8">блок if</text>
+        <line x1="46" y1="232" x2="108" y2="232" stroke="#6E7E92" stroke-width="2"/>
+        <line x1="46" y1="226" x2="46" y2="238" stroke="#6E7E92" stroke-width="2"/>
+        <line x1="108" y1="226" x2="108" y2="238" stroke="#6E7E92" stroke-width="2"/>
+        <text x="122" y="240" font-size="23" fill="#6E7E92">4 пробела</text>
+        <text x="46" y="300" font-size="25" fill="#38475A" font-family="monospace">print('Проверка окончена')</text>
+        <text x="470" y="300" font-size="23" fill="#6E7E92">вне блока</text>
+        <rect x="46" y="340" width="608" height="110" rx="20" fill="#E9F4FF"/>
+        <text x="76" y="384" font-size="26" font-weight="700" fill="#0B3E7A">Отступ — часть кода, а не украшение</text>
+        <text x="76" y="414" font-size="22" fill="#6E7E92">именно он показывает, где блок начинается</text>
+          <text x="76" y="444" font-size="22" fill="#6E7E92">и где кончается</text>
+      </svg>
+    </div>
+  </div>
+</section>
+<!-- 5 -->
+<!-- 6 -->
+<section class="slide" data-title="if-else: два пути">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ветвление</p>
+    <h2>if-else: два пути</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="ifelse" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="20">Возраст 20</button>
+          <button class="chip" type="button" data-val="14">Возраст 14</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = int(input('Сколько вам лет? '))</span><span class="ln" data-no="2">if age &gt;= 18:</span><span class="ln" data-no="3">    print('Доступ разрешён')</span><span class="ln" data-no="4">else:</span><span class="ln" data-no="5">    print('Доступ запрещён')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220"><b>else</b> описывает, что делать, когда условие ложно. Выполняется всегда ровно одна из двух веток.</div>
+  </div>
+</section>
+<!-- 6 -->
+<!-- 7 -->
+<section class="slide" data-title="Операторы сравнения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сравнения</p>
+    <h2>Шесть операторов сравнения</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">больше</div><h3>&gt;</h3><p>x &gt; 7</p></div>
+      <div class="card r" style="--d:110"><div class="num">меньше</div><h3>&lt;</h3><p>x &lt; 7</p></div>
+      <div class="card r" style="--d:150"><div class="num">больше либо равно</div><h3>&gt;=</h3><p>x &gt;= 7</p></div>
+      <div class="card r" style="--d:190"><div class="num">меньше либо равно</div><h3>&lt;=</h3><p>x &lt;= 7</p></div>
+      <div class="card r" style="--d:230"><div class="num">равно</div><h3>==</h3><p>x == 7</p></div>
+      <div class="card r" style="--d:270"><div class="num">не равно</div><h3>!=</h3><p>x != 7</p></div>
+    </div>
+    <div class="note r" style="--d:320">Условие строится из этих знаков, а результатом сравнения всегда будет <b>True</b> или <b>False</b>.</div>
+  </div>
+</section>
+<!-- 7 -->
+<!-- 7 -->
+<section class="slide" data-title="Присваивание и сравнение">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сравнения</p>
+    <h2>= присваивает, == сравнивает</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="eq" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="500">price = 500</button><button class="chip" type="button" data-val="300">price = 300</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">price = int(input())</span><span class="ln" data-no="2">if price == 500:</span><span class="ln" data-no="3">    print('Ровно 500')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Один знак <b>=</b> кладёт значение в переменную, два знака <b>==</b> задают вопрос «равно?». Путаница между ними — одна из самых частых ошибок. Строки сравниваются с учётом регистра: <b>'Да'</b> и <b>'да'</b> — разные значения.</div>
+  </div>
+</section>
+<!-- 8 -->
+<!-- 9 -->
+<section class="slide" data-title="Цепочки сравнений">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сравнения</p>
+    <h2>Цепочки сравнений</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="chain" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="5">Возраст 5</button>
+          <button class="chip" type="button" data-val="9">Возраст 9</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = int(input())</span><span class="ln" data-no="2">if 3 &lt;= age &lt;= 6:</span><span class="ln" data-no="3">    print('Дошкольник')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Сравнения объединяются в цепочку, как в математике: <b>1 &lt;= x &lt;= 10</b>. С цепочкой != так не получится: <b>a != b != c</b> не значит, что все числа различны (проверьте на 1, 2 и 1).</div>
+  </div>
+</section>
+<!-- 9 -->
+<!-- 10 -->
+<section class="slide" data-title="Логические операторы">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Логика</p>
+    <h2>Логические операторы</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><h3>and</h3><p>«И»: истина, только если истинны оба условия.</p><code>amount &gt;= 1000 and card == 'да'</code></div>
+      <div class="card r" style="--d:130"><h3>or</h3><p>«Или»: истина, если истинно хотя бы одно условие.</p><code>day == 6 or day == 7</code></div>
+      <div class="card r" style="--d:190"><h3>not</h3><p>«Не»: меняет True на False и наоборот.</p><code>not (amount &lt; 1000)</code></div>
+    </div>
+    <div class="note r" style="--d:250">Эти два условия равносильны: <b>not (amount &lt; 1000)</b> и <b>amount &gt;= 1000</b>. not берут, когда проще сформулировать противоположное.</div>
+  </div>
+</section>
+<!-- 10 -->
+<!-- 11 -->
+<section class="slide" data-title="Таблицы истинности">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Логика</p>
+    <h2>Таблицы истинности</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><h3>and</h3>
+        <div class="tt c1">
+          <div class="row"><span>True and True</span><b class="t">True</b></div>
+          <div class="row"><span>True and False</span><b class="f">False</b></div>
+          <div class="row"><span>False and True</span><b class="f">False</b></div>
+          <div class="row"><span>False and False</span><b class="f">False</b></div>
+        </div>
+      </div>
+      <div class="card r" style="--d:140"><h3>or</h3>
+        <div class="tt c1">
+          <div class="row"><span>True or True</span><b class="t">True</b></div>
+          <div class="row"><span>True or False</span><b class="t">True</b></div>
+          <div class="row"><span>False or True</span><b class="t">True</b></div>
+          <div class="row"><span>False or False</span><b class="f">False</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="chips r" style="--d:210">
+      <span class="chip">not True → False</span>
+      <span class="chip">not False → True</span>
+    </div>
+  </div>
+</section>
+<!-- 11 -->
+<!-- 11 -->
+<section class="slide" data-title="Приоритет логических операторов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Логика</p>
+    <h2>Приоритет и скобки</h2>
+  </header>
+  <div class="body">
+    <div class="chips r" style="--d:70">
+      <span class="chip">сначала not</span>
+      <span class="chip">потом and</span>
+      <span class="chip">в последнюю очередь or</span>
+      <span class="chip">скобки меняют порядок</span>
+    </div>
+    <div class="run r" data-run="paren" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="no">без скобок</button><button class="chip" type="button" data-val="yes">со скобками</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(True or False and False)</span><span class="ln" data-no="2">print((True or False) and False)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:240">Одинаковые строки дают разный результат: <b>True or False and False</b> — это True, а <b>(True or False) and False</b> — False. Скобки читаются первыми.</div>
+  </div>
+</section>
+<!-- 12 -->
+<!-- 12 -->
+<section class="slide" data-title="Укороченная схема">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Логика</p>
+    <h2>Укороченная схема</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="short" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="and">and</button><button class="chip" type="button" data-val="or">or</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(5 &gt; 100 and 10 &gt; 0)</span><span class="ln" data-no="2">print(10 &gt; 0 or 5 &gt; 100)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="acc r" style="--d:220">Так защищаются от ошибок: <span style="font-family:var(--mono); font-size:34px">b != 0 and a // b &gt; 2</span> — деление выполнится, только если делитель не ноль.</div>
+  </div>
+</section>
+<!-- 13 -->
+<!-- 14 -->
+<section class="slide" data-title="Четверти на координатной плоскости">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вложенные условия</p>
+    <h2>Четверти на координатной плоскости</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <div class="acc r" style="--d:70">Номер четверти задают знаки x и y.</div>
+        <div class="note r" style="--d:140">Программа сначала смотрит на x, а внутри ветки — на y. Точка (5; 3) лежит в первой четверти, (−2; 4) — во второй, (1; −3) — в четвёртой.</div>
+      </div>
+      <div class="r" style="--d:210">
+        <svg class="ill" viewBox="0 0 700 620" role="img" aria-label="Координатная плоскость с точками (5; 3), (−2; 4), (−3; −1) и (1; −3) в четырёх четвертях">
+          <line x1="40" y1="340" x2="678" y2="340" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="350" y1="606" x2="350" y2="30" stroke="#A8D3FF" stroke-width="4"/>
+          <path d="M 686 340 l -22 -11 l 0 22 z" fill="#A8D3FF"/>
+          <path d="M 350 22 l -11 22 l 22 0 z" fill="#A8D3FF"/>
+          <text x="658" y="322" font-size="34" fill="#38475A">x</text>
+          <text x="318" y="48" font-size="34" fill="#38475A">y</text>
+          <text x="640" y="60" font-size="52" font-weight="700" fill="#6E7E92">I</text>
+          <text x="118" y="92" font-size="52" font-weight="700" fill="#6E7E92">II</text>
+          <text x="108" y="592" font-size="52" font-weight="700" fill="#6E7E92">III</text>
+          <text x="640" y="592" font-size="52" font-weight="700" fill="#6E7E92">IV</text>
+          <line x1="410" y1="330" x2="410" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="410" y="372" text-anchor="middle" font-size="26" fill="#38475A">1</text>
+          <line x1="290" y1="330" x2="290" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="290" y="372" text-anchor="middle" font-size="26" fill="#38475A">-1</text>
+          <line x1="470" y1="330" x2="470" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="470" y="372" text-anchor="middle" font-size="26" fill="#38475A">2</text>
+          <line x1="230" y1="330" x2="230" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="230" y="372" text-anchor="middle" font-size="26" fill="#38475A">-2</text>
+          <line x1="530" y1="330" x2="530" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="530" y="372" text-anchor="middle" font-size="26" fill="#38475A">3</text>
+          <line x1="170" y1="330" x2="170" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="170" y="372" text-anchor="middle" font-size="26" fill="#38475A">-3</text>
+          <line x1="590" y1="330" x2="590" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="590" y="372" text-anchor="middle" font-size="26" fill="#38475A">4</text>
+          <line x1="110" y1="330" x2="110" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="110" y="372" text-anchor="middle" font-size="26" fill="#38475A">-4</text>
+          <line x1="650" y1="330" x2="650" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="650" y="372" text-anchor="middle" font-size="26" fill="#38475A">5</text>
+          <line x1="50" y1="330" x2="50" y2="350" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="50" y="372" text-anchor="middle" font-size="26" fill="#38475A">-5</text>
+          <line x1="338" y1="280" x2="362" y2="280" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="284" text-anchor="end" font-size="26" fill="#38475A">1</text>
+          <line x1="338" y1="400" x2="362" y2="400" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="404" text-anchor="end" font-size="26" fill="#38475A">-1</text>
+          <line x1="338" y1="220" x2="362" y2="220" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="224" text-anchor="end" font-size="26" fill="#38475A">2</text>
+          <line x1="338" y1="460" x2="362" y2="460" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="464" text-anchor="end" font-size="26" fill="#38475A">-2</text>
+          <line x1="338" y1="160" x2="362" y2="160" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="164" text-anchor="end" font-size="26" fill="#38475A">3</text>
+          <line x1="338" y1="520" x2="362" y2="520" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="524" text-anchor="end" font-size="26" fill="#38475A">-3</text>
+          <line x1="338" y1="100" x2="362" y2="100" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="104" text-anchor="end" font-size="26" fill="#38475A">4</text>
+          <line x1="338" y1="580" x2="362" y2="580" stroke="#A8D3FF" stroke-width="3"/>
+          <text x="332" y="584" text-anchor="end" font-size="26" fill="#38475A">-4</text>
+          <line x1="650" y1="160" x2="650" y2="340" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <line x1="650" y1="160" x2="350" y2="160" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <circle cx="650" cy="160" r="16" fill="#1E7EE8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="636" y="126" text-anchor="end" font-size="34" font-weight="700" fill="#0B3E7A">(5; 3)</text>
+          <line x1="230" y1="100" x2="230" y2="340" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <line x1="230" y1="100" x2="350" y2="100" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <circle cx="230" cy="100" r="16" fill="#1E7EE8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="206" y="146" text-anchor="end" font-size="34" font-weight="700" fill="#0B3E7A">(−2; 4)</text>
+          <line x1="170" y1="400" x2="170" y2="340" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <line x1="170" y1="400" x2="350" y2="400" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <circle cx="170" cy="400" r="16" fill="#1E7EE8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="148" y="438" text-anchor="end" font-size="34" font-weight="700" fill="#0B3E7A">(−3; −1)</text>
+          <line x1="410" y1="520" x2="410" y2="340" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <line x1="410" y1="520" x2="350" y2="520" stroke="#A8D3FF" stroke-width="2.5" stroke-dasharray="7 9"/>
+          <circle cx="410" cy="520" r="16" fill="#1E7EE8" stroke="#FFFFFF" stroke-width="4"/>
+          <text x="432" y="556" text-anchor="start" font-size="34" font-weight="700" fill="#0B3E7A">(1; −3)</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 14 -->
+<!-- 15 -->
+<section class="slide" data-title="Вложенные условия: четверти">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вложенность</p>
+    <h2>Вложенные условия</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="nesting" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="p1">x = 5, y = 3</button>
+          <button class="chip" type="button" data-val="p2">x = −2, y = 4</button>
+          <button class="chip" type="button" data-val="p3">x = 1, y = −3</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">x = int(input())</span><span class="ln" data-no="2">y = int(input())</span><span class="ln" data-no="3">if x &gt; 0:</span><span class="ln" data-no="4">    if y &gt; 0:</span><span class="ln" data-no="5">        print('Первая четверть')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Четвёртая четверть')</span><span class="ln" data-no="8">else:</span><span class="ln" data-no="9">    if y &gt; 0:</span><span class="ln" data-no="10">        print('Вторая четверть')</span><span class="ln" data-no="11">    else:</span><span class="ln" data-no="12">        print('Третья четверть')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 15 -->
+<!-- 15 -->
+<section class="slide" data-title="Вложенные if или and">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вложенность</p>
+    <h2>Вложенные if или and?</h2>
+  </header>
+  <div class="body">
+    <div class="run r sm" data-run="nestand" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="nested">вложенные условия</button><button class="chip" type="button" data-val="and">через and</button><button class="chip" type="button" data-val="noc">card = 'нет'</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input())</span><span class="ln" data-no="2">card = input()</span><span class="ln" data-no="3">if amount &gt;= 1000:</span><span class="ln" data-no="4">    if card == 'да':</span><span class="ln" data-no="5">        print('Скидка 10%')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Скидка 5%')</span><span class="ln" data-no="8">else:</span><span class="ln" data-no="9">    print('Скидки нет')</span><span class="ln" data-no="10"># то же самое через and:</span><span class="ln" data-no="11">if amount &gt;= 1000 and card == 'да':</span><span class="ln" data-no="12">    print('Скидка 10%')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Два вложенных if без ветки else у внешнего условия — это одно условие с and. На двух уровнях код читается в любом виде; когда вложений становится больше, берут каскад.</div>
+  </div>
+</section>
+<!-- 16 -->
+<!-- 16 -->
+<section class="slide" data-title="Каскад if-elif-else">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Каскад</p>
+    <h2>Каскад if-elif-else</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="cascade" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="9">9 утра</button><button class="chip" type="button" data-val="15">15 дня</button><button class="chip" type="button" data-val="23">23 ночи</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">hour = int(input('Который час (0-23)? '))</span><span class="ln" data-no="2">if hour &lt; 6:</span><span class="ln" data-no="3">    print('Ночь')</span><span class="ln" data-no="4">elif hour &lt; 12:</span><span class="ln" data-no="5">    print('Утро')</span><span class="ln" data-no="6">elif hour &lt; 18:</span><span class="ln" data-no="7">    print('День')</span><span class="ln" data-no="8">else:</span><span class="ln" data-no="9">    print('Вечер')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Условия проверяются сверху вниз: срабатывает первая истинная ветка, остальную часть каскада Python пропускает. if, elif и else выравниваются по одному уровню, а заключительный else необязателен.</div>
+  </div>
+</section>
+<!-- 17 -->
+<!-- 18 -->
+<section class="slide" data-title="Каскад на отметках">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Каскад</p>
+    <h2>Отметка по 100-балльной шкале</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="elif" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="95">Отметка 95</button>
+          <button class="chip" type="button" data-val="82">Отметка 82</button>
+          <button class="chip" type="button" data-val="55">Отметка 55</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">grade = int(input('Введите отметку по 100-балльной системе: '))</span><span class="ln" data-no="2">if grade &gt;= 90:</span><span class="ln" data-no="3">    print(5)</span><span class="ln" data-no="4">elif grade &gt;= 80:</span><span class="ln" data-no="5">    print(4)</span><span class="ln" data-no="6">elif grade &gt;= 70:</span><span class="ln" data-no="7">    print(3)</span><span class="ln" data-no="8">elif grade &gt;= 60:</span><span class="ln" data-no="9">    print(2)</span><span class="ln" data-no="10">else:</span><span class="ln" data-no="11">    print(1)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 18 -->
+<!-- 19 -->
+<section class="slide" data-title="Светофор">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Каскад</p>
+    <h2>Светофор</h2>
+  </header>
+  <div class="body">
+    <div class="split" style="grid-template-columns:300px minmax(0,1fr)">
+      <div class="notes r" style="--d:70;gap:8px">
+        <h3>Сигнал — это значение переменной</h3>
+        <div class="note">Выберите чип — загорится лампа, а программа напечатает, что делать.</div>
+        <svg id="traffic-light" class="ill" style="width:168px" viewBox="0 0 320 620" role="img" aria-label="Игрушечный светофор: красная, жёлтая и зелёная лампы">
+          <rect x="40" y="20" width="240" height="520" rx="44" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="4"/>
+          <circle data-lamp="red" data-on="#E03127" cx="160" cy="120" r="64" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="3"/>
+          <circle data-lamp="yellow" data-on="#F2A50C" cx="160" cy="290" r="64" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="3"/>
+          <circle data-lamp="green" data-on="#1E9E4E" cx="160" cy="460" r="64" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="3"/>
+          <rect x="148" y="540" width="24" height="52" fill="#DEEAF7"/>
+          <rect x="105" y="592" width="110" height="22" rx="11" fill="#DEEAF7"/>
+        </svg>
+      </div>
+    <div class="run r sm" data-run="light" style="--d:120">
+          <div class="run-top">
+            <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+            <div class="chips" data-role="variants">
+              <button class="chip on" type="button" data-val="красный">красный</button>
+              <button class="chip" type="button" data-val="жёлтый">жёлтый</button>
+              <button class="chip" type="button" data-val="зелёный">зелёный</button>
+            </div>
+          </div>
+          <div class="run-grid">
+            <pre class="run-code"><span class="ln" data-no="1">signal = input('Введите сигнал светофора: ')</span><span class="ln" data-no="2">if signal == 'красный':</span><span class="ln" data-no="3">    print('Стой!')</span><span class="ln" data-no="4">elif signal == 'жёлтый':</span><span class="ln" data-no="5">    print('Приготовься...')</span><span class="ln" data-no="6">elif signal == 'зелёный':</span><span class="ln" data-no="7">    print('Иди!')</span></pre>
+            <div class="run-console" data-role="console" aria-live="polite"></div>
+          </div>
+        </div>
+    </div>
+    <div class="note r" style="--d:220">Тут блока else нет. Если ни одно условие не подошло, программа просто ничего не выведет и продолжит работу без ошибок.</div>
+  </div>
+</section>
+<!-- 19 -->
+<!-- 20 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Калькулятор скидок</h3><p>Скидка по сумме покупки, по выходным и по карте клиента. Печатаем процент скидки и цену к оплате.</p></div>
+      <div class="card r" style="--d:140"><div class="num">доп. задание</div><h3>Среда и проверка дня</h3><p>Скидка 2% по средам и сообщение об ошибке, если введён день вне диапазона 1–7.</p></div>
+    </div>
+    <div class="note r" style="--d:210">Работаем в VS Code: файл <b>lesson6.py</b>.</div>
+  </div>
+</section>
+<!-- 20 -->
+<!-- 21 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Три значения: сумма покупки в рублях, день недели числом от 1 до 7 и ответ про карту — <code>да</code> или <code>нет</code>.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Две строки: сколько процентов скидки набралось и сколько рублей осталось заплатить.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">6000 · сб · карта</span><span class="ar">&#8594;</span><span class="out">Скидка: 20%, К оплате: 4800 руб.</span></div>
+          <div class="trow"><span class="in">3000 · ср · без карты</span><span class="ar">&#8594;</span><span class="out">Скидка: 5%, К оплате: 2850 руб.</span></div>
+          <div class="trow"><span class="in">800 · вс · карта</span><span class="ar">&#8594;</span><span class="out">Скидка: 5%, К оплате: 760 руб.</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Чек: сумма 6000 рублей, скидка по сумме 10 процентов, за выходной 5 процентов, по карте 5 процентов, итого 20 процентов, к оплате 4800 рублей">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Чек</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">6000 руб.</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="56" rx="14" fill="#E9F4FF"/>
+          <text x="72" y="150" font-size="24" fill="#38475A">сумма покупки</text>
+          <text x="628" y="150" text-anchor="end" font-size="24" font-weight="700" fill="#0B3E7A">6000 руб.</text>
+          <rect x="52" y="180" width="596" height="56" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="218" font-size="24" fill="#38475A">скидка по сумме: от 5000 руб.</text>
+          <text x="628" y="218" text-anchor="end" font-size="24" font-weight="700" fill="#1E7EE8">10%</text>
+          <rect x="52" y="248" width="596" height="56" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="286" font-size="24" fill="#38475A">за выходной день</text>
+          <text x="628" y="286" text-anchor="end" font-size="24" font-weight="700" fill="#1E7EE8">+5%</text>
+          <rect x="52" y="316" width="596" height="56" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="354" font-size="24" fill="#38475A">карта постоянного клиента</text>
+          <text x="628" y="354" text-anchor="end" font-size="24" font-weight="700" fill="#1E7EE8">+5%</text>
+          <rect x="52" y="386" width="596" height="102" rx="20" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="76" y="426" font-size="27" font-weight="700" fill="#8A4A00">Итого скидка 20%</text>
+          <text x="76" y="466" font-size="27" font-weight="700" fill="#8A4A00">К оплате 4800 руб.</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 21 -->
+<!-- 22 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Считаем данные с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">input() всегда отдаёт строку, поэтому сумму и день превращаем в числа через int(). Ответ про карту оставляем строкой — её будем сравнивать с <b>'да'</b>.</div>
+    <div class="run r" data-run="p1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6000 · сб · карта</button><button class="chip" type="button" data-val="b">3000 · ср · без карты</button><button class="chip" type="button" data-val="c">800 · вс · карта</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input('Введите сумму покупки в рублях: '))</span><span class="ln" data-no="2">day = int(input('Введите день недели (1-7): '))</span><span class="ln" data-no="3">card = input('Есть карта? (да/нет): ')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 22 -->
+<!-- 23 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
+    <h2>Скидка по сумме покупки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Подходит ровно один вариант из трёх — значит каскад if — elif — else. Условия идут <b>от большей суммы к меньшей</b>, иначе порядок сломает логику.</div>
+    <div class="run r" data-run="dsum" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="6000">Сумма 6000</button><button class="chip" type="button" data-val="3000">Сумма 3000</button><button class="chip" type="button" data-val="800">Сумма 800</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input('Введите сумму покупки в рублях: '))</span><span class="ln" data-no="2">if amount &gt;= 5000:</span><span class="ln" data-no="3">    discount = 10</span><span class="ln" data-no="4">elif amount &gt;= 1000:</span><span class="ln" data-no="5">    discount = 5</span><span class="ln" data-no="6">else:</span><span class="ln" data-no="7">    discount = 0</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 23 -->
+<!-- 24 -->
+<section class="slide" data-title="Задача 1: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 3</p>
+    <h2>День недели и карта</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Выходные ловит <b>or</b>: день равен 6 или 7. Скидка по карте работает, только если выполнены оба условия — карта есть и сумма не меньше 1000, поэтому <b>and</b>. Запись <b>discount += 5</b> увеличивает скидку на 5.</div>
+    <div class="run r" data-run="p3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6000 · сб · карта</button><button class="chip" type="button" data-val="b">3000 · ср · без карты</button><button class="chip" type="button" data-val="c">800 · вс · карта</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">if day == 6 or day == 7:</span><span class="ln" data-no="2">    discount += 5</span><span class="ln" data-no="3">if card == 'да' and amount &gt;= 1000:</span><span class="ln" data-no="4">    discount += 5</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 24 -->
+<!-- 25 -->
+<section class="slide" data-title="Задача 1: шаг 4">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 4</p>
+    <h2>Считаем цену</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Скидка — целые проценты, поэтому <b>amount * discount // 100</b> даёт целые рубли без остатка. Цену считаем от первоначальной суммы покупки.</div>
+    <div class="run r" data-run="price" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6000 · сб · карта</button><button class="chip" type="button" data-val="b">3000 · ср · без карты</button><button class="chip" type="button" data-val="c">800 · вс · карта</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">price = amount - amount * discount // 100</span><span class="ln" data-no="2">print(f'Скидка: {discount}%')</span><span class="ln" data-no="3">print(f'К оплате: {price} руб.')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 25 -->
+<!-- 26 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r sm" data-run="pfull" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6000 · сб · карта</button><button class="chip" type="button" data-val="b">3000 · ср · без карты</button><button class="chip" type="button" data-val="c">800 · вс · карта</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input('Введите сумму покупки в рублях: '))</span><span class="ln" data-no="2">day = int(input('Введите день недели (1-7): '))</span><span class="ln" data-no="3">card = input('Есть карта? (да/нет): ')</span><span class="ln" data-no="4">if amount &gt;= 5000:</span><span class="ln" data-no="5">    discount = 10</span><span class="ln" data-no="6">elif amount &gt;= 1000:</span><span class="ln" data-no="7">    discount = 5</span><span class="ln" data-no="8">else:</span><span class="ln" data-no="9">    discount = 0</span><span class="ln" data-no="10">if day == 6 or day == 7:</span><span class="ln" data-no="11">    discount += 5</span><span class="ln" data-no="12">if card == 'да' and amount &gt;= 1000:</span><span class="ln" data-no="13">    discount += 5</span><span class="ln" data-no="14">price = amount - amount * discount // 100</span><span class="ln" data-no="15">print(f'Скидка: {discount}%')</span><span class="ln" data-no="16">print(f'К оплате: {price} руб.')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 26 -->
+<!-- 27 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>День недели числом. Первое задание добавляет скидку 2% по средам, второе проверяет, что день лежит в диапазоне от 1 до 7.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Базовая скидка за день — 5% (среда и выходные), для среды она растёт ещё на 2%, а для дня вне диапазона вместо расчёта печатается предупреждение <code>Такого дня нет</code>.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">среда · 3</span><span class="ar">&#8594;</span><span class="out">скидка за день была 5%, стала 7%</span></div>
+          <div class="trow"><span class="in">суббота · 6</span><span class="ar">&#8594;</span><span class="out">скидка за день 5%: условие среды ложно</span></div>
+          <div class="trow"><span class="in">день 9</span><span class="ar">&#8594;</span><span class="out">Такого дня нет</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 460" role="img" aria-label="Дни недели числом от 1 до 7; среда выделена, день 9 — вне диапазона">
+          <text x="30" y="52" font-size="26" font-weight="700" fill="#0B3E7A">Дни недели числом</text>
+          <rect x="30" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="72" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">1</text>
+          <text x="72" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Пн</text>
+          <rect x="122" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="164" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">2</text>
+          <text x="164" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Вт</text>
+          <rect x="214" y="76" width="84" height="96" rx="16" fill="#FFF3E2" stroke="#FF8E00" stroke-width="4"/>
+          <text x="256" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#8A4A00">3</text>
+          <text x="256" y="152" text-anchor="middle" font-size="22" fill="#8A4A00">Ср</text>
+          <rect x="306" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="348" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">4</text>
+          <text x="348" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Чт</text>
+          <rect x="398" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="440" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">5</text>
+          <text x="440" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Пт</text>
+          <rect x="490" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="532" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">6</text>
+          <text x="532" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Сб</text>
+          <rect x="582" y="76" width="84" height="96" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="624" y="118" text-anchor="middle" font-size="34" font-weight="700" fill="#0B3E7A">7</text>
+          <text x="624" y="152" text-anchor="middle" font-size="22" fill="#6E7E92">Вс</text>
+          <text x="256" y="200" text-anchor="middle" font-size="22" font-weight="700" fill="#8A4A00">среда</text>
+          <rect x="30" y="238" width="640" height="80" rx="20" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="54" y="288" font-size="24" fill="#38475A">день от 1 до 7 — цепочка сравнений</text>
+          <text x="646" y="289" text-anchor="end" font-size="26" font-weight="700" fill="#0B3E7A">1 &lt;= day &lt;= 7</text>
+          <rect x="30" y="340" width="640" height="96" rx="20" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="54" y="384" font-size="24" font-weight="700" fill="#8A4A00">день 9 — такого дня нет</text>
+          <text x="54" y="418" font-size="23" fill="#95622C">not (1 &lt;= day &lt;= 7)  &#8594;  True</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 27 -->
+<!-- 28 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Доп. задание · Шаг 1</p>
+    <h2>Скидка по средам</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Условие короткое, поэтому хватает обычного if без else: если день равен 3, скидка увеличивается на 2.</div>
+    <div class="run r" data-run="dw1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="3">среда (3)</button><button class="chip" type="button" data-val="6">суббота (6)</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">if day == 3:</span><span class="ln" data-no="2">    discount += 2</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 28 -->
+<!-- 29 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Доп. задание · Шаг 2</p>
+    <h2>Проверка дня недели</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Цепочку сравнений <b>1 &lt;= day &lt;= 7</b> оборачиваем в <b>not</b>: получаем «день лежит вне диапазона» и печатаем сообщение об ошибке.</div>
+    <div class="run r" data-run="dw2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="9">день 9</button><button class="chip" type="button" data-val="3">день 3</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">if not (1 &lt;= day &lt;= 7):</span><span class="ln" data-no="2">    print('Такого дня нет')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 29 -->
+<!-- 30 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="dwfull" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="3">среда (3)</button><button class="chip" type="button" data-val="6">суббота (6)</button><button class="chip" type="button" data-val="9">день 9</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">day = int(input('Введите день недели (1-7): '))</span><span class="ln" data-no="2">if not (1 &lt;= day &lt;= 7):</span><span class="ln" data-no="3">    print('Такого дня нет')</span><span class="ln" data-no="4">else:</span><span class="ln" data-no="5">    discount = 0</span><span class="ln" data-no="6">    if day == 3 or day == 6 or day == 7:</span><span class="ln" data-no="7">        discount += 5</span><span class="ln" data-no="8">    if day == 3:</span><span class="ln" data-no="9">        discount += 2</span><span class="ln" data-no="10">    print(f'Скидка за день: {discount}%')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 30 -->
+<!-- 27 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>if-else выбирает, какие действия выполнить: блок задают двоеточие и отступ в 4 пробела.</div>
+      <div>Операторы сравнения дают True или False. Знак = присваивает, == сравнивает.</div>
+      <div>Сравнения объединяются в цепочки: 1 &lt;= x &lt;= 10.</div>
+      <div>and, or, not соединяют условия. Приоритет: not, затем and, затем or.</div>
+      <div>Вложенные условия удобны при небольшой глубине, для выбора из многих вариантов — каскад if-elif-else.</div>
+      <div>В калькуляторе скидок условия работают вместе с целочисленной арифметикой.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">30</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    'if': [
+      { val:'20', label:'Возраст 20', steps:[
+        { ln:1, out:{ t:'age = 20' } },
+        { ln:2, out:{ t:'age &gt;= 18  →  True', kind:'true' } },
+        { ln:3, out:{ t:'Доступ разрешён', kind:'p' } },
+        { ln:4, out:{ t:'Добро пожаловать!', kind:'p' } }
+      ]},
+      { val:'14', label:'Возраст 14', skip:[3,4], steps:[
+        { ln:1, out:{ t:'age = 14' } },
+        { ln:2, out:{ t:'age &gt;= 18  →  False', kind:'false' }, badge:'Блок if пропущен целиком' }
+      ]}
+    ],
+    'ifelse': [
+      { val:'20', label:'Возраст 20', skip:[4,5], steps:[
+        { ln:1, out:{ t:'age = 20' } },
+        { ln:2, out:{ t:'age &gt;= 18  →  True', kind:'true' } },
+        { ln:3, out:{ t:'Доступ разрешён', kind:'p' } }
+      ]},
+      { val:'14', label:'Возраст 14', skip:[3], steps:[
+        { ln:1, out:{ t:'age = 14' } },
+        { ln:2, out:{ t:'age &gt;= 18  →  False', kind:'false' } },
+        { ln:5, out:{ t:'Доступ запрещён', kind:'p' } }
+      ]}
+    ],
+    'chain': [
+      { val:'5', label:'Возраст 5', steps:[
+        { ln:1, out:{ t:'age = 5' } },
+        { ln:2, out:{ t:'3 &lt;= 5 &lt;= 6  →  True', kind:'true' } },
+        { ln:3, out:{ t:'Дошкольник', kind:'p' } }
+      ]},
+      { val:'9', label:'Возраст 9', skip:[3], steps:[
+        { ln:1, out:{ t:'age = 9' } },
+        { ln:2, out:{ t:'3 &lt;= 9 &lt;= 6  →  False', kind:'false' }, badge:'В диапазон не попал' }
+      ]}
+    ],
+    'nesting': [
+      { val:'p1', label:'x = 5, y = 3', skip:[6,7,8,9,10,11,12], steps:[
+        { ln:1, out:{ t:'x = 5' } },
+        { ln:2, out:{ t:'y = 3' } },
+        { ln:3, out:{ t:'x &gt; 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'y &gt; 0  →  True', kind:'true' } },
+        { ln:5, out:{ t:'Первая четверть', kind:'p' } }
+      ]},
+      { val:'p2', label:'x = −2, y = 4', skip:[4,5,6,7,11,12], steps:[
+        { ln:1, out:{ t:'x = −2' } },
+        { ln:2, out:{ t:'y = 4' } },
+        { ln:3, out:{ t:'x &gt; 0  →  False', kind:'false' } },
+        { ln:9, out:{ t:'y &gt; 0  →  True', kind:'true' } },
+        { ln:10, out:{ t:'Вторая четверть', kind:'p' } }
+      ]},
+      { val:'p3', label:'x = 1, y = −3', skip:[5,8,9,10,11,12], steps:[
+        { ln:1, out:{ t:'x = 1' } },
+        { ln:2, out:{ t:'y = −3' } },
+        { ln:3, out:{ t:'x &gt; 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'y &gt; 0  →  False', kind:'false' } },
+        { ln:7, out:{ t:'Четвёртая четверть', kind:'p' } }
+      ]}
+    ],
+    'elif': [
+      { val:'95', label:'Отметка 95', skip:[4,5,6,7,8,9,10,11], steps:[
+        { ln:1, out:{ t:'grade = 95' } },
+        { ln:2, out:{ t:'95 &gt;= 90  →  True', kind:'true' } },
+        { ln:3, out:{ t:'5', kind:'p' }, badge:'Остальная часть каскада пропущена' }
+      ]},
+      { val:'82', label:'Отметка 82', skip:[3,6,7,8,9,10,11], steps:[
+        { ln:1, out:{ t:'grade = 82' } },
+        { ln:2, out:{ t:'82 &gt;= 90  →  False', kind:'false' } },
+        { ln:4, out:{ t:'82 &gt;= 80  →  True', kind:'true' } },
+        { ln:5, out:{ t:'4', kind:'p' } }
+      ]},
+      { val:'55', label:'Отметка 55', skip:[3,5,7,9], steps:[
+        { ln:1, out:{ t:'grade = 55' } },
+        { ln:2, out:{ t:'55 &gt;= 90  →  False', kind:'false' } },
+        { ln:4, out:{ t:'55 &gt;= 80  →  False', kind:'false' } },
+        { ln:6, out:{ t:'55 &gt;= 70  →  False', kind:'false' } },
+        { ln:8, out:{ t:'55 &gt;= 60  →  False', kind:'false' } },
+        { ln:10, out:{ t:'ни одно условие не истинно  →  else', kind:'false' } },
+        { ln:11, out:{ t:'1', kind:'p' } }
+      ]}
+    ],
+    'light': [
+      { val:'красный', label:'Сигнал: красный', skip:[4,5,6,7], steps:[
+        { ln:1, out:{ t:'signal = красный' } },
+        { ln:2, out:{ t:"signal == 'красный'  →  True", kind:'true' } },
+        { ln:3, out:{ t:'Стой!', kind:'p' } }
+      ]},
+      { val:'жёлтый', label:'Сигнал: жёлтый', skip:[3,6,7], steps:[
+        { ln:1, out:{ t:'signal = жёлтый' } },
+        { ln:2, out:{ t:"signal == 'красный'  →  False", kind:'false' } },
+        { ln:4, out:{ t:"signal == 'жёлтый'  →  True", kind:'true' } },
+        { ln:5, out:{ t:'Приготовься...', kind:'p' } }
+      ]},
+      { val:'зелёный', label:'Сигнал: зелёный', skip:[3,5], steps:[
+        { ln:1, out:{ t:'signal = зелёный' } },
+        { ln:2, out:{ t:"signal == 'красный'  →  False", kind:'false' } },
+        { ln:4, out:{ t:"signal == 'жёлтый'  →  False", kind:'false' } },
+        { ln:6, out:{ t:"signal == 'зелёный'  →  True", kind:'true' } },
+        { ln:7, out:{ t:'Иди!', kind:'p' } }
+      ]}
+    ],
+    'dsum': [
+      { val:'6000', label:'Сумма 6000', skip:[4,5,6,7], steps:[
+        { ln:1, out:{ t:'amount = 6000' } },
+        { ln:2, out:{ t:'6000 &gt;= 5000  →  True', kind:'true' } },
+        { ln:3, out:{ t:'discount = 10' }, badge:'Скидка по сумме: 10%' }
+      ]},
+      { val:'3000', label:'Сумма 3000', skip:[3,6,7], steps:[
+        { ln:1, out:{ t:'amount = 3000' } },
+        { ln:2, out:{ t:'3000 &gt;= 5000  →  False', kind:'false' } },
+        { ln:4, out:{ t:'3000 &gt;= 1000  →  True', kind:'true' } },
+        { ln:5, out:{ t:'discount = 5' }, badge:'Скидка по сумме: 5%' }
+      ]},
+      { val:'800', label:'Сумма 800', skip:[3,5], steps:[
+        { ln:1, out:{ t:'amount = 800' } },
+        { ln:2, out:{ t:'800 &gt;= 5000  →  False', kind:'false' } },
+        { ln:4, out:{ t:'800 &gt;= 1000  →  False', kind:'false' } },
+        { ln:6, out:{ t:'ни одно условие не истинно  →  else' } },
+        { ln:7, out:{ t:'discount = 0' }, badge:'Скидка по сумме: 0%' }
+      ]}
+    ],
+    "eq": [
+      { val:"500", label:"price = 500", skip:[], steps:[
+        { ln:1, out:{ t:"price = 500  →  тип int" } },
+        { ln:2, out:{ t:"price == 500  →  True", kind:"true" } },
+        { ln:3, out:{ t:"Ровно 500", kind:"p" }, badge:"Условие истинно — блок выполнился" }
+      ]},
+      { val:"300", label:"price = 300", skip:[], steps:[
+        { ln:1, out:{ t:"price = 300  →  тип int" } },
+        { ln:2, out:{ t:"price == 500  →  False", kind:"false" }, badge:"Условие ложно — блок пропущен" }
+      ]}
+    ],
+    "paren": [
+      { val:"no", label:"без скобок", skip:[2], steps:[
+        { ln:1, out:{ t:"True", kind:"p" }, badge:"False and False посчиталось первым: and связывает крепче, чем or" }
+      ]},
+      { val:"yes", label:"со скобками", skip:[1], steps:[
+        { ln:2, out:{ t:"False", kind:"p" }, badge:"Скобки изменили порядок: сначала True or False, потом and False" }
+      ]}
+    ],
+    "short": [
+      { val:"and", label:"and", skip:[2], steps:[
+        { ln:1, out:{ t:"False", kind:"p" }, badge:"Первая часть ложна — вторую Python не проверял" }
+      ]},
+      { val:"or", label:"or", skip:[1], steps:[
+        { ln:2, out:{ t:"True", kind:"p" }, badge:"Первая часть истинна — вторая тоже не проверялась" }
+      ]}
+    ],
+    "nestand": [
+      { val:"nested", label:"вложенные условия", skip:[10,11,12], steps:[
+        { ln:1, out:{ t:"amount = 1200" } },
+        { ln:2, out:{ t:"card = 'да'" } },
+        { ln:3, out:{ t:"1200 &gt;= 1000  →  True", kind:"true" } },
+        { ln:4, out:{ t:"card == 'да'  →  True", kind:"true" } },
+        { ln:5, out:{ t:"Скидка 10%", kind:"p" }, badge:"Сработали оба уровня вложенности" }
+      ]},
+      { val:"and", label:"через and", skip:[3,4,5,6,7,8,9], steps:[
+        { ln:1, out:{ t:"amount = 1200" } },
+        { ln:2, out:{ t:"card = 'да'" } },
+        { ln:10 },
+        { ln:11, out:{ t:"1200 &gt;= 1000 and card == 'да'  →  True", kind:"true" } },
+        { ln:12, out:{ t:"Скидка 10%", kind:"p" }, badge:"Тот же результат без второго уровня вложенности" }
+      ]},
+      { val:"noc", label:"card = 'нет'", skip:[10,11,12], steps:[
+        { ln:1, out:{ t:"amount = 1200" } },
+        { ln:2, out:{ t:"card = 'нет'" } },
+        { ln:3, out:{ t:"1200 &gt;= 1000  →  True", kind:"true" } },
+        { ln:4, out:{ t:"card == 'да'  →  False", kind:"false" } },
+        { ln:7, out:{ t:"Скидка 5%", kind:"p" }, badge:"Внешнее условие истинно, внутреннее — нет" }
+      ]}
+    ],
+    "cascade": [
+      { val:"9", label:"9 утра", skip:[], steps:[
+        { ln:1, out:{ t:"hour = 9" } },
+        { ln:2, out:{ t:"9 &lt; 6  →  False", kind:"false" } },
+        { ln:4, out:{ t:"9 &lt; 12  →  True", kind:"true" } },
+        { ln:5, out:{ t:"Утро", kind:"p" }, badge:"Остальную часть каскада Python пропустил" }
+      ]},
+      { val:"15", label:"15 дня", skip:[], steps:[
+        { ln:1, out:{ t:"hour = 15" } },
+        { ln:2, out:{ t:"15 &lt; 6  →  False", kind:"false" } },
+        { ln:4, out:{ t:"15 &lt; 12  →  False", kind:"false" } },
+        { ln:6, out:{ t:"15 &lt; 18  →  True", kind:"true" } },
+        { ln:7, out:{ t:"День", kind:"p" }, badge:"Третья ветка оказалась истинной" }
+      ]},
+      { val:"23", label:"23 ночи", skip:[], steps:[
+        { ln:1, out:{ t:"hour = 23" } },
+        { ln:2, out:{ t:"23 &lt; 6  →  False", kind:"false" } },
+        { ln:4, out:{ t:"23 &lt; 12  →  False", kind:"false" } },
+        { ln:6, out:{ t:"23 &lt; 18  →  False", kind:"false" } },
+        { ln:8, out:{ t:"ни одно условие не истинно  →  else", kind:"false" } },
+        { ln:9, out:{ t:"Вечер", kind:"p" } }
+      ]}
+    ],
+    "p1": [
+      { val:"a", label:"6000 · сб · карта", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 6000" } },
+        { ln:2, out:{ t:"day = 6" } },
+        { ln:3, out:{ t:"card = да", kind:"p" }, badge:"Данные прочитаны с клавиатуры" }
+      ]},
+      { val:"b", label:"3000 · ср · без карты", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 3000" } },
+        { ln:2, out:{ t:"day = 3" } },
+        { ln:3, out:{ t:"card = нет", kind:"p" }, badge:"Данные прочитаны с клавиатуры" }
+      ]},
+      { val:"c", label:"800 · вс · карта", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 800" } },
+        { ln:2, out:{ t:"day = 7" } },
+        { ln:3, out:{ t:"card = да", kind:"p" }, badge:"Данные прочитаны с клавиатуры" }
+      ]}
+    ],
+    "p3": [
+      { val:"a", label:"6000 · сб · карта", skip:[], steps:[
+        { ln:1, out:{ t:"day == 6 or day == 7  →  True", kind:"true" } },
+        { ln:2, out:{ t:"discount += 5  →  15" } },
+        { ln:3, out:{ t:"card == 'да' and 6000 &gt;= 1000  →  True", kind:"true" } },
+        { ln:4, out:{ t:"discount += 5  →  20" }, badge:"Итоговая скидка: 20%" }
+      ]},
+      { val:"b", label:"3000 · ср · без карты", skip:[], steps:[
+        { ln:1, out:{ t:"day == 3, это не 6 и не 7  →  False", kind:"false" } },
+        { ln:3, out:{ t:"card == 'нет'  →  False", kind:"false" }, badge:"Итоговая скидка осталась 5%" }
+      ]},
+      { val:"c", label:"800 · вс · карта", skip:[], steps:[
+        { ln:1, out:{ t:"day == 7  →  True", kind:"true" } },
+        { ln:2, out:{ t:"discount += 5  →  5" } },
+        { ln:3, out:{ t:"card == 'да' and 800 &gt;= 1000  →  False", kind:"false" }, badge:"Скидка 5%: по карте не сработала — сумма меньше 1000" }
+      ]}
+    ],
+    "price": [
+      { val:"a", label:"6000 · сб · карта", skip:[], steps:[
+        { ln:1, out:{ t:"price = 6000 - 6000 * 20 // 100  →  4800" } },
+        { ln:2, out:{ t:"Скидка: 20%", kind:"p" } },
+        { ln:3, out:{ t:"К оплате: 4800 руб.", kind:"p" }, badge:"Тест 6000 · сб · карта пройден: вывод совпал с условием" }
+      ]},
+      { val:"b", label:"3000 · ср · без карты", skip:[], steps:[
+        { ln:1, out:{ t:"price = 3000 - 3000 * 5 // 100  →  2850" } },
+        { ln:2, out:{ t:"Скидка: 5%", kind:"p" } },
+        { ln:3, out:{ t:"К оплате: 2850 руб.", kind:"p" }, badge:"Тест 3000 · ср · без карты пройден: вывод совпал с условием" }
+      ]},
+      { val:"c", label:"800 · вс · карта", skip:[], steps:[
+        { ln:1, out:{ t:"price = 800 - 800 * 5 // 100  →  760" } },
+        { ln:2, out:{ t:"Скидка: 5%", kind:"p" } },
+        { ln:3, out:{ t:"К оплате: 760 руб.", kind:"p" }, badge:"Тест 800 · вс · карта пройден: вывод совпал с условием" }
+      ]}
+    ],
+    "pfull": [
+      { val:"a", label:"6000 · сб · карта", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 6000" } },
+        { ln:2, out:{ t:"day = 6" } },
+        { ln:3, out:{ t:"card = да" } },
+        { ln:4, out:{ t:"6000 &gt;= 5000  →  True", kind:"true" } },
+        { ln:5, out:{ t:"discount = 10" } },
+        { ln:10, out:{ t:"day == 6 or day == 7  →  True", kind:"true" } },
+        { ln:11, out:{ t:"discount += 5  →  15" } },
+        { ln:12, out:{ t:"card == 'да' and 6000 &gt;= 1000  →  True", kind:"true" } },
+        { ln:13, out:{ t:"discount += 5  →  20" } },
+        { ln:14, out:{ t:"price = 6000 - 6000 * 20 // 100  →  4800" } },
+        { ln:15, out:{ t:"Скидка: 20%", kind:"p" } },
+        { ln:16, out:{ t:"К оплате: 4800 руб.", kind:"p" }, badge:"Тест 6000 · сб · карта пройден: вывод совпал с условием" }
+      ]},
+      { val:"b", label:"3000 · ср · без карты", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 3000" } },
+        { ln:2, out:{ t:"day = 3" } },
+        { ln:3, out:{ t:"card = нет" } },
+        { ln:4, out:{ t:"3000 &gt;= 5000  →  False", kind:"false" } },
+        { ln:6, out:{ t:"3000 &gt;= 1000  →  True", kind:"true" } },
+        { ln:7, out:{ t:"discount = 5" } },
+        { ln:10, out:{ t:"day == 3, это не 6 и не 7  →  False", kind:"false" } },
+        { ln:12, out:{ t:"card == 'нет'  →  False", kind:"false" } },
+        { ln:14, out:{ t:"price = 3000 - 3000 * 5 // 100  →  2850" } },
+        { ln:15, out:{ t:"Скидка: 5%", kind:"p" } },
+        { ln:16, out:{ t:"К оплате: 2850 руб.", kind:"p" }, badge:"Тест 3000 · ср · без карты пройден: вывод совпал с условием" }
+      ]},
+      { val:"c", label:"800 · вс · карта", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 800" } },
+        { ln:2, out:{ t:"day = 7" } },
+        { ln:3, out:{ t:"card = да" } },
+        { ln:4, out:{ t:"800 &gt;= 5000  →  False", kind:"false" } },
+        { ln:6, out:{ t:"800 &gt;= 1000  →  False", kind:"false" } },
+        { ln:8, out:{ t:"ни одно условие не истинно  →  else", kind:"false" } },
+        { ln:9, out:{ t:"discount = 0" } },
+        { ln:10, out:{ t:"day == 6 or day == 7  →  True", kind:"true" } },
+        { ln:11, out:{ t:"discount += 5  →  5" } },
+        { ln:12, out:{ t:"card == 'да' and 800 &gt;= 1000  →  False", kind:"false" }, badge:"Скидка за выходной есть, а по карте — нет: сумма меньше 1000" },
+        { ln:14, out:{ t:"price = 800 - 800 * 5 // 100  →  760" } },
+        { ln:15, out:{ t:"Скидка: 5%", kind:"p" } },
+        { ln:16, out:{ t:"К оплате: 760 руб.", kind:"p" }, badge:"Тест 800 · вс · карта пройден: вывод совпал с условием" }
+      ]}
+    ],
+    "dw1": [
+      { val:"3", label:"среда (3)", skip:[], steps:[
+        { ln:1, out:{ t:"day == 3  →  True", kind:"true" } },
+        { ln:2, out:{ t:"discount += 2  →  7" }, badge:"Среда: скидка за день выросла до 7%" }
+      ]},
+      { val:"6", label:"суббота (6)", skip:[], steps:[
+        { ln:1, out:{ t:"day == 6, это не среда  →  False", kind:"false" }, badge:"Условие ложно — скидка осталась 5%" }
+      ]}
+    ],
+    "dw2": [
+      { val:"9", label:"день 9", skip:[], steps:[
+        { ln:1, out:{ t:"1 &lt;= 9 &lt;= 7  →  False", kind:"false" } },
+        { ln:2, out:{ t:"Такого дня нет", kind:"p" }, badge:"День вне диапазона: напечатали предупреждение" }
+      ]},
+      { val:"3", label:"день 3", skip:[], steps:[
+        { ln:1, out:{ t:"1 &lt;= 3 &lt;= 7  →  True", kind:"true" }, badge:"not превратил True в False — блок пропущен, программа работает дальше" }
+      ]}
+    ],
+    "dwfull": [
+      { val:"3", label:"среда (3)", skip:[], steps:[
+        { ln:1, out:{ t:"day = 3" } },
+        { ln:2, out:{ t:"1 &lt;= 3 &lt;= 7  →  True", kind:"true" } },
+        { ln:4, out:{ t:"not True  →  False  →  ветка else", kind:"false" } },
+        { ln:5, out:{ t:"discount = 0" } },
+        { ln:6, out:{ t:"day == 3 or day == 6 or day == 7  →  True", kind:"true" } },
+        { ln:7, out:{ t:"discount += 5  →  5" } },
+        { ln:8, out:{ t:"day == 3  →  True", kind:"true" } },
+        { ln:9, out:{ t:"discount += 2  →  7" } },
+        { ln:10, out:{ t:"Скидка за день: 7%", kind:"p" }, badge:"Тест «среда» пройден: 5% + 2% = 7%" }
+      ]},
+      { val:"6", label:"суббота (6)", skip:[], steps:[
+        { ln:1, out:{ t:"day = 6" } },
+        { ln:2, out:{ t:"1 &lt;= 6 &lt;= 7  →  True", kind:"true" } },
+        { ln:4, out:{ t:"not True  →  False  →  ветка else", kind:"false" } },
+        { ln:5, out:{ t:"discount = 0" } },
+        { ln:6, out:{ t:"day == 3 or day == 6 or day == 7  →  True", kind:"true" } },
+        { ln:7, out:{ t:"discount += 5  →  5" } },
+        { ln:8, out:{ t:"day == 3  →  False", kind:"false" } },
+        { ln:10, out:{ t:"Скидка за день: 5%", kind:"p" }, badge:"Тест «суббота» пройден: условие среды ложно, скидка 5%" }
+      ]},
+      { val:"9", label:"день 9", skip:[5,6,7,8,9,10], steps:[
+        { ln:1, out:{ t:"day = 9" } },
+        { ln:2, out:{ t:"1 &lt;= 9 &lt;= 7  →  False, а not (…)  →  True", kind:"false" } },
+        { ln:3, out:{ t:"Такого дня нет", kind:"p" }, badge:"День вне диапазона: вместо расчёта — предупреждение" }
+      ]}
+    ],
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+/* светофор: подсвечиваем лампу под выбранный сигнал (слайд «Светофор») */
+(function () {
+  var run = document.querySelector('.run[data-run="light"]');
+  var box = document.getElementById('traffic-light');
+  if (!run || !box) return;
+  var names = {'красный': 'red', 'жёлтый': 'yellow', 'зелёный': 'green'};
+  function paint(value) {
+    var lit = names[String(value).trim()];
+    ['red', 'yellow', 'green'].forEach(function (name) {
+      var lamp = box.querySelector('[data-lamp="' + name + '"]');
+      if (!lamp) return;
+      var on = (name === lit);
+      lamp.setAttribute('fill', on ? lamp.getAttribute('data-on') : '#FFFFFF');
+      lamp.setAttribute('stroke', on ? '#FFFFFF' : '#DEEAF7');
+    });
+  }
+  Array.prototype.forEach.call(run.querySelectorAll('.chip'), function (chip) {
+    chip.addEventListener('click', function () { paint(chip.getAttribute('data-val') || chip.textContent); });
+  });
+  var first = run.querySelector('.chip.on') || run.querySelector('.chip');
+  if (first) paint(first.getAttribute('data-val') || first.textContent);
+})();
+</script>
+</body>
+</html>

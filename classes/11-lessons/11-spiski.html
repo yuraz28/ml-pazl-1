@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 11. Списки — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 11</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Списки</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Что такое список</h3><p>Одна переменная хранит много значений. Достаём их по индексу, длина — len().</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Список можно менять</h3><p>Меняем элемент по индексу, добавляем через append() и убираем через remove().</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Сортировка</h3><p>sort() расставляет числа по порядку и меняет сам список, а не отдаёт новый.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Перебор в цикле</h3><p>for x in numbers берёт элементы по одному — с каждым можно что-то сделать.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+
+<section class="slide" data-title="Список — полка с ячейками">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Что такое список</p>
+    <h2>Список — полка с ячейками</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Список хранит несколько значений подряд. Запись — в квадратных скобках, элементы разделяют запятыми.</p>
+        <p class="note r" style="--d:140">Нумерация, как у символов строки, начинается с 0. У пяти элементов индексы 0…4.</p>
+        <p class="note r" style="--d:210">С конца берут отрицательные номера: −1 — последний элемент, −2 — предпоследний.</p>
+        <p class="note r" style="--d:280">Пустой список пишут как <b>[]</b> — с него начинают и наполняют по мере чтения чисел.</p>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 400" role="img" aria-label="Список из пяти чисел как полка с пронумерованными ячейками">
+        <text x="24" y="44" font-size="26" font-family="monospace" fill="#101A26">numbers = [2, 4, 6, 8, 10]</text>
+        <rect x="24" y="110" width="120" height="120" rx="18" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="3"/>
+        <rect x="157" y="110" width="120" height="120" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+        <rect x="290" y="110" width="120" height="120" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+        <rect x="423" y="110" width="120" height="120" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+        <rect x="556" y="110" width="120" height="120" rx="18" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="3"/>
+        <text x="84" y="182" font-size="36" font-weight="700" text-anchor="middle" fill="#0B3E7A">2</text>
+        <text x="217" y="182" font-size="36" font-weight="700" text-anchor="middle" fill="#0B3E7A">4</text>
+        <text x="350" y="182" font-size="36" font-weight="700" text-anchor="middle" fill="#0B3E7A">6</text>
+        <text x="483" y="182" font-size="36" font-weight="700" text-anchor="middle" fill="#0B3E7A">8</text>
+        <text x="616" y="182" font-size="36" font-weight="700" text-anchor="middle" fill="#0B3E7A">10</text>
+        <text x="84" y="88" font-size="24" text-anchor="middle" fill="#1E7EE8">0</text>
+        <text x="217" y="88" font-size="24" text-anchor="middle" fill="#1E7EE8">1</text>
+        <text x="350" y="88" font-size="24" text-anchor="middle" fill="#1E7EE8">2</text>
+        <text x="483" y="88" font-size="24" text-anchor="middle" fill="#1E7EE8">3</text>
+        <text x="616" y="88" font-size="24" text-anchor="middle" fill="#1E7EE8">4</text>
+        <text x="84" y="264" font-size="24" text-anchor="middle" fill="#6E7E92">−5</text>
+        <text x="217" y="264" font-size="24" text-anchor="middle" fill="#6E7E92">−4</text>
+        <text x="350" y="264" font-size="24" text-anchor="middle" fill="#6E7E92">−3</text>
+        <text x="483" y="264" font-size="24" text-anchor="middle" fill="#6E7E92">−2</text>
+        <text x="616" y="264" font-size="24" text-anchor="middle" fill="#6E7E92">−1</text>
+        <text x="24" y="316" font-size="23" fill="#6E7E92">сверху — индексы с начала, снизу — с конца</text>
+        <rect x="24" y="340" width="652" height="44" rx="16" fill="#E9F4FF"/>
+        <text x="48" y="369" font-size="23" fill="#0B3E7A">numbers[-1] — это 10, len(numbers) = 5</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+
+<section class="slide" data-title="Индекс, −1 и длина">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Что такое список</p>
+    <h2>Индекс, −1 и длина</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="index" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Смотрим элементы</button>
+          <button class="chip" type="button" data-val="b">Индекс, которого нет</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [2, 4, 6, 8, 10]</span><span class="ln" data-no="2">print(numbers[0])</span><span class="ln" data-no="3">print(numbers[2])</span><span class="ln" data-no="4">print(numbers[-1])</span><span class="ln" data-no="5">print(len(numbers))</span><span class="ln" data-no="6">print(numbers)</span><span class="ln" data-no="7">print(numbers[5])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Запись <b>numbers[i]</b> берёт один элемент. Если указать номер, которого нет, программа остановится с ошибкой <b>IndexError</b>.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+
+<section class="slide" data-title="Срезы и оператор in">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Что такое список</p>
+    <h2>Срез списка и проверка in</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Срез берёт <b>кусок списка</b>: границы пишут через двоеточие, правое число в кусок не входит. Оператор <b>in</b> отвечает на вопрос «есть ли такое значение в списке».</div>
+    <div class="run r" data-run="slices" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Срез списка</button><button class="chip" type="button" data-val="b">Проверка in</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [10, 20, 30, 40, 50]</span><span class="ln" data-no="2">print(numbers[1:4])</span><span class="ln" data-no="3">print(numbers[:3])</span><span class="ln" data-no="4">print(numbers[2:])</span><span class="ln" data-no="5">print(40 in numbers)</span><span class="ln" data-no="6">print(100 in numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+
+<section class="slide" data-title="Список можно менять">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Что такое список</p>
+    <h2>Элемент списка можно заменить</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Список — не строка: его элементы <b>можно переписать</b>. Пишем индекс в квадратных скобках и присваиваем новое значение. Индекс <b>−1</b> — это последний элемент.</div>
+    <div class="run r" data-run="mutate" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Меняем элементы</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [10, 20, 30]</span><span class="ln" data-no="2">numbers[1] = 99</span><span class="ln" data-no="3">numbers[-1] = 7</span><span class="ln" data-no="4">print(numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+
+<section class="slide" data-title="append и remove">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Добавить и удалить</p>
+    <h2>append() и remove()</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="ops" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">append: растущий список</button>
+          <button class="chip" type="button" data-val="b">remove: убираем значение</button>
+          <button class="chip" type="button" data-val="c">Обе операции подряд</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = []</span><span class="ln" data-no="2">numbers.append(5)</span><span class="ln" data-no="3">numbers.append(7)</span><span class="ln" data-no="4">print(numbers)</span><span class="ln" data-no="5">fruits = ['яблоко', 'банан', 'яблоко']</span><span class="ln" data-no="6">fruits.remove('яблоко')</span><span class="ln" data-no="7">print(fruits)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220"><b>append()</b> кладёт элемент в конец списка, <b>remove()</b> убирает первое совпадение. Если значения может не быть, сначала проверяют его через <b>in</b>.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+
+<section class="slide" data-title="Сортируем список">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сортировка</p>
+    <h2>sort(): по возрастанию и убыванию</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="sortdemo" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">По возрастанию</button>
+          <button class="chip" type="button" data-val="b">По убыванию</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">a = [5, 1, 8, 2, 4]</span><span class="ln" data-no="2">a.sort()</span><span class="ln" data-no="3">print(a)</span><span class="ln" data-no="4">a.sort(reverse=True)</span><span class="ln" data-no="5">print(a)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Метод <b>sort()</b> расставляет элементы по возрастанию. С <b>reverse=True</b> — по убыванию. Строки сортируются по алфавиту.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+
+<section class="slide" data-title="a = a.sort() — ошибка">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Сортировка</p>
+    <h2>Методы меняют список сами</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="smethod" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Просто вызываем метод</button>
+          <button class="chip" type="button" data-val="b">a = a.sort()</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">a = [5, 1, 8, 2, 4]</span><span class="ln" data-no="2">a.sort()</span><span class="ln" data-no="3">print(a)</span><span class="ln" data-no="4">a = [5, 1, 8, 2, 4]</span><span class="ln" data-no="5">a = a.sort()</span><span class="ln" data-no="6">print(a)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:220">Запись a = a.sort() теряет список: метод возвращает None. Методы списка просто вызывают — a.sort().</div>
+  </div>
+</section>
+
+<!-- 10 -->
+
+<section class="slide" data-title="Перебор списка в цикле">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Перебор</p>
+    <h2>Перебор списка в цикле</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="iter" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Каждый элемент × 10</button>
+          <button class="chip" type="button" data-val="b">Вывод в одну строку</button>
+          <button class="chip" type="button" data-val="c">Ещё и индексы</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [2, 4, 6]</span><span class="ln" data-no="2">for x in numbers:</span><span class="ln" data-no="3">    print(x * 10)</span><span class="ln" data-no="4">for x in numbers:</span><span class="ln" data-no="5">    print(x, end=' ')</span><span class="ln" data-no="6">print()</span><span class="ln" data-no="7">for i in range(len(numbers)):</span><span class="ln" data-no="8">    print(i, numbers[i])</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Переменная цикла <b>x</b> по очереди получает каждый элемент. Нужны номера — перебирают <b>range(len(numbers))</b> и берут <b>numbers[i]</b>.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+
+<section class="slide" data-title="Частые ошибки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Частые ошибки</p>
+    <h2>Частые ошибки</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">ошибка 1</div><h3>IndexError</h3><p>Обратились к numbers[len(numbers)] — такого индекса нет. Последний равен len(numbers) − 1.</p><code>numbers[len(numbers)]</code></div>
+      <div class="card r" style="--d:120"><div class="num">ошибка 2</div><h3>a = a.sort()</h3><p>Метод вернул None и затёр список. sort() просто вызывают.</p><code>a = a.sort()  →  None</code></div>
+      <div class="card r" style="--d:170"><div class="num">ошибка 3</div><h3>Максимум с нуля</h3><p>Если все числа отрицательные, ответом станет 0 — число, которого в списке нет. Начинайте с первого элемента.</p><code>maximum = numbers[0]</code></div>
+      <div class="card r" style="--d:220"><div class="num">ошибка 4</div><h3>Забыли int()</h3><p>В списке окажутся строки, и сортировка со сравнениями дадут неверный результат.</p><code>numbers.append(int(input()))</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+
+<section class="slide" data-title="Проверь себя">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Проверь себя</p>
+    <h2>Проверь себя</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r quiz" style="--d:70"><div class="num">список a</div><h3>a[1]</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">20</code></div>
+      <div class="card r quiz" style="--d:110"><div class="num">список a</div><h3>a[-1]</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">40</code></div>
+      <div class="card r quiz" style="--d:150"><div class="num">список a</div><h3>a[1:3]</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">[20, 30]</code></div>
+      <div class="card r quiz" style="--d:190"><div class="num">список a</div><h3>len(a)</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">4</code></div>
+    </div>
+    <div class="note r" style="--d:250">Список такой: <b>a = [10, 20, 30, 40]</b>. Считаем в уме, а потом нажимаем на карточку и проверяем ответ.</div>
+  </div>
+</section>
+
+<!-- 13 -->
+
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c3" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Максимум и минимум</h3><p>Читаем список чисел и находим самое большое и самое маленькое.</p></div>
+      <div class="card r" style="--d:150"><div class="num">задача 2</div><h3>Сортировка в две стороны</h3><p>Выводим те же числа по возрастанию и по убыванию.</p></div>
+      <div class="card r" style="--d:230"><div class="num">задача 3</div><h3>Только чётные</h3><p>Собираем в отдельный список числа, которые делятся на 2.</p></div>
+    </div>
+    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson11.py</b>.</div>
+  </div>
+</section>
+
+<!-- 14 -->
+
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Сначала количество чисел, потом сами числа — каждое с новой строки.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Две строки: самое большое число списка и самое маленькое.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">4 числа: 4, 9, 2, 7</span><span class="ar">&#8594;</span><span class="out">Максимум: 9, Минимум: 2</span></div>
+          <div class="trow"><span class="in">1 число: 5</span><span class="ar">&#8594;</span><span class="out">Максимум: 5, Минимум: 5</span></div>
+          <div class="trow"><span class="in">3 числа: -5, -3, -8</span><span class="ar">&#8594;</span><span class="out">Максимум: -3, Минимум: -8</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Числа 4, 9, 2, 7 лежат в списке: максимум 9 обведён, минимум 2 обведён">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Список чисел</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">4 числа</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="130" width="130" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="117" y="196" text-anchor="middle" font-size="44" font-weight="700" fill="#38475A">4</text>
+          <rect x="200" y="130" width="130" height="104" rx="18" fill="#D6E9FF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="265" y="196" text-anchor="middle" font-size="44" font-weight="700" fill="#0B3E7A">9</text>
+          <rect x="348" y="130" width="130" height="104" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="413" y="196" text-anchor="middle" font-size="44" font-weight="700" fill="#8A4A00">2</text>
+          <rect x="496" y="130" width="130" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="561" y="196" text-anchor="middle" font-size="44" font-weight="700" fill="#38475A">7</text>
+          <text x="117" y="272" text-anchor="middle" font-size="21" fill="#6E7E92">индекс 0</text>
+          <text x="265" y="272" text-anchor="middle" font-size="21" fill="#6E7E92">индекс 1</text>
+          <text x="413" y="272" text-anchor="middle" font-size="21" fill="#6E7E92">индекс 2</text>
+          <text x="561" y="272" text-anchor="middle" font-size="21" fill="#6E7E92">индекс 3</text>
+          <rect x="52" y="316" width="596" height="76" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="366" font-size="26" font-weight="700" fill="#0B3E7A">Максимум: 9</text>
+          <text x="624" y="366" text-anchor="end" font-size="23" fill="#38475A">больше всех остальных</text>
+          <rect x="52" y="406" width="596" height="76" rx="18" fill="#FFF3E2"/>
+          <text x="76" y="456" font-size="26" font-weight="700" fill="#8A4A00">Минимум: 2</text>
+          <text x="624" y="456" text-anchor="end" font-size="23" fill="#8A4A00">меньше всех остальных</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Считаем числа в список</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Сначала спрашиваем, сколько чисел, потом читаем их <b>по одному</b> и складываем в список. Каждый input() превращаем в int(): иначе в списке окажутся строки.</div>
+    <div class="run r" data-run="m1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">4 числа: 4, 9, 2, 7</button><button class="chip" type="button" data-val="b">1 число: 5</button><button class="chip" type="button" data-val="c">3 числа: -5, -3, -8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел? '))</span><span class="ln" data-no="2">numbers = []</span><span class="ln" data-no="3">for i in range(n):</span><span class="ln" data-no="4">    numbers.append(int(input('Число: ')))</span><span class="ln" data-no="5">print('Список:', numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
+    <h2>Максимум и минимум за один перебор</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">За первое число принимаем и максимум, и минимум. Дальше идём по списку: если число больше максимума — запоминаем его, если меньше минимума — тоже.</div>
+    <div class="run r" data-run="m2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">4 числа: 4, 9, 2, 7</button><button class="chip" type="button" data-val="b">1 число: 5</button><button class="chip" type="button" data-val="c">3 числа: -5, -3, -8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [4, 9, 2, 7]</span><span class="ln" data-no="2">maximum = numbers[0]</span><span class="ln" data-no="3">minimum = numbers[0]</span><span class="ln" data-no="4">for x in numbers:</span><span class="ln" data-no="5">    if x &gt; maximum:</span><span class="ln" data-no="6">        maximum = x</span><span class="ln" data-no="7">    if x &lt; minimum:</span><span class="ln" data-no="8">        minimum = x</span><span class="ln" data-no="9">print('Максимум:', maximum)</span><span class="ln" data-no="10">print('Минимум:', minimum)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="mm" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">4 числа: 4, 9, 2, 7</button><button class="chip" type="button" data-val="b">1 число: 5</button><button class="chip" type="button" data-val="c">3 числа: -5, -3, -8</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел? '))</span><span class="ln" data-no="2">numbers = []</span><span class="ln" data-no="3">for i in range(n):</span><span class="ln" data-no="4">    numbers.append(int(input('Число: ')))</span><span class="ln" data-no="5">maximum = numbers[0]</span><span class="ln" data-no="6">minimum = numbers[0]</span><span class="ln" data-no="7">for x in numbers:</span><span class="ln" data-no="8">    if x &gt; maximum:</span><span class="ln" data-no="9">        maximum = x</span><span class="ln" data-no="10">    if x &lt; minimum:</span><span class="ln" data-no="11">        minimum = x</span><span class="ln" data-no="12">print('Максимум:', maximum)</span><span class="ln" data-no="13">print('Минимум:', minimum)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Количество чисел, потом сами числа — каждое с новой строки.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Две строки: те же числа по возрастанию и по убыванию.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">5 чисел: 5, 1, 8, 2, 4</span><span class="ar">&#8594;</span><span class="out">По возрастанию: [1, 2, 4, 5, 8], По убыванию: [8, 5, 4, 2, 1]</span></div>
+          <div class="trow"><span class="in">3 числа: 3, 4, 5</span><span class="ar">&#8594;</span><span class="out">По возрастанию: [3, 4, 5], По убыванию: [5, 4, 3]</span></div>
+          <div class="trow"><span class="in">3 числа: 10, 7, 25</span><span class="ar">&#8594;</span><span class="out">По возрастанию: [7, 10, 25], По убыванию: [25, 10, 7]</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Пять чисел 5, 1, 8, 2, 4: их печатают по возрастанию 1, 2, 4, 5, 8 и по убыванию 8, 5, 4, 2, 1">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Список чисел</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">5 чисел</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="124" width="104" height="104" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="104" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#8A4A00">5</text>
+          <rect x="175" y="124" width="104" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="227" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">1</text>
+          <rect x="298" y="124" width="104" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="350" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">8</text>
+          <rect x="421" y="124" width="104" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="473" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">2</text>
+          <rect x="544" y="124" width="104" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="596" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">4</text>
+          <rect x="52" y="266" width="596" height="76" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="313" font-size="23" fill="#38475A">по возрастанию</text>
+          <rect x="290" y="278" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="319" y="318" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">1</text>
+          <rect x="356" y="278" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="385" y="318" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">2</text>
+          <rect x="422" y="278" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="451" y="318" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">4</text>
+          <rect x="488" y="278" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="517" y="318" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">5</text>
+          <rect x="554" y="278" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="583" y="318" text-anchor="middle" font-size="30" font-weight="700" fill="#0B3E7A">8</text>
+          <rect x="52" y="356" width="596" height="76" rx="18" fill="#FFF3E2"/>
+          <text x="76" y="403" font-size="23" fill="#8A4A00">по убыванию</text>
+          <rect x="290" y="368" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#FF8E00" stroke-width="3"/>
+          <text x="319" y="408" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">8</text>
+          <rect x="356" y="368" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#FF8E00" stroke-width="3"/>
+          <text x="385" y="408" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">5</text>
+          <rect x="422" y="368" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#FF8E00" stroke-width="3"/>
+          <text x="451" y="408" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">4</text>
+          <rect x="488" y="368" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#FF8E00" stroke-width="3"/>
+          <text x="517" y="408" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">2</text>
+          <rect x="554" y="368" width="58" height="52" rx="18" fill="#FFFFFF" stroke="#FF8E00" stroke-width="3"/>
+          <text x="583" y="408" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">1</text>
+          <text x="52" y="478" font-size="22" fill="#6E7E92">Те же пять чисел — два порядка печати</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Шаг 1</p>
+    <h2>Считаем числа в список</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Шаг тот же, что в задаче 1: спрашиваем количество, читаем числа по одному и складываем в список. Дальше останется только отсортировать его.</div>
+    <div class="run r" data-run="s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">5 чисел: 5, 1, 8, 2, 4</button><button class="chip" type="button" data-val="b">3 числа: 3, 4, 5</button><button class="chip" type="button" data-val="c">3 числа: 10, 7, 25</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел? '))</span><span class="ln" data-no="2">numbers = []</span><span class="ln" data-no="3">for i in range(n):</span><span class="ln" data-no="4">    numbers.append(int(input('Число: ')))</span><span class="ln" data-no="5">print('Список:', numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+
+<section class="slide" data-title="Задача 2: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Шаг 2</p>
+    <h2>Сортируем в две стороны</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">sort() расставляет числа по возрастанию, а sort(reverse=True) — по убыванию. Оба раза список меняется на месте, поэтому печатаем его после каждой сортировки.</div>
+    <div class="run r" data-run="s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">5 чисел: 5, 1, 8, 2, 4</button><button class="chip" type="button" data-val="b">3 числа: 3, 4, 5</button><button class="chip" type="button" data-val="c">3 числа: 10, 7, 25</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [5, 1, 8, 2, 4]</span><span class="ln" data-no="2">numbers.sort()</span><span class="ln" data-no="3">print('По возрастанию:', numbers)</span><span class="ln" data-no="4">numbers.sort(reverse=True)</span><span class="ln" data-no="5">print('По убыванию:', numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="sortl" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">5 чисел: 5, 1, 8, 2, 4</button><button class="chip" type="button" data-val="b">3 числа: 3, 4, 5</button><button class="chip" type="button" data-val="c">3 числа: 10, 7, 25</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел? '))</span><span class="ln" data-no="2">numbers = []</span><span class="ln" data-no="3">for i in range(n):</span><span class="ln" data-no="4">    numbers.append(int(input('Число: ')))</span><span class="ln" data-no="5">numbers.sort()</span><span class="ln" data-no="6">print('По возрастанию:', numbers)</span><span class="ln" data-no="7">numbers.sort(reverse=True)</span><span class="ln" data-no="8">print('По убыванию:', numbers)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Количество чисел, потом сами числа — каждое с новой строки.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одна строка: список только чётных чисел. Если чётных нет — пустые квадратные скобки.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">6 чисел: 7, 2, 9, 4, 10, 3</span><span class="ar">&#8594;</span><span class="out">Чётные числа: [2, 4, 10]</span></div>
+          <div class="trow"><span class="in">3 числа: 3, 5, 7</span><span class="ar">&#8594;</span><span class="out">Чётные числа: []</span></div>
+          <div class="trow"><span class="in">3 числа: 6, 8, 12</span><span class="ar">&#8594;</span><span class="out">Чётные числа: [6, 8, 12]</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Из шести чисел 7, 2, 9, 4, 10, 3 в новый список попадают чётные 2, 4 и 10">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Список чисел</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">6 чисел</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="124" width="88" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="96" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">7</text>
+          <rect x="153" y="124" width="88" height="104" rx="18" fill="#D6E9FF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="197" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#0B3E7A">2</text>
+          <rect x="254" y="124" width="88" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="298" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">9</text>
+          <rect x="355" y="124" width="88" height="104" rx="18" fill="#D6E9FF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="399" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#0B3E7A">4</text>
+          <rect x="456" y="124" width="88" height="104" rx="18" fill="#D6E9FF" stroke="#1E7EE8" stroke-width="3"/>
+          <text x="500" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#0B3E7A">10</text>
+          <rect x="557" y="124" width="88" height="104" rx="18" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="601" y="190" text-anchor="middle" font-size="40" font-weight="700" fill="#38475A">3</text>
+          <line x1="52" y1="266" x2="648" y2="266" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="316" font-size="23" fill="#0B3E7A">новый список</text>
+          <rect x="230" y="284" width="88" height="64" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="274" y="330" text-anchor="middle" font-size="32" font-weight="700" fill="#8A4A00">2</text>
+          <rect x="331" y="284" width="88" height="64" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="375" y="330" text-anchor="middle" font-size="32" font-weight="700" fill="#8A4A00">4</text>
+          <rect x="432" y="284" width="88" height="64" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="476" y="330" text-anchor="middle" font-size="32" font-weight="700" fill="#8A4A00">10</text>
+          <rect x="52" y="392" width="596" height="88" rx="18" fill="#E9F4FF"/>
+          <text x="76" y="444" font-size="22" fill="#38475A">Если чётных нет — пустые скобки []</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Шаг 1</p>
+    <h2>Проверяем каждое число</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Идём по списку и проверяем остаток от деления на 2: если он равен нулю, число чётное. Чётные складываем в новый пустой список.</div>
+    <div class="run r" data-run="e1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6 чисел: 7, 2, 9, 4, 10, 3</button><button class="chip" type="button" data-val="b">3 числа: 3, 5, 7</button><button class="chip" type="button" data-val="c">3 числа: 6, 8, 12</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">numbers = [7, 2, 9, 4, 10, 3]</span><span class="ln" data-no="2">evens = []</span><span class="ln" data-no="3">for x in numbers:</span><span class="ln" data-no="4">    if x % 2 == 0:</span><span class="ln" data-no="5">        evens.append(x)</span><span class="ln" data-no="6">print('Чётные числа:', evens)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="evens" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">6 чисел: 7, 2, 9, 4, 10, 3</button><button class="chip" type="button" data-val="b">3 числа: 3, 5, 7</button><button class="chip" type="button" data-val="c">3 числа: 6, 8, 12</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел? '))</span><span class="ln" data-no="2">numbers = []</span><span class="ln" data-no="3">for i in range(n):</span><span class="ln" data-no="4">    numbers.append(int(input('Число: ')))</span><span class="ln" data-no="5">evens = []</span><span class="ln" data-no="6">for x in numbers:</span><span class="ln" data-no="7">    if x % 2 == 0:</span><span class="ln" data-no="8">        evens.append(x)</span><span class="ln" data-no="9">print('Чётные числа:', evens)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+
+<section class="slide" data-title="Дополнительное задание">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Дополнительное задание</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">к задаче 1</div><h3>Номер максимума</h3><p>Выведите индекс наибольшего элемента списка.</p></div>
+      <div class="card r" style="--d:130"><div class="num">к задаче 2</div><h3>Три самых больших</h3><p>Выведите три самых больших числа в порядке убывания.</p></div>
+      <div class="card r" style="--d:190"><div class="num">к задаче 3</div><h3>Больше 10 и делятся на 3</h3><p>В условии соедините две проверки через and.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Эти задания на запас: кто справился с тремя основными задачами, пробует их.</div>
+  </div>
+</section>
+
+<!-- 26 -->
+
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Список хранит несколько значений в квадратных скобках. Нумерация с 0, последний элемент — [-1], длину даёт len().</div>
+      <div>Список можно менять: numbers[i] = значение, а ещё append(), remove() и sort().</div>
+      <div>Методы меняют сам список, результат присваивать не нужно: a = a.sort() — ошибка.</div>
+      <div>Срез берёт часть списка, а оператор in проверяет, есть ли значение внутри.</div>
+      <div>Список перебирают циклом for x in numbers или for i in range(len(numbers)).</div>
+      <div>Мы решили три задачи: максимум и минимум, сортировку, отбор чётных чисел.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">26</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    'index': [
+      { val:'a', label:'Смотрим элементы списка', skip:[7], steps:[
+        { ln:1, out:{ t:'numbers = [2, 4, 6, 8, 10]' } },
+        { ln:2, out:{ t:'2', kind:'p' }, badge:'numbers[0] — первый элемент' },
+        { ln:3, out:{ t:'6', kind:'p' }, badge:'numbers[2] — третий по счёту' },
+        { ln:4, out:{ t:'10', kind:'p' }, badge:'numbers[-1] — последний элемент' },
+        { ln:5, out:{ t:'5', kind:'p' }, badge:'len(numbers) — сколько элементов' },
+        { ln:6, out:{ t:'[2, 4, 6, 8, 10]', kind:'p' }, badge:'print(numbers) печатает список целиком' }
+      ]},
+      { val:'b', label:'Индекс, которого нет', skip:[2,3,4,5,6], steps:[
+        { ln:1, out:{ t:'numbers = [2, 4, 6, 8, 10]' } },
+        { ln:7, out:{ t:'IndexError: list index out of range', kind:'false' }, badge:'Последний индекс — len(numbers) − 1 = 4' }
+      ]}
+    ],
+    'ops': [
+      { val:'a', label:'append: растущий список', skip:[5,6,7], steps:[
+        { ln:1, out:{ t:'numbers = []' } },
+        { ln:2, out:{ t:'numbers.append(5)' } },
+        { ln:3, out:{ t:'numbers.append(7)' } },
+        { ln:4, out:{ t:'[5, 7]', kind:'p' }, badge:'append() кладёт элемент в конец списка' }
+      ]},
+      { val:'b', label:'remove: убираем значение', skip:[1,2,3,4], steps:[
+        { ln:5, out:{ t:"fruits = ['яблоко', 'банан', 'яблоко']" } },
+        { ln:6, out:{ t:"fruits.remove('яблоко')" } },
+        { ln:7, out:{ t:"['банан', 'яблоко']", kind:'p' }, badge:'remove() убрал только первое «яблоко»' }
+      ]},
+      { val:'c', label:'Обе операции подряд', skip:[], steps:[
+        { ln:1, out:{ t:'numbers = []' } },
+        { ln:2, out:{ t:'numbers.append(5)' } },
+        { ln:3, out:{ t:'numbers.append(7)' } },
+        { ln:4, out:{ t:'[5, 7]', kind:'p' } },
+        { ln:5, out:{ t:"fruits = ['яблоко', 'банан', 'яблоко']" } },
+        { ln:6, out:{ t:"fruits.remove('яблоко')" } },
+        { ln:7, out:{ t:"['банан', 'яблоко']", kind:'p' }, badge:'Оба метода изменили список на месте' }
+      ]}
+    ],
+    'sortdemo': [
+      { val:'a', label:'По возрастанию', skip:[4,5], steps:[
+        { ln:1, out:{ t:'a = [5, 1, 8, 2, 4]' } },
+        { ln:2, out:{ t:'a.sort()' } },
+        { ln:3, out:{ t:'[1, 2, 4, 5, 8]', kind:'p' }, badge:'sort() — по возрастанию' }
+      ]},
+      { val:'b', label:'По убыванию', skip:[2,3], steps:[
+        { ln:1, out:{ t:'a = [5, 1, 8, 2, 4]' } },
+        { ln:4, out:{ t:'a.sort(reverse=True)' } },
+        { ln:5, out:{ t:'[8, 5, 4, 2, 1]', kind:'p' }, badge:'reverse=True — по убыванию' }
+      ]}
+    ],
+    'smethod': [
+      { val:'a', label:'Просто вызываем метод', skip:[4,5,6], steps:[
+        { ln:1, out:{ t:'a = [5, 1, 8, 2, 4]' } },
+        { ln:2, out:{ t:'a.sort()' } },
+        { ln:3, out:{ t:'[1, 2, 4, 5, 8]', kind:'p' }, badge:'Список отсортирован, и a осталась списком' }
+      ]},
+      { val:'b', label:'a = a.sort()', skip:[1,2,3], steps:[
+        { ln:4, out:{ t:'a = [5, 1, 8, 2, 4]' } },
+        { ln:5, out:{ t:'a = a.sort()' } },
+        { ln:6, out:{ t:'None', kind:'false' }, badge:'sort() вернул None — список потерялся' }
+      ]}
+    ],
+    'iter': [
+      { val:'a', label:'Каждый элемент × 10', skip:[4,5,6,7,8], steps:[
+        { ln:1, out:{ t:'numbers = [2, 4, 6]' } },
+        { ln:2, out:{ t:'x = 2' } },
+        { ln:3, out:{ t:'20', kind:'p' } },
+        { ln:2, out:{ t:'x = 4' } },
+        { ln:3, out:{ t:'40', kind:'p' } },
+        { ln:2, out:{ t:'x = 6' } },
+        { ln:3, out:{ t:'60', kind:'p' }, badge:'Цикл прошёл список от первого элемента до последнего' }
+      ]},
+      { val:'b', label:'Вывод в одну строку', skip:[2,3,7,8], steps:[
+        { ln:1, out:{ t:'numbers = [2, 4, 6]' } },
+        { ln:4, out:{ t:'x = 2, потом 4, потом 6' } },
+        { ln:5, out:{ t:'2 4 6', kind:'p' } },
+        { ln:6, badge:'print() завершил строку: end=" " не переносит её' }
+      ]},
+      { val:'c', label:'Ещё и индексы', skip:[2,3,4,5,6], steps:[
+        { ln:1, out:{ t:'numbers = [2, 4, 6]' } },
+        { ln:7, out:{ t:'i = 0' } },
+        { ln:8, out:{ t:'0 2', kind:'p' } },
+        { ln:7, out:{ t:'i = 1' } },
+        { ln:8, out:{ t:'1 4', kind:'p' } },
+        { ln:7, out:{ t:'i = 2' } },
+        { ln:8, out:{ t:'2 6', kind:'p' }, badge:'range(len(numbers)) даёт номера 0, 1, 2' }
+      ]}
+    ],
+
+    'slices': [
+      { val:'a', label:'Срез списка', skip:[5,6], steps:[
+        { ln:1, out:{ t:'numbers = [10, 20, 30, 40, 50]' } },
+        { ln:2, out:{ t:'[20, 30, 40]', kind:'p' }, badge:'numbers[1:4] — берём с индекса 1 по индекс 3: правое число не входит' },
+        { ln:3, out:{ t:'[10, 20, 30]', kind:'p' }, badge:'numbers[:3] — начало можно не писать' },
+        { ln:4, out:{ t:'[30, 40, 50]', kind:'p' }, badge:'numbers[2:] — и конец тоже' }
+      ]},
+      { val:'b', label:'Проверка in', skip:[2,3,4], steps:[
+        { ln:1, out:{ t:'numbers = [10, 20, 30, 40, 50]' } },
+        { ln:5, out:{ t:'True', kind:'p' }, badge:'40 есть в списке' },
+        { ln:6, out:{ t:'False', kind:'p' }, badge:'100 в списке нет' }
+      ]}
+    ],
+    'mutate': [
+      { val:'a', label:'Меняем элементы', steps:[
+        { ln:1, out:{ t:'numbers = [10, 20, 30]' } },
+        { ln:2, out:{ t:'numbers = [10, 99, 30]' }, badge:'numbers[1] = 99 — переписали второй элемент' },
+        { ln:3, out:{ t:'numbers = [10, 99, 7]' }, badge:'numbers[-1] — это последний элемент списка' },
+        { ln:4, out:{ t:'[10, 99, 7]', kind:'p' }, badge:'Список изменился: старые значения заменены' }
+      ]}
+    ],
+    'm1': [
+      { val:'a', label:'4 числа: 4, 9, 2, 7', steps:[
+        { ln:1, out:{ t:'n = 4' }, badge:'Сколько чисел? 4' },
+        { ln:2, out:{ t:'numbers = []' }, badge:'Пустой список — сюда будем складывать числа' },
+        { ln:3, out:{ t:'цикл повторится 4 раза' }, badge:'range(4) — это 0, 1, 2, 3' },
+        { ln:4, out:{ t:'numbers = [4, 9, 2, 7]' }, badge:'Каждое число превращаем в int() и добавляем в конец' },
+        { ln:5, out:{ t:'Список: [4, 9, 2, 7]', kind:'p' }, badge:'Все числа в списке' }
+      ]},
+      { val:'b', label:'1 число: 5', steps:[
+        { ln:1, out:{ t:'n = 1' }, badge:'Сколько чисел? 1' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 1 раз' }, badge:'range(1) — только 0' },
+        { ln:4, out:{ t:'numbers = [5]' } },
+        { ln:5, out:{ t:'Список: [5]', kind:'p' } }
+      ]},
+      { val:'c', label:'3 числа: -5, -3, -8', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' }, badge:'range(3) — 0, 1, 2' },
+        { ln:4, out:{ t:'numbers = [-5, -3, -8]' }, badge:'Отрицательные числа тоже читаются через int()' },
+        { ln:5, out:{ t:'Список: [-5, -3, -8]', kind:'p' } }
+      ]}
+    ],
+    'm2': [
+      { val:'a', label:'4 числа: 4, 9, 2, 7', steps:[
+        { ln:1, out:{ t:'numbers = [4, 9, 2, 7]' }, badge:'Числа уже в списке — из шага 1' },
+        { ln:2, out:{ t:'maximum = 4' }, badge:'Пока максимум — первое число' },
+        { ln:3, out:{ t:'minimum = 4' }, badge:'И минимум тоже' },
+        { ln:4, out:{ t:'идём по списку: 4, 9, 2, 7' }, badge:'for x in numbers' },
+        { ln:5, out:{ t:'9 &gt; 4  →  True', kind:'true' }, badge:'9 больше максимума' },
+        { ln:6, out:{ t:'maximum = 9' } },
+        { ln:7, out:{ t:'2 &lt; 4  →  True', kind:'true' }, badge:'2 меньше минимума' },
+        { ln:8, out:{ t:'minimum = 2' } },
+        { ln:9, out:{ t:'Максимум: 9', kind:'p' } },
+        { ln:10, out:{ t:'Минимум: 2', kind:'p' }, badge:'Оба числа нашли за один перебор' }
+      ]},
+      { val:'b', label:'1 число: 5', steps:[
+        { ln:1, out:{ t:'numbers = [5]' }, badge:'В списке одно число' },
+        { ln:2, out:{ t:'maximum = 5' } },
+        { ln:3, out:{ t:'minimum = 5' } },
+        { ln:4, out:{ t:'идём по списку: 5' } },
+        { ln:5, out:{ t:'5 &gt; 5  →  False', kind:'false' }, badge:'Число не больше самого себя' },
+        { ln:7, out:{ t:'5 &lt; 5  →  False', kind:'false' } },
+        { ln:9, out:{ t:'Максимум: 5', kind:'p' } },
+        { ln:10, out:{ t:'Минимум: 5', kind:'p' }, badge:'Единственное число — и максимум, и минимум' }
+      ]},
+      { val:'c', label:'3 числа: -5, -3, -8', steps:[
+        { ln:1, out:{ t:'numbers = [-5, -3, -8]' }, badge:'Все числа отрицательные' },
+        { ln:2, out:{ t:'maximum = -5' } },
+        { ln:3, out:{ t:'minimum = -5' } },
+        { ln:4, out:{ t:'идём по списку: -5, -3, -8' } },
+        { ln:5, out:{ t:'-3 &gt; -5  →  True', kind:'true' }, badge:'-3 больше -5' },
+        { ln:6, out:{ t:'maximum = -3' } },
+        { ln:7, out:{ t:'-8 &lt; -5  →  True', kind:'true' }, badge:'-8 меньше -5' },
+        { ln:8, out:{ t:'minimum = -8' } },
+        { ln:9, out:{ t:'Максимум: -3', kind:'p' } },
+        { ln:10, out:{ t:'Минимум: -8', kind:'p' }, badge:'Даже с минусами сравнение работает' }
+      ]}
+    ],
+    'mm': [
+      { val:'a', label:'4 числа: 4, 9, 2, 7', steps:[
+        { ln:1, out:{ t:'n = 4' }, badge:'Сколько чисел? 4' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 4 раза' }, badge:'range(4)' },
+        { ln:4, out:{ t:'numbers = [4, 9, 2, 7]' } },
+        { ln:5, out:{ t:'maximum = 4' } },
+        { ln:6, out:{ t:'minimum = 4' } },
+        { ln:7, out:{ t:'идём по списку: 4, 9, 2, 7' }, badge:'for x in numbers' },
+        { ln:8, out:{ t:'9 &gt; 4  →  True', kind:'true' } },
+        { ln:9, out:{ t:'maximum = 9' } },
+        { ln:10, out:{ t:'2 &lt; 4  →  True', kind:'true' } },
+        { ln:11, out:{ t:'minimum = 2' } },
+        { ln:12, out:{ t:'Максимум: 9', kind:'p' } },
+        { ln:13, out:{ t:'Минимум: 2', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]},
+      { val:'b', label:'1 число: 5', steps:[
+        { ln:1, out:{ t:'n = 1' }, badge:'Сколько чисел? 1' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 1 раз' } },
+        { ln:4, out:{ t:'numbers = [5]' } },
+        { ln:5, out:{ t:'maximum = 5' } },
+        { ln:6, out:{ t:'minimum = 5' } },
+        { ln:7, out:{ t:'идём по списку: 5' } },
+        { ln:8, out:{ t:'5 &gt; 5  →  False', kind:'false' } },
+        { ln:10, out:{ t:'5 &lt; 5  →  False', kind:'false' } },
+        { ln:12, out:{ t:'Максимум: 5', kind:'p' } },
+        { ln:13, out:{ t:'Минимум: 5', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]},
+      { val:'c', label:'3 числа: -5, -3, -8', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [-5, -3, -8]' } },
+        { ln:5, out:{ t:'maximum = -5' } },
+        { ln:6, out:{ t:'minimum = -5' } },
+        { ln:7, out:{ t:'идём по списку: -5, -3, -8' } },
+        { ln:8, out:{ t:'-3 &gt; -5  →  True', kind:'true' } },
+        { ln:9, out:{ t:'maximum = -3' } },
+        { ln:10, out:{ t:'-8 &lt; -5  →  True', kind:'true' } },
+        { ln:11, out:{ t:'minimum = -8' } },
+        { ln:12, out:{ t:'Максимум: -3', kind:'p' } },
+        { ln:13, out:{ t:'Минимум: -8', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]}
+    ],
+    's1': [
+      { val:'a', label:'5 чисел: 5, 1, 8, 2, 4', steps:[
+        { ln:1, out:{ t:'n = 5' }, badge:'Сколько чисел? 5' },
+        { ln:2, out:{ t:'numbers = []' }, badge:'Пустой список — сюда будем складывать числа' },
+        { ln:3, out:{ t:'цикл повторится 5 раз' }, badge:'range(5) — это 0, 1, 2, 3, 4' },
+        { ln:4, out:{ t:'numbers = [5, 1, 8, 2, 4]' }, badge:'Каждое число превращаем в int() и добавляем в конец' },
+        { ln:5, out:{ t:'Список: [5, 1, 8, 2, 4]', kind:'p' } }
+      ]},
+      { val:'b', label:'3 числа: 3, 4, 5', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [3, 4, 5]' }, badge:'Список уже по порядку — но это случайность' },
+        { ln:5, out:{ t:'Список: [3, 4, 5]', kind:'p' } }
+      ]},
+      { val:'c', label:'3 числа: 10, 7, 25', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [10, 7, 25]' }, badge:'Двузначные числа читаем целиком' },
+        { ln:5, out:{ t:'Список: [10, 7, 25]', kind:'p' } }
+      ]}
+    ],
+    's2': [
+      { val:'a', label:'5 чисел: 5, 1, 8, 2, 4', steps:[
+        { ln:1, out:{ t:'numbers = [5, 1, 8, 2, 4]' }, badge:'Числа в том порядке, как их ввели' },
+        { ln:2, out:{ t:'numbers = [1, 2, 4, 5, 8]' }, badge:'sort() расставил числа по возрастанию' },
+        { ln:3, out:{ t:'По возрастанию: [1, 2, 4, 5, 8]', kind:'p' } },
+        { ln:4, out:{ t:'numbers = [8, 5, 4, 2, 1]' }, badge:'reverse=True — теперь по убыванию' },
+        { ln:5, out:{ t:'По убыванию: [8, 5, 4, 2, 1]', kind:'p' }, badge:'Обе сортировки получились из одного списка' }
+      ]},
+      { val:'b', label:'3 числа: 3, 4, 5', steps:[
+        { ln:1, out:{ t:'numbers = [3, 4, 5]' }, badge:'Числа уже по порядку' },
+        { ln:2, out:{ t:'numbers = [3, 4, 5]' }, badge:'sort() ничего не меняет — но проверяет порядок' },
+        { ln:3, out:{ t:'По возрастанию: [3, 4, 5]', kind:'p' } },
+        { ln:4, out:{ t:'numbers = [5, 4, 3]' } },
+        { ln:5, out:{ t:'По убыванию: [5, 4, 3]', kind:'p' } }
+      ]},
+      { val:'c', label:'3 числа: 10, 7, 25', steps:[
+        { ln:1, out:{ t:'numbers = [10, 7, 25]' }, badge:'Двузначные числа сравниваются как числа' },
+        { ln:2, out:{ t:'numbers = [7, 10, 25]' }, badge:'Если забыть int(), порядок был бы другим' },
+        { ln:3, out:{ t:'По возрастанию: [7, 10, 25]', kind:'p' } },
+        { ln:4, out:{ t:'numbers = [25, 10, 7]' } },
+        { ln:5, out:{ t:'По убыванию: [25, 10, 7]', kind:'p' } }
+      ]}
+    ],
+    'sortl': [
+      { val:'a', label:'5 чисел: 5, 1, 8, 2, 4', steps:[
+        { ln:1, out:{ t:'n = 5' }, badge:'Сколько чисел? 5' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 5 раз' } },
+        { ln:4, out:{ t:'numbers = [5, 1, 8, 2, 4]' } },
+        { ln:5, out:{ t:'numbers = [1, 2, 4, 5, 8]' }, badge:'sort() расставил числа по возрастанию' },
+        { ln:6, out:{ t:'По возрастанию: [1, 2, 4, 5, 8]', kind:'p' } },
+        { ln:7, out:{ t:'numbers = [8, 5, 4, 2, 1]' }, badge:'reverse=True — теперь по убыванию' },
+        { ln:8, out:{ t:'По убыванию: [8, 5, 4, 2, 1]', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]},
+      { val:'b', label:'3 числа: 3, 4, 5', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [3, 4, 5]' } },
+        { ln:5, out:{ t:'numbers = [3, 4, 5]' }, badge:'sort() ничего не меняет: числа уже по порядку' },
+        { ln:6, out:{ t:'По возрастанию: [3, 4, 5]', kind:'p' } },
+        { ln:7, out:{ t:'numbers = [5, 4, 3]' } },
+        { ln:8, out:{ t:'По убыванию: [5, 4, 3]', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]},
+      { val:'c', label:'3 числа: 10, 7, 25', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [10, 7, 25]' }, badge:'Двузначные числа сравниваются как числа' },
+        { ln:5, out:{ t:'numbers = [7, 10, 25]' }, badge:'Если забыть int(), порядок был бы другим' },
+        { ln:6, out:{ t:'По возрастанию: [7, 10, 25]', kind:'p' } },
+        { ln:7, out:{ t:'numbers = [25, 10, 7]' } },
+        { ln:8, out:{ t:'По убыванию: [25, 10, 7]', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]}
+    ],
+    'e1': [
+      { val:'a', label:'6 чисел: 7, 2, 9, 4, 10, 3', steps:[
+        { ln:1, out:{ t:'numbers = [7, 2, 9, 4, 10, 3]' }, badge:'Числа уже в списке — из шага 1' },
+        { ln:2, out:{ t:'evens = []' }, badge:'Пустой список для чётных чисел' },
+        { ln:3, out:{ t:'проверяем каждое число: 7, 2, 9, 4, 10, 3' }, badge:'for x in numbers' },
+        { ln:4, out:{ t:'2 % 2 == 0  →  True', kind:'true' }, badge:'Остаток от деления на 2 равен нулю' },
+        { ln:5, out:{ t:'evens = [2, 4, 10]' }, badge:'Чётные числа собрались по одному' },
+        { ln:6, out:{ t:'Чётные числа: [2, 4, 10]', kind:'p' } }
+      ]},
+      { val:'b', label:'3 числа: 3, 5, 7', steps:[
+        { ln:1, out:{ t:'numbers = [3, 5, 7]' }, badge:'Все числа нечётные' },
+        { ln:2, out:{ t:'evens = []' } },
+        { ln:3, out:{ t:'проверяем каждое число: 3, 5, 7' } },
+        { ln:4, out:{ t:'3 % 2 == 0  →  False', kind:'false' }, badge:'Остаток равен 1 — число нечётное' },
+        { ln:5, out:{ t:'evens = []' }, badge:'Ни одно число не подошло' },
+        { ln:6, out:{ t:'Чётные числа: []', kind:'p' }, badge:'Пустой список печатается как []' }
+      ]},
+      { val:'c', label:'3 числа: 6, 8, 12', steps:[
+        { ln:1, out:{ t:'numbers = [6, 8, 12]' }, badge:'Все числа чётные' },
+        { ln:2, out:{ t:'evens = []' } },
+        { ln:3, out:{ t:'проверяем каждое число: 6, 8, 12' } },
+        { ln:4, out:{ t:'6 % 2 == 0  →  True', kind:'true' } },
+        { ln:5, out:{ t:'evens = [6, 8, 12]' }, badge:'В новый список попадут все числа' },
+        { ln:6, out:{ t:'Чётные числа: [6, 8, 12]', kind:'p' } }
+      ]}
+    ],
+    'evens': [
+      { val:'a', label:'6 чисел: 7, 2, 9, 4, 10, 3', steps:[
+        { ln:1, out:{ t:'n = 6' }, badge:'Сколько чисел? 6' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 6 раз' } },
+        { ln:4, out:{ t:'numbers = [7, 2, 9, 4, 10, 3]' } },
+        { ln:5, out:{ t:'evens = []' }, badge:'Пустой список для чётных чисел' },
+        { ln:6, out:{ t:'проверяем каждое число: 7, 2, 9, 4, 10, 3' }, badge:'for x in numbers' },
+        { ln:7, out:{ t:'2 % 2 == 0  →  True', kind:'true' }, badge:'Остаток от деления на 2 равен нулю' },
+        { ln:8, out:{ t:'evens = [2, 4, 10]' }, badge:'Чётные числа собрались по одному' },
+        { ln:9, out:{ t:'Чётные числа: [2, 4, 10]', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]},
+      { val:'b', label:'3 числа: 3, 5, 7', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [3, 5, 7]' }, badge:'Все числа нечётные' },
+        { ln:5, out:{ t:'evens = []' } },
+        { ln:6, out:{ t:'проверяем каждое число: 3, 5, 7' } },
+        { ln:7, out:{ t:'3 % 2 == 0  →  False', kind:'false' }, badge:'Остаток равен 1 — число нечётное' },
+        { ln:8, out:{ t:'evens = []' }, badge:'Ни одно число не подошло' },
+        { ln:9, out:{ t:'Чётные числа: []', kind:'p' }, badge:'Тест пройден: пустой список печатается как []' }
+      ]},
+      { val:'c', label:'3 числа: 6, 8, 12', steps:[
+        { ln:1, out:{ t:'n = 3' }, badge:'Сколько чисел? 3' },
+        { ln:2, out:{ t:'numbers = []' } },
+        { ln:3, out:{ t:'цикл повторится 3 раза' } },
+        { ln:4, out:{ t:'numbers = [6, 8, 12]' } },
+        { ln:5, out:{ t:'evens = []' } },
+        { ln:6, out:{ t:'проверяем каждое число: 6, 8, 12' } },
+        { ln:7, out:{ t:'6 % 2 == 0  →  True', kind:'true' } },
+        { ln:8, out:{ t:'evens = [6, 8, 12]' }, badge:'В новый список попадут все числа' },
+        { ln:9, out:{ t:'Чётные числа: [6, 8, 12]', kind:'p' }, badge:'Тест пройден: вывод совпал с условием' }
+      ]}
+    ],
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+</body>
+</html>

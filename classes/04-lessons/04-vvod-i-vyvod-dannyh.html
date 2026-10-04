@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 4. Ввод и вывод данных — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+</style>
+<style>
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+
+<!-- 1 -->
+
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 4</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Ввод и вывод данных</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Печатаем текст</h3><p>print() выводит значения на экран: несколько аргументов, кавычки, апострофы внутри текста.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Настройки print()</h3><p>sep ставит разделитель между значениями, end — чем закончить строку.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Ввод</h3><p>input() задаёт вопрос и ждёт ответа с клавиатуры. Ответ всегда приходит строкой.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Число из строки</h3><p>int() превращает строку в целое число — только тогда с ней можно считать.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>f-строки</h3><p>f-строка подставляет значения прямо в текст и форматирует числа.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="print() печатает на экран">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вывод</p>
+    <h2>print() печатает текст</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="quotes" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="both">Обе строки</button>
+          <button class="chip" type="button" data-val="single">Только одинарные</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('Мы изучаем Python')</span><span class="ln" data-no="2">print("Мы изучаем Python")</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Текст берём в кавычки — одинарные или двойные, Python их не различает. Главное: кавычки в начале и в конце одинаковые. Результат в VS Code видно в окне <b>TERMINAL</b>.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Аргументы print()">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вывод</p>
+    <h2>Аргументы разделяют запятыми</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="args" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="4">Четыре аргумента</button>
+          <button class="chip" type="button" data-val="3">Три аргумента</button>
+          <button class="chip" type="button" data-val="1">Один текст</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('Я', 'учусь', 'писать', 'код')</span><span class="ln" data-no="2">print('Я', 'учусь', 'код')</span><span class="ln" data-no="3">print('Я учусь писать код')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">То, что стоит в скобках у print(), называется <b>аргументами</b>. Если аргументов несколько, при выводе между ними автоматически появляется пробел.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Особенности print()">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вывод</p>
+    <h2>Пять мелочей про print()</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">регистр</div><h3>Только строчными</h3><p>Пишем print с маленькой буквы: Print и PRINT Python не поймёт.</p></div>
+      <div class="card r" style="--d:120"><div class="num">новая строка</div><h3>Каждый print — с новой строки</h3><p>Следующий вывод начинается ниже, а не рядом.</p></div>
+      <div class="card r" style="--d:170"><div class="num">пустые скобки</div><h3>print() без аргументов</h3><p>Печатает пустую строку — так делают отступ в выводе.</p></div>
+    </div>
+    <div class="cards c2">
+      <div class="card r" style="--d:230"><div class="num">кавычки внутри</div><h3>Нужны двойные внутри —</h3><p>весь текст берут в одинарные. И наоборот. В одном print() можно совмещать оба вида кавычек.</p></div>
+      <div class="card r" style="--d:280"><div class="num">ошибка</div><h3>Одинарная внутри одинарных</h3><p>Python решит, что текст закончился, и выдаст <b>SyntaxError</b>.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Кавычки внутри текста">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вывод</p>
+    <h2>Кавычки внутри текста</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="q2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="ok">Двойные внутри одинарных</button>
+          <button class="chip" type="button" data-val="err">Одинарная внутри одинарных</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('Он сказал: "Привет!"')</span><span class="ln" data-no="2">print("Это 'одинарные' кавычки")</span><span class="ln" data-no="3">print('Он сказал: 'Привет!'')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="У print() есть sep и end">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Вывод</p>
+    <h2>Два параметра: sep и end</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="sep" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="sep">sep='.'</button>
+          <button class="chip" type="button" data-val="def">Без sep</button>
+          <button class="chip" type="button" data-val="end">end=' '</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('15', '03', '2026')</span><span class="ln" data-no="2">print('15', '03', '2026', sep='.')</span><span class="ln" data-no="3">print('Привет,', end=' ')</span><span class="ln" data-no="4">print('мир!')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220"><b>sep</b> задаёт разделитель между аргументами, <b>end</b> — чем заканчивается вывод. По умолчанию это пробел и переход на новую строку.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="input() спрашивает и ждёт">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ввод</p>
+    <h2>input() спрашивает и ждёт</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="input" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="Даша">Имя: Даша</button>
+          <button class="chip" type="button" data-val="Тимур">Имя: Тимур</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как вас зовут? ')</span><span class="ln" data-no="2">print('Привет,', name)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Дойдя до input(), программа останавливается и ждёт: вводим текст, жмём Enter. Подсказка в скобках появляется перед местом ввода. Введённое сразу кладём в переменную, иначе оно потеряется.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="input() всегда возвращает строку">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ввод</p>
+    <h2>input() отдаёт строку, а не число</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="types" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="str">Без int()</button>
+          <button class="chip" type="button" data-val="int">С int()</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = input('Сколько вам лет? ')</span><span class="ln" data-no="2">print(type(age))</span><span class="ln" data-no="3">age = int(input('Сколько вам лет? '))</span><span class="ln" data-no="4">print(type(age))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Даже если ввели число, внутри это по-прежнему строка. Со строкой нельзя считать, поэтому её преобразуют.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Число из строки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ввод</p>
+    <h2>Число из строки</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">целое</div><h3>int()</h3><p>Превращает строку в целое число: 14, 2026, 7.</p><code>age = int(input())</code></div>
+      <div class="card r" style="--d:120"><div class="num">дробное</div><h3>float()</h3><p>Для чисел с точкой: рост 1.7, вес 0.5.</p><code>height = float(input())</code></div>
+      <div class="card r" style="--d:170"><div class="num">не число</div><h3>ValueError</h3><p>Ввели слово — int() не сможет его превратить и остановит программу.</p></div>
+    </div>
+    <div class="note r" style="--d:230">Как обрабатывать такие ситуации, узнаем позже. Пока просто вводим числа там, где программа их ждёт.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="f-строка: значения в тексте">
+  <header class="sh r">
+    <p class="eyebrow">Теория · f-строки</p>
+    <h2>f-строка: значения в тексте</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="fstr" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="f">С буквой f</button>
+          <button class="chip" type="button" data-val="nof">Забыли букву f</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = 'Даша'</span><span class="ln" data-no="2">age = 25</span><span class="ln" data-no="3">print(f'Меня зовут {name}, мне {age} лет.')</span><span class="ln" data-no="4">print('Меня зовут {name}, мне {age} лет.')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Перед кавычкой — буква <b>f</b>, имена переменных — в фигурных скобках. Раньше выводили через запятую, и пробелы ставил Python сам.</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Выражения и формат числа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · f-строки</p>
+    <h2>В скобках — выражения и формат</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="fexpr" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="f2">С форматом .2f</button>
+          <button class="chip" type="button" data-val="plain">Без формата</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">age = 25</span><span class="ln" data-no="2">height = 1.7</span><span class="ln" data-no="3">print(f'Через 5 лет мне будет {age + 5}.')</span><span class="ln" data-no="4">print(f'Рост: {height} м')</span><span class="ln" data-no="5">print(f'Рост: {height:.2f} м')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">В фигурных скобках можно писать выражения. А после двоеточия указывают формат: <b>.2f</b> — два знака после запятой.</div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Строка умножается на число">
+  <header class="sh r">
+    <p class="eyebrow">Теория · f-строки</p>
+    <h2>Строка умножается на число</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="star" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="20">20 символов</button>
+          <button class="chip" type="button" data-val="30">30 символов</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print('=' * 20)</span><span class="ln" data-no="2">print('=' * 30)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Умножение строки на число повторяет её нужное количество раз. Так рисуют рамки и разделители.</div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Частые ошибки">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Частые ошибки</p>
+    <h2>Частые ошибки</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">TypeError</div><h3>Забыли int()</h3><p>Год рождения остался строкой — и вычитание не работает.</p></div>
+      <div class="card r" style="--d:120"><div class="num">нет буквы f</div><h3>Потеряли букву f</h3><p>На экране появятся имена переменных в фигурных скобках вместо значений.</p></div>
+      <div class="card r" style="--d:170"><div class="num">кавычки</div><h3>Кавычки как снаружи</h3><p>Внутри f-строки нужны другие кавычки, иначе программа выдаст ошибку.</p></div>
+      <div class="card r" style="--d:220"><div class="num">ValueError</div><h3>Ввели слово</h3><p>int() не смог превратить слово в число и остановил программу.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Паспорт пользователя</h3><p>Спрашиваем четыре значения и печатаем карточку-паспорт с возрастом.</p></div>
+      <div class="card r" style="--d:130"><div class="num">доп. задание</div><h3>Хобби и 30 лет</h3><p>Добавляем вопрос про хобби и считаем год, когда пользователю будет 30.</p></div>
+    </div>
+    <div class="note r" style="--d:190">Работаем в VS Code: файл <b>lesson4.py</b>.</div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Четыре вопроса, на которые отвечает пользователь: имя, год рождения, любимое число и город. <code>input()</code> отдаёт строки, поэтому год и число берём в <code>int()</code>.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Карточка-паспорт: заголовок, линия-разделитель и четыре поля — имя, возраст, любимое число, город.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Даша · 2012 · 7 · Казань</span><span class="ar">&#8594;</span><span class="out">Паспорт пользователя, Имя: Даша, Возраст: 14, Любимое число: 7, Город: Казань</span></div>
+          <div class="trow"><span class="in">Тимур · 2008 · 42 · Пермь</span><span class="ar">&#8594;</span><span class="out">Паспорт пользователя, Имя: Тимур, Возраст: 18, Любимое число: 42, Город: Пермь</span></div>
+          <div class="trow"><span class="in">Марк · 2026 · 0 · Сочи</span><span class="ar">&#8594;</span><span class="out">Паспорт пользователя, Имя: Марк, Возраст: 0, Любимое число: 0, Город: Сочи</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 560" role="img" aria-label="Игрушечный паспорт: имя Даша, возраст 14, любимое число 7, город Казань">
+          <rect x="40" y="30" width="620" height="500" rx="26" fill="#1E7EE8"/>
+          <rect x="64" y="54" width="572" height="452" rx="18" fill="#FFFFFF"/>
+          <text x="104" y="112" font-size="30" font-weight="700" fill="#0B3E7A" letter-spacing="2">ПАСПОРТ</text>
+          <text x="104" y="144" font-size="24" fill="#6E7E92">пользователя</text>
+          <line x1="104" y1="166" x2="596" y2="166" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="104" y="196" width="150" height="190" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <circle cx="179" cy="258" r="38" fill="#A8D3FF"/>
+          <path d="M 129 366 a 50 50 0 0 1 100 0 z" fill="#A8D3FF"/>
+          <text x="300" y="206" font-size="22" fill="#6E7E92">Имя</text>
+          <text x="300" y="238" font-size="30" font-weight="700" fill="#101A26">Даша</text>
+          <line x1="300" y1="252" x2="596" y2="252" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="300" y="282" font-size="22" fill="#6E7E92">Возраст</text>
+          <text x="300" y="314" font-size="30" font-weight="700" fill="#101A26">14</text>
+          <line x1="300" y1="328" x2="596" y2="328" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="300" y="358" font-size="22" fill="#6E7E92">Любимое число</text>
+          <text x="300" y="390" font-size="30" font-weight="700" fill="#101A26">7</text>
+          <line x1="300" y1="404" x2="596" y2="404" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="300" y="434" font-size="22" fill="#6E7E92">Город</text>
+          <text x="300" y="466" font-size="30" font-weight="700" fill="#101A26">Казань</text>
+          <rect x="104" y="430" width="150" height="10" rx="5" fill="#E9F4FF"/>
+          <rect x="104" y="452" width="110" height="10" rx="5" fill="#E9F4FF"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Спрашиваем четыре значения</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">input() задаёт вопрос, ждёт ответ и кладёт его в переменную. Год рождения и число заворачиваем в <b>int()</b>.</div>
+    <div class="run r" data-run="ask" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="Даша">Даша · 2012 · 7 · Казань</button>
+          <button class="chip" type="button" data-val="Тимур">Тимур · 2008 · 42 · Пермь</button><button class="chip" type="button" data-val="Марк">Марк · 2026 · 0 · Сочи</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как вас зовут? ')</span><span class="ln" data-no="2">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="3">number = int(input('Ваше любимое число? '))</span><span class="ln" data-no="4">city = input('В каком городе вы живёте? ')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
+    <h2>Считаем возраст</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Из текущего года вычитаем год рождения. Год берём из условия: 2026.</div>
+    <div class="run r" data-run="age" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="2012">Год рождения 2012</button>
+          <button class="chip" type="button" data-val="2008">Год рождения 2008</button><button class="chip" type="button" data-val="2026">Год рождения 2026</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="2">age = 2026 - birth_year</span><span class="ln" data-no="3">print(f'Возраст: {age}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Задача 1: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 3</p>
+    <h2>Печатаем карточку</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Карточка — это пять строк печати. Возраст подставляем в f-строку, чтобы не склеивать текст и число.</div>
+    <div class="run r" data-run="pstep3" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="2012">Год рождения 2012</button><button class="chip" type="button" data-val="2008">Год рождения 2008</button><button class="chip" type="button" data-val="2026">Год рождения 2026</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="2">age = 2026 - birth_year</span><span class="ln" data-no="3">print('Паспорт пользователя')</span><span class="ln" data-no="4">print('==============================')</span><span class="ln" data-no="5">print(f'Возраст: {age}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Вся программа целиком: четыре вопроса, возраст и карточка-паспорт.</div>
+    <div class="run r sm" data-run="passport" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="Даша">Даша · 2012 · 7 · Казань</button>
+          <button class="chip" type="button" data-val="Тимур">Тимур · 2008 · 42 · Пермь</button><button class="chip" type="button" data-val="Марк">Марк · 2026 · 0 · Сочи</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как вас зовут? ')</span><span class="ln" data-no="2">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="3">number = int(input('Ваше любимое число? '))</span><span class="ln" data-no="4">city = input('В каком городе вы живёте? ')</span><span class="ln" data-no="5">age = 2026 - birth_year</span><span class="ln" data-no="6">print('Паспорт пользователя')</span><span class="ln" data-no="7">print('=' * 30)</span><span class="ln" data-no="8">print(f'Имя: {name}')</span><span class="ln" data-no="9">print(f'Возраст: {age}')</span><span class="ln" data-no="10">print(f'Любимое число: {number}')</span><span class="ln" data-no="11">print(f'Город: {city}')</span><span class="ln" data-no="12">print('=' * 30)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Те же вопросы плюс один новый: хобби пользователя. Год рождения уже спрашивали — используем его ещё раз.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Две строки: хобби и год, когда пользователю исполнится 30 лет.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Даша · 2012 · футбол</span><span class="ar">&#8594;</span><span class="out">Хобби: футбол, 30 лет будет в 2042 году</span></div>
+          <div class="trow"><span class="in">Тимур · 2008 · шахматы</span><span class="ar">&#8594;</span><span class="out">Хобби: шахматы, 30 лет будет в 2038 году</span></div>
+          <div class="trow"><span class="in">Марк · 2026 · рисование</span><span class="ar">&#8594;</span><span class="out">Хобби: рисование, 30 лет будет в 2056 году</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+<svg class="ill" viewBox="0 0 700 440" role="img" aria-label="Год рождения 2012 плюс 30 лет даёт 2042 год, хобби пользователя футбол">
+          <text x="30" y="52" font-size="26" font-weight="700" fill="#0B3E7A">Когда будет 30 лет</text>
+          <rect x="30" y="80" width="220" height="110" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="140" y="132" text-anchor="middle" font-size="40" font-weight="700" fill="#0B3E7A">2012</text>
+          <text x="140" y="168" text-anchor="middle" font-size="22" fill="#6E7E92">год рождения</text>
+          <text x="272" y="146" font-size="28" font-weight="700" fill="#1E7EE8">+ 30</text>
+          <rect x="370" y="80" width="300" height="110" rx="20" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="520" y="132" text-anchor="middle" font-size="40" font-weight="700" fill="#8A4A00">2042</text>
+          <text x="520" y="168" text-anchor="middle" font-size="22" fill="#95622C">год тридцатилетия</text>
+          <rect x="30" y="220" width="640" height="84" rx="20" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="54" y="272" font-size="25" fill="#38475A">Хобби: футбол</text>
+          <rect x="30" y="324" width="640" height="84" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="54" y="376" font-size="25" font-weight="700" fill="#0B3E7A">30 лет будет в 2042 году</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 1</p>
+    <h2>Спрашиваем про хобби</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Ещё один input() и печать ответа через f-строку.</div>
+    <div class="run r" data-run="dw1" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Хобби: футбол</button><button class="chip" type="button" data-val="b">Хобби: шахматы</button><button class="chip" type="button" data-val="c">Хобби: рисование</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">hobby = input('Ваше хобби? ')</span><span class="ln" data-no="2">print(f'Хобби: {hobby}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 2</p>
+    <h2>Считаем год тридцатилетия</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Год рождения плюс 30. Считаем в переменной, печатаем через f-строку.</div>
+    <div class="run r" data-run="dw2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Год: 2012</button><button class="chip" type="button" data-val="b">Год: 2008</button><button class="chip" type="button" data-val="c">Год: 2026</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="2">year30 = birth_year + 30</span><span class="ln" data-no="3">print(f'30 лет будет в {year30} году')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Вся программа: вопросы, счёт года и две строки печати.</div>
+    <div class="run r" data-run="dwfull" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Даша · 2012 · футбол</button><button class="chip" type="button" data-val="b">Тимур · 2008 · шахматы</button><button class="chip" type="button" data-val="c">Марк · 2026 · рисование</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">name = input('Как вас зовут? ')</span><span class="ln" data-no="2">birth_year = int(input('В каком году вы родились? '))</span><span class="ln" data-no="3">hobby = input('Ваше хобби? ')</span><span class="ln" data-no="4">year30 = birth_year + 30</span><span class="ln" data-no="5">print(f'Хобби: {hobby}')</span><span class="ln" data-no="6">print(f'30 лет будет в {year30} году')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>print() выводит данные на экран: аргументы разделяем запятыми, а sep и end управляют оформлением.</div>
+      <div>input() получает данные от пользователя и всегда возвращает строку.</div>
+      <div>Числа из input() преобразуют: int() для целых, float() для дробных.</div>
+      <div>f-строка вставляет значения переменных и выражения в текст — в фигурных скобках.</div>
+      <div>Строку можно умножить на число: '=' * 30 даёт рамку для карточки.</div>
+      <div>С print(), input() и f-строками получается простая интерактивная программа.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">25</span></div>
+</div>
+
+  <script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+    var RUNS = {
+    'quotes': [
+      { val:'both', label:'Обе строки', skip:[], steps:[
+        { ln:1, out:{ t:'Мы изучаем Python', kind:'p' } },
+        { ln:2, out:{ t:'Мы изучаем Python', kind:'p' }, badge:'Оба print() сработали одинаково' }
+      ]},
+      { val:'single', label:'Только одинарные кавычки', skip:[2], steps:[
+        { ln:1, out:{ t:'Мы изучаем Python', kind:'p' }, badge:'Двойные кавычки дали бы то же самое' }
+      ]}
+    ],
+    'args': [
+      { val:'4', label:'Четыре аргумента', skip:[2,3], steps:[
+        { ln:1, out:{ t:'Я учусь писать код', kind:'p' }, badge:'Между аргументами Python поставил пробелы' }
+      ]},
+      { val:'3', label:'Три аргумента', skip:[1,3], steps:[
+        { ln:2, out:{ t:'Я учусь код', kind:'p' } }
+      ]},
+      { val:'1', label:'Один текст в кавычках', skip:[1,2], steps:[
+        { ln:3, out:{ t:'Я учусь писать код', kind:'p' }, badge:'Одна строка в кавычках — тоже аргумент' }
+      ]}
+    ],
+    'q2': [
+      { val:'ok', label:'Двойные внутри одинарных', skip:[3], steps:[
+        { ln:1, out:{ t:'Он сказал: "Привет!"', kind:'p' } },
+        { ln:2, out:{ t:"Это 'одинарные' кавычки", kind:'p' }, badge:'Кавычки внутри текста не мешают' }
+      ]},
+      { val:'err', label:'Одинарная внутри одинарных', skip:[1,2], steps:[
+        { ln:3, out:{ t:'SyntaxError: текст закончился раньше времени', kind:'false' }, badge:'Внутри нужны другие кавычки' }
+      ]}
+    ],
+    'sep': [
+      { val:'sep', label:'sep=', skip:[1,3,4], steps:[
+        { ln:2, out:{ t:'15.03.2026', kind:'p' }, badge:'Разделитель — точка, а не пробел' }
+      ]},
+      { val:'def', label:'Без sep', skip:[2,3,4], steps:[
+        { ln:1, out:{ t:'15 03 2026', kind:'p' }, badge:'По умолчанию разделитель — пробел' }
+      ]},
+      { val:'end', label:'end=', skip:[1,2], steps:[
+        { ln:3, out:{ t:'Привет,', kind:'p' }, badge:'Строка не закончилась — ждём продолжения' },
+        { ln:4, out:{ t:'мир!', kind:'p' }, badge:'На экране: Привет, мир!' }
+      ]}
+    ],
+    'input': [
+      { val:'Даша', label:'Имя: Даша', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша', kind:'p' } },
+        { ln:2, out:{ t:'Привет, Даша', kind:'p' }, badge:'Значение из input() сохранили в переменную' }
+      ]},
+      { val:'Тимур', label:'Имя: Тимур', skip:[], steps:[
+        { ln:1, out:{ t:'name = Тимур', kind:'p' } },
+        { ln:2, out:{ t:'Привет, Тимур', kind:'p' } }
+      ]}
+    ],
+    'types': [
+      { val:'str', label:'Без int()', skip:[3,4], steps:[
+        { ln:1, out:{ t:'age = 14', kind:'p' } },
+        { ln:2, out:{ t:"&lt;class 'str'&gt;", kind:'p' }, badge:'Это строка — считать с ней нельзя' }
+      ]},
+      { val:'int', label:'С int()', skip:[1,2], steps:[
+        { ln:3, out:{ t:'age = 14', kind:'p' } },
+        { ln:4, out:{ t:"&lt;class 'int'&gt;", kind:'p' }, badge:'Теперь age — число' }
+      ]}
+    ],
+    'fstr': [
+      { val:'f', label:'С буквой f', skip:[4], steps:[
+        { ln:1, out:{ t:'name = Даша', kind:'p' } },
+        { ln:2, out:{ t:'age = 25', kind:'p' } },
+        { ln:3, out:{ t:'Меня зовут Даша, мне 25 лет.', kind:'p' }, badge:'Значения подставились в текст' }
+      ]},
+      { val:'nof', label:'Забыли букву f', skip:[3], steps:[
+        { ln:1, out:{ t:'name = Даша', kind:'p' } },
+        { ln:2, out:{ t:'age = 25', kind:'p' } },
+        { ln:4, out:{ t:'Меня зовут {name}, мне {age} лет.', kind:'p' }, badge:'На экране имена переменных, а не значения' }
+      ]}
+    ],
+    'fexpr': [
+      { val:'f2', label:'С форматом .2f', skip:[4], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:2, out:{ t:'height = 1.7', kind:'p' } },
+        { ln:3, out:{ t:'Через 5 лет мне будет 30.', kind:'p' }, badge:'В скобках можно считать: age + 5' },
+        { ln:5, out:{ t:'Рост: 1.70 м', kind:'p' }, badge:'Два знака после запятой' }
+      ]},
+      { val:'plain', label:'Без формата', skip:[5], steps:[
+        { ln:1, out:{ t:'age = 25', kind:'p' } },
+        { ln:2, out:{ t:'height = 1.7', kind:'p' } },
+        { ln:3, out:{ t:'Через 5 лет мне будет 30.', kind:'p' } },
+        { ln:4, out:{ t:'Рост: 1.7 м', kind:'p' }, badge:'Число вывелось как есть' }
+      ]}
+    ],
+    'star': [
+      { val:'20', label:'20 символов', skip:[2], steps:[
+        { ln:1, out:{ t:'====================', kind:'p' }, badge:'Символ = повторился 20 раз' }
+      ]},
+      { val:'30', label:'30 символов', skip:[1], steps:[
+        { ln:2, out:{ t:'==============================', kind:'p' }, badge:'В паспорте рамка именно такая — 30 знаков' }
+      ]}
+    ],
+    'ask': [
+      { val:'Даша', label:'Даша · 2012 · 7 · Казань', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша' } },
+        { ln:2, out:{ t:'birth_year = 2012' } },
+        { ln:3, out:{ t:'number = 7' } },
+        { ln:4, out:{ t:'city = Казань' }, badge:'Четыре значения лежат в переменных' }
+      ]},
+      { val:'Тимур', label:'Тимур · 2008 · 42 · Пермь', skip:[], steps:[
+        { ln:1, out:{ t:'name = Тимур' } },
+        { ln:2, out:{ t:'birth_year = 2008' } },
+        { ln:3, out:{ t:'number = 42' } },
+        { ln:4, out:{ t:'city = Пермь' }, badge:'Год рождения и число — уже целые' }
+      ]},
+      { val:'Марк', label:'Марк · 2026 · 0 · Сочи', skip:[], steps:[
+        { ln:1, out:{ t:'name = Марк' } },
+        { ln:2, out:{ t:'birth_year = 2026' } },
+        { ln:3, out:{ t:'number = 0' } },
+        { ln:4, out:{ t:'city = Сочи' }, badge:'Ноль — тоже целое число, int(0) не мешает' }
+      ]}
+    ],
+    'age': [
+      { val:'2012', label:'Год рождения 2012', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2012' } },
+        { ln:2, out:{ t:'2026 - 2012  →  14' } },
+        { ln:3, out:{ t:'Возраст: 14', kind:'p' }, badge:'Возраст приблизительный — по году рождения' }
+      ]},
+      { val:'2008', label:'Год рождения 2008', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2008' } },
+        { ln:2, out:{ t:'2026 - 2008  →  18' } },
+        { ln:3, out:{ t:'Возраст: 18', kind:'p' }, badge:'День рождения не спрашивали' }
+      ]},
+      { val:'2026', label:'Год рождения 2026', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2026' } },
+        { ln:2, out:{ t:'2026 - 2026  →  0' } },
+        { ln:3, out:{ t:'Возраст: 0', kind:'p' }, badge:'Год совпал с текущим — вычитание даёт ноль' }
+      ]}
+    ],
+    'pstep3': [
+      { val:'2012', label:'Год рождения 2012', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2012' } },
+        { ln:2, out:{ t:'2026 - 2012  →  14' } },
+        { ln:3, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:4, out:{ t:'==============================', kind:'p' } },
+        { ln:5, out:{ t:'Возраст: 14', kind:'p' }, badge:'Строка карточки напечатана по формату' }
+      ]},
+      { val:'2008', label:'Год рождения 2008', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2008' } },
+        { ln:2, out:{ t:'2026 - 2008  →  18' } },
+        { ln:3, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:4, out:{ t:'==============================', kind:'p' } },
+        { ln:5, out:{ t:'Возраст: 18', kind:'p' }, badge:'Меняется только подставленное значение' }
+      ]},
+      { val:'2026', label:'Год рождения 2026', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2026' } },
+        { ln:2, out:{ t:'2026 - 2026  →  0' } },
+        { ln:3, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:4, out:{ t:'==============================', kind:'p' } },
+        { ln:5, out:{ t:'Возраст: 0', kind:'p' }, badge:'Возраст 0 печатается как обычное число' }
+      ]}
+    ],
+    'passport': [
+      { val:'Даша', label:'Даша · 2012 · 7 · Казань', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша' } },
+        { ln:2, out:{ t:'birth_year = 2012' } },
+        { ln:3, out:{ t:'number = 7' } },
+        { ln:4, out:{ t:'city = Казань' } },
+        { ln:5, out:{ t:'2026 - 2012  →  14' } },
+        { ln:6, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:7, out:{ t:'==============================', kind:'p' } },
+        { ln:8, out:{ t:'Имя: Даша', kind:'p' } },
+        { ln:9, out:{ t:'Возраст: 14', kind:'p' } },
+        { ln:10, out:{ t:'Любимое число: 7', kind:'p' } },
+        { ln:11, out:{ t:'Город: Казань', kind:'p' } },
+        { ln:12, out:{ t:'==============================', kind:'p' }, badge:'Карточка готова' }
+      ]},
+      { val:'Тимур', label:'Тимур · 2008 · 42 · Пермь', skip:[], steps:[
+        { ln:1, out:{ t:'name = Тимур' } },
+        { ln:2, out:{ t:'birth_year = 2008' } },
+        { ln:3, out:{ t:'number = 42' } },
+        { ln:4, out:{ t:'city = Пермь' } },
+        { ln:5, out:{ t:'2026 - 2008  →  18' } },
+        { ln:6, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:7, out:{ t:'==============================', kind:'p' } },
+        { ln:8, out:{ t:'Имя: Тимур', kind:'p' } },
+        { ln:9, out:{ t:'Возраст: 18', kind:'p' } },
+        { ln:10, out:{ t:'Любимое число: 42', kind:'p' } },
+        { ln:11, out:{ t:'Город: Пермь', kind:'p' } },
+        { ln:12, out:{ t:'==============================', kind:'p' }, badge:'Карточка готова' }
+      ]},
+      { val:'Марк', label:'Марк · 2026 · 0 · Сочи', skip:[], steps:[
+        { ln:1, out:{ t:'name = Марк' } },
+        { ln:2, out:{ t:'birth_year = 2026' } },
+        { ln:3, out:{ t:'number = 0' } },
+        { ln:4, out:{ t:'city = Сочи' } },
+        { ln:5, out:{ t:'2026 - 2026  →  0' } },
+        { ln:6, out:{ t:'Паспорт пользователя', kind:'p' } },
+        { ln:7, out:{ t:'==============================', kind:'p' } },
+        { ln:8, out:{ t:'Имя: Марк', kind:'p' } },
+        { ln:9, out:{ t:'Возраст: 0', kind:'p' } },
+        { ln:10, out:{ t:'Любимое число: 0', kind:'p' } },
+        { ln:11, out:{ t:'Город: Сочи', kind:'p' } },
+        { ln:12, out:{ t:'==============================', kind:'p' }, badge:'Карточка готова' }
+      ]}
+    ],
+    'dw1': [
+      { val:'a', label:'Хобби: футбол', skip:[], steps:[
+        { ln:1, out:{ t:'hobby = футбол' } },
+        { ln:2, out:{ t:'Хобби: футбол', kind:'p' }, badge:'Ответ пользователя подставился в текст' }
+      ]},
+      { val:'b', label:'Хобби: шахматы', skip:[], steps:[
+        { ln:1, out:{ t:'hobby = шахматы' } },
+        { ln:2, out:{ t:'Хобби: шахматы', kind:'p' }, badge:'f-строка работает с любой строкой' }
+      ]},
+      { val:'c', label:'Хобби: рисование', skip:[], steps:[
+        { ln:1, out:{ t:'hobby = рисование' } },
+        { ln:2, out:{ t:'Хобби: рисование', kind:'p' }, badge:'Одно слово — тоже строка' }
+      ]}
+    ],
+    'dw2': [
+      { val:'a', label:'Год: 2012', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2012' } },
+        { ln:2, out:{ t:'year30 = 2042' } },
+        { ln:3, out:{ t:'30 лет будет в 2042 году', kind:'p' }, badge:'Год считается из года рождения' }
+      ]},
+      { val:'b', label:'Год: 2008', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2008' } },
+        { ln:2, out:{ t:'year30 = 2038' } },
+        { ln:3, out:{ t:'30 лет будет в 2038 году', kind:'p' }, badge:'Без int() получилась бы склейка строк' }
+      ]},
+      { val:'c', label:'Год: 2026', skip:[], steps:[
+        { ln:1, out:{ t:'birth_year = 2026' } },
+        { ln:2, out:{ t:'year30 = 2056' } },
+        { ln:3, out:{ t:'30 лет будет в 2056 году', kind:'p' }, badge:'Год рождения в будущем не мешает счёту' }
+      ]}
+    ],
+    'dwfull': [
+      { val:'a', label:'Даша · 2012 · футбол', skip:[], steps:[
+        { ln:1, out:{ t:'name = Даша' } },
+        { ln:2, out:{ t:'birth_year = 2012' } },
+        { ln:3, out:{ t:'hobby = футбол' } },
+        { ln:4, out:{ t:'year30 = 2042' } },
+        { ln:5, out:{ t:'Хобби: футбол', kind:'p' } },
+        { ln:6, out:{ t:'30 лет будет в 2042 году', kind:'p' }, badge:'Две строки собраны из четырёх переменных' }
+      ]},
+      { val:'b', label:'Тимур · 2008 · шахматы', skip:[], steps:[
+        { ln:1, out:{ t:'name = Тимур' } },
+        { ln:2, out:{ t:'birth_year = 2008' } },
+        { ln:3, out:{ t:'hobby = шахматы' } },
+        { ln:4, out:{ t:'year30 = 2038' } },
+        { ln:5, out:{ t:'Хобби: шахматы', kind:'p' } },
+        { ln:6, out:{ t:'30 лет будет в 2038 году', kind:'p' }, badge:'Порядок строк печати задаём мы' }
+      ]},
+      { val:'c', label:'Марк · 2026 · рисование', skip:[], steps:[
+        { ln:1, out:{ t:'name = Марк' } },
+        { ln:2, out:{ t:'birth_year = 2026' } },
+        { ln:3, out:{ t:'hobby = рисование' } },
+        { ln:4, out:{ t:'year30 = 2056' } },
+        { ln:5, out:{ t:'Хобби: рисование', kind:'p' } },
+        { ln:6, out:{ t:'30 лет будет в 2056 году', kind:'p' }, badge:'Год считается, а не берётся готовым' }
+      ]}
+    ]
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+</body>
+</html>

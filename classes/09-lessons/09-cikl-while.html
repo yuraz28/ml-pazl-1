@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 9. Цикл while — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 9</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Цикл while</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Цикл вместо копирования</h3><p>Повторяем действие, не выписывая одну и ту же строку пять раз.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Как устроен while</h3><p>Условие сверху, тело цикла с отступом, возврат к проверке.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Счётчик и шаг</h3><p>Переменная, которая на каждой итерации растёт или уменьшается.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Бесконечный цикл</h3><p>Если счётчик не менять, условие не станет ложным никогда.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Накопитель</h3><p>Переменная, которая собирает сумму по частям: total += i.</p></div>
+      <div class="blk r" style="--d:370"><div class="num">Блок 6</div><h3>Ввод в цикле</h3><p>Спрашиваем числа, пока не введут 0.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Цикл вместо пяти строк">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Повторение</p>
+    <h2>Цикл вместо пяти строк</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <h3>без цикла</h3>
+        <pre class="snip">print(1)
+print(2)
+print(3)
+print(4)
+print(5)</pre>
+      </div>
+      <div class="card r" style="--d:160">
+        <h3>с циклом</h3>
+        <pre class="snip">n = 1
+while n &lt;= 5:
+    print(n)
+    n += 1</pre>
+      </div>
+    </div>
+    <div class="note r" style="--d:230">Строк меньше, а чисел может быть не пять, а сто пятьдесят: меняем одно условие — меняется вся программа.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Как работает while">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Устройство</p>
+    <h2>Как работает while</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70"><b>Проверить условие</b> — строка с while и двоеточием.</p>
+        <p class="note r" style="--d:130"><b>Выполнить тело</b> — строки с отступом под while.</p>
+        <p class="note r" style="--d:190"><b>Вернуться к условию</b> — один повтор называют итерацией.</p>
+        <p class="note r" style="--d:250"><b>Выйти из цикла</b> — когда условие стало ложным.</p>
+        <p class="note r" style="--d:310">Условие проверяется перед каждым повтором: если оно ложно уже в первый раз, тело не выполнится ни разу.</p>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 500" role="img" aria-label="Схема работы while: n равен 1, условие n меньше или равно 3 истинно на трёх проверках — печатаются 1, 2, 3 и n растёт до 4; четвёртая проверка ложна, цикл заканчивается">
+        <rect x="20" y="16" width="660" height="468" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <rect x="88" y="36" width="120" height="52" rx="14" fill="#CDE5FF"/>
+        <text x="148" y="70" text-anchor="middle" font-size="24" font-weight="700" fill="#0B3E7A">n = 1</text>
+        <text x="228" y="70" font-size="26" font-weight="700" fill="#0B3E7A">while n &lt;= 3:</text>
+        <text x="648" y="70" text-anchor="end" font-size="22" fill="#6E7E92">проверка условия</text>
+        <line x1="88" y1="92" x2="648" y2="92" stroke="#DEEAF7" stroke-width="2"/>
+        <rect x="88" y="104" width="560" height="62" rx="14" fill="#E9F4FF"/>
+        <text x="108" y="142" font-size="22" fill="#38475A">n = 1 — истинно, печатаем 1, n стало 2</text>
+        <circle cx="610" cy="135" r="20" fill="#CDE5FF"/>
+        <text x="610" y="143" text-anchor="middle" font-size="22" font-weight="700" fill="#0B3E7A">1</text>
+        <rect x="88" y="178" width="560" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="108" y="216" font-size="22" fill="#38475A">n = 2 — истинно, печатаем 2, n стало 3</text>
+        <circle cx="610" cy="209" r="20" fill="#CDE5FF"/>
+        <text x="610" y="217" text-anchor="middle" font-size="22" font-weight="700" fill="#0B3E7A">2</text>
+        <rect x="88" y="252" width="560" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="108" y="290" font-size="22" fill="#38475A">n = 3 — истинно, печатаем 3, n стало 4</text>
+        <circle cx="610" cy="283" r="20" fill="#CDE5FF"/>
+        <text x="610" y="291" text-anchor="middle" font-size="22" font-weight="700" fill="#0B3E7A">3</text>
+        <rect x="88" y="326" width="560" height="62" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+        <text x="108" y="364" font-size="22" font-weight="700" fill="#8A4A00">n = 4 — ложно, выходим из цикла</text>
+        <path d="M 88 283 C 56 283 56 70 88 70" fill="none" stroke="#1E7EE8" stroke-width="2" stroke-dasharray="8 7"/>
+        <polygon points="90,70 74,62 74,78" fill="#1E7EE8"/>
+        <text x="88" y="428" font-size="22" fill="#6E7E92">Три итерации: тело цикла выполнилось три раза.</text>
+        <text x="88" y="462" font-size="22" fill="#6E7E92">Четвёртая проверка ложна — цикл закончился.</text>
+      </svg>
+    </div>
+    <div class="acc r" style="--d:380">Двоеточие и отступ работают так же, как в if: тело цикла — это строки с отступом.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Считаем итерации">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Итерации</p>
+    <h2>Обратный отсчёт: считаем итерации</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="countdown" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="3">Старт 3</button>
+          <button class="chip" type="button" data-val="1">Старт 1</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Старт с какого числа? '))</span><span class="ln" data-no="2">while n &gt; 0:</span><span class="ln" data-no="3">    print(n)</span><span class="ln" data-no="4">    n -= 1</span><span class="ln" data-no="5">print('Поехали!')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Каждый повтор — итерация. Условие проверяется перед каждой, а счётчик уменьшается внутри тела цикла.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Бесконечный цикл">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Осторожно</p>
+    <h2>Бесконечный цикл</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="infinite" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="1">Забыли n += 1</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = 1</span><span class="ln" data-no="2">while n &lt;= 5:</span><span class="ln" data-no="3">    print(n)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:220">Счётчик не меняется — условие вечно истинно: это бесконечный цикл. Такую программу прерывают вручную — в терминале это Ctrl+C.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Накопитель результата">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Накопитель</p>
+    <h2>Собираем сумму по частям</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="sum" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="5">Ввод 5</button>
+          <button class="chip" type="button" data-val="3">Ввод 3</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел сложить? '))</span><span class="ln" data-no="2">total = 0</span><span class="ln" data-no="3">i = 1</span><span class="ln" data-no="4">while i &lt;= n:</span><span class="ln" data-no="5">    total += i</span><span class="ln" data-no="6">    i += 1</span><span class="ln" data-no="7">print('Сумма:', total)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Здесь в цикле живут две переменные: <b>i</b> считает шаги, а <b>total</b> копит результат. К концу цикла в total лежит 15.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Числа до нуля">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Ввод</p>
+    <h2>Спрашиваем, пока не введут 0</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="until" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Ввод: 2, 3, 0</button>
+          <button class="chip" type="button" data-val="b">Ввод: 7, 0</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">total = 0</span><span class="ln" data-no="2">x = int(input('Число (0 — стоп): '))</span><span class="ln" data-no="3">while x != 0:</span><span class="ln" data-no="4">    total += x</span><span class="ln" data-no="5">    x = int(input('Число (0 — стоп): '))</span><span class="ln" data-no="6">print('Итог:', total)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Сколько чисел придёт — заранее неизвестно, поэтому while. Ввели 0 — условие стало ложным, цикл закончился.</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">Задача 1</div><h3>Обратный отсчёт</h3><p>Выводим числа от N до 1, а в конце — «Поехали!».</p></div>
+      <div class="card r" style="--d:110"><div class="num">Задача 2</div><h3>Сумма чисел</h3><p>Складываем все числа от 1 до N через накопитель total.</p></div>
+      <div class="card r" style="--d:150"><div class="num">Задача 3</div><h3>Копилка</h3><p>Считаем недели, пока в копилке не наберётся нужная сумма.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Доп. задание</div><h3>Нулевой взнос</h3><p>Проверка перед циклом: при взносе 0 копилка не растёт никогда.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Работаем в VS Code: файл <b>lesson9.py</b>.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно целое число — с какого числа начинаем отсчёт.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Числа по убыванию, каждое на своей строке, и последняя строка <code>Поехали!</code>.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Старт 3</span><span class="ar">&#8594;</span><span class="out">3, 2, 1, Поехали!</span></div>
+          <div class="trow"><span class="in">Старт 5</span><span class="ar">&#8594;</span><span class="out">5, 4, 3, 2, 1, Поехали!</span></div>
+          <div class="trow"><span class="in">Старт 1</span><span class="ar">&#8594;</span><span class="out">1, Поехали!</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Таблица итераций обратного отсчёта: при n равном 3 печатаем 3 и уменьшаем n до 2, при n равном 2 печатаем 2 и уменьшаем до 1, при n равном 1 печатаем 1 и уменьшаем до 0, при n равном 0 условие ложно и цикл заканчивается, после цикла печатается слово Поехали">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Обратный отсчёт</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">n = 3</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="62" rx="14" fill="#E9F4FF"/>
+          <text x="72" y="150" font-size="24" fill="#38475A">n = 3 — печатаем 3, n стало 2</text>
+          <rect x="52" y="186" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="224" font-size="24" fill="#38475A">n = 2 — печатаем 2, n стало 1</text>
+          <rect x="52" y="260" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="298" font-size="24" fill="#38475A">n = 1 — печатаем 1, n стало 0</text>
+          <rect x="52" y="334" width="596" height="62" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="72" y="372" font-size="24" font-weight="700" fill="#8A4A00">n = 0 — условие ложно, выходим</text>
+          <rect x="52" y="408" width="596" height="80" rx="20" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+          <text x="76" y="446" font-size="26" font-weight="700" fill="#0B6B45">Печатаем: Поехали!</text>
+          <text x="76" y="476" font-size="21" fill="#0B6B45">Строка без отступа — один раз после цикла</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Шаг 1</p>
+    <h2>Цикл идёт вниз</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Счётчик n уменьшается на 1 на каждом проходе: <code>n -= 1</code>. Как только n станет 0, условие <code>n &gt; 0</code> окажется ложным — и цикл закончится.</div>
+    <div class="run r" data-run="z1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Считаем от 3</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = 3</span><span class="ln" data-no="2">while n &gt; 0:</span><span class="ln" data-no="3">    print(n)</span><span class="ln" data-no="4">    n -= 1</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1 · Полное решение</p>
+    <h2>Отсчёт стартует с введённого числа</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Число читаем через <code>int(input())</code>, а строка <code>Поехали!</code> стоит без отступа — она выполняется один раз, уже после выхода из цикла.</div>
+    <div class="run r sm" data-run="zf" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Старт 3</button><button class="chip" type="button" data-val="b">Старт 5</button><button class="chip" type="button" data-val="c">Старт 1</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Старт с какого числа? '))</span><span class="ln" data-no="2">while n &gt; 0:</span><span class="ln" data-no="3">    print(n)</span><span class="ln" data-no="4">    n -= 1</span><span class="ln" data-no="5">print('Поехали!')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно целое число N — сколько чисел складываем.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одна строка: сумма всех чисел от 1 до N.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Чисел: 5</span><span class="ar">&#8594;</span><span class="out">Сумма: 15</span></div>
+          <div class="trow"><span class="in">Чисел: 3</span><span class="ar">&#8594;</span><span class="out">Сумма: 6</span></div>
+          <div class="trow"><span class="in">Чисел: 1</span><span class="ar">&#8594;</span><span class="out">Сумма: 1</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Накопитель total собирает сумму чисел от 1 до 5: 0 плюс 1 равно 1, 1 плюс 2 равно 3, 3 плюс 3 равно 6, 6 плюс 4 равно 10, 10 плюс 5 равно 15, после цикла печатается Сумма 15">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Накопитель total</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">до 5</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="62" rx="14" fill="#E9F4FF"/>
+          <text x="72" y="150" font-size="24" fill="#38475A">i = 1 — total = 0 + 1 = 1</text>
+          <rect x="52" y="186" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="224" font-size="24" fill="#38475A">i = 2 — total = 1 + 2 = 3</text>
+          <rect x="52" y="260" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="298" font-size="24" fill="#38475A">i = 3 — total = 3 + 3 = 6</text>
+          <rect x="52" y="334" width="596" height="62" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="72" y="372" font-size="24" font-weight="700" fill="#8A4A00">i = 4 — total = 6 + 4 = 10</text>
+          <rect x="52" y="408" width="596" height="80" rx="20" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+          <text x="76" y="446" font-size="26" font-weight="700" fill="#0B6B45">i = 5 — total = 10 + 5 = 15</text>
+          <text x="76" y="476" font-size="22" fill="#0B6B45">Печатаем: Сумма: 15</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Шаг 1</p>
+    <h2>Накопитель работает</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">total копит сумму, i идёт от 1 до 5. На каждом проходе прибавляем i к total — и увеличиваем i, иначе условие <code>i &lt;= 5</code> не станет ложным.</div>
+    <div class="run r" data-run="s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Считаем до 5</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">total = 0</span><span class="ln" data-no="2">i = 1</span><span class="ln" data-no="3">while i &lt;= 5:</span><span class="ln" data-no="4">    total += i</span><span class="ln" data-no="5">    i += 1</span><span class="ln" data-no="6">print('Сумма:', total)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2 · Полное решение</p>
+    <h2>Сколько чисел — решает пользователь</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Меняется только граница цикла: вместо пятёрки стоит переменная n, которую мы прочитали с клавиатуры. Печать — одна строка после цикла.</div>
+    <div class="run r sm" data-run="sf" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Чисел: 5</button><button class="chip" type="button" data-val="b">Чисел: 3</button><button class="chip" type="button" data-val="c">Чисел: 1</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Сколько чисел сложить? '))</span><span class="ln" data-no="2">total = 0</span><span class="ln" data-no="3">i = 1</span><span class="ln" data-no="4">while i &lt;= n:</span><span class="ln" data-no="5">    total += i</span><span class="ln" data-no="6">    i += 1</span><span class="ln" data-no="7">print('Сумма:', total)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Два числа: сколько нужно накопить (goal) и сколько откладываем за неделю (per_week).</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Сколько недель понадобилось — или сообщение, что за 3 недели цель не достигнута.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Цель 10000 · по 5000</span><span class="ar">&#8594;</span><span class="out">Недель понадобилось: 2</span></div>
+          <div class="trow"><span class="in">Цель 10000 · по 3000</span><span class="ar">&#8594;</span><span class="out">Цель не достигнута за 3 недели</span></div>
+          <div class="trow"><span class="in">Цель 10000 · по 10000</span><span class="ar">&#8594;</span><span class="out">Недель понадобилось: 1</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Копилка с целью 10000 и взносом 5000 в неделю: после первой недели saved равен 5000 и цикл продолжается, после второй недели saved равен 10000, условие стало ложным, цикл закончился, печатаем Недель понадобилось 2">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Копилка: цель 10000</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">по 5000</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="62" rx="14" fill="#E9F4FF"/>
+          <text x="72" y="150" font-size="24" fill="#38475A">неделя 1 — saved = 5000, продолжаем</text>
+          <rect x="52" y="186" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="224" font-size="24" fill="#38475A">неделя 2 — saved = 10000</text>
+          <rect x="52" y="260" width="596" height="62" rx="14" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="72" y="298" font-size="24" font-weight="700" fill="#8A4A00">10000 &lt; 10000 — ложь, выходим</text>
+          <rect x="52" y="334" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="372" font-size="24" fill="#38475A">week = 2 — столько раз прошли цикл</text>
+          <rect x="52" y="408" width="596" height="80" rx="20" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+          <text x="76" y="446" font-size="26" font-weight="700" fill="#0B6B45">Печатаем: Недель понадобилось: 2</text>
+          <text x="76" y="476" font-size="21" fill="#0B6B45">Взнос 3000 дал бы 9000 — цель не достигнута</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Шаг 1</p>
+    <h2>Копилка и счётчик недель</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Условие проверяется перед каждой неделей. Как только в копилке достаточно — выходим из цикла.</div>
+    <div class="run r" data-run="piggy" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Цель 10000 · по 5000</button><button class="chip" type="button" data-val="b">Цель 9000 · по 3000</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">saved = 0</span><span class="ln" data-no="2">week = 0</span><span class="ln" data-no="3">goal = int(input('Сколько нужно накопить? '))</span><span class="ln" data-no="4">per_week = int(input('Сколько откладываем за неделю? '))</span><span class="ln" data-no="5">while saved &lt; goal:</span><span class="ln" data-no="6">    saved += per_week</span><span class="ln" data-no="7">    week += 1</span><span class="ln" data-no="8">print('Недель понадобилось:', week)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Задача 3: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Шаг 2</p>
+    <h2>Добавляем итоговые строки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Обе строки стоят без отступа и выполняются один раз — уже после выхода из цикла. Недели считает week, сумма лежит в saved: копим по 4000 — за третью неделю в копилке окажется 12000.</div>
+    <div class="run r" data-run="p2" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Копим по 4000</button><button class="chip" type="button" data-val="b">Копим по 6000</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">saved = 0</span><span class="ln" data-no="2">week = 0</span><span class="ln" data-no="3">goal = int(input('Сколько нужно накопить? '))</span><span class="ln" data-no="4">per_week = int(input('Сколько откладываем за неделю? '))</span><span class="ln" data-no="5">while saved &lt; goal:</span><span class="ln" data-no="6">    saved += per_week</span><span class="ln" data-no="7">    week += 1</span><span class="ln" data-no="8">print('Недель понадобилось:', week)</span><span class="ln" data-no="9">print('В копилке:', saved)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3 · Полное решение</p>
+    <h2>Копилка с предохранителем</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">В условии цикла появилась вторая часть: <code>week &lt; 3</code>. Она останавливает цикл, даже если цель не достигнута, — и тогда сработает ветка else.</div>
+    <div class="run r sm" data-run="piggyfull" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Цель 10000 · по 5000</button><button class="chip" type="button" data-val="b">Цель 10000 · по 3000</button><button class="chip" type="button" data-val="c">Цель 10000 · по 10000</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">saved = 0</span><span class="ln" data-no="2">week = 0</span><span class="ln" data-no="3">goal = int(input('Сколько нужно накопить? '))</span><span class="ln" data-no="4">per_week = int(input('Сколько откладываем за неделю? '))</span><span class="ln" data-no="5">while saved &lt; goal and week &lt; 3:</span><span class="ln" data-no="6">    saved += per_week</span><span class="ln" data-no="7">    week += 1</span><span class="ln" data-no="8">if saved &gt;= goal:</span><span class="ln" data-no="9">    print('Недель понадобилось:', week)</span><span class="ln" data-no="10">else:</span><span class="ln" data-no="11">    print('Цель не достигнута за 3 недели')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Два числа: цель и недельный взнос. Взнос может быть нулевым или отрицательным.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Либо сколько недель понадобилось, либо подсказка <code>Взнос должен быть больше нуля</code>.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">Цель 10000 · по 0</span><span class="ar">&#8594;</span><span class="out">Взнос должен быть больше нуля</span></div>
+          <div class="trow"><span class="in">Цель 10000 · по 5000</span><span class="ar">&#8594;</span><span class="out">Недель понадобилось: 2</span></div>
+          <div class="trow"><span class="in">Цель 10000 · по -500</span><span class="ar">&#8594;</span><span class="out">Взнос должен быть больше нуля</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Проверка перед циклом: если взнос меньше или равен нулю, печатаем подсказку и цикл не запускаем, иначе считаем недели как обычно">
+          <rect x="20" y="16" width="660" height="488" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="52" y="72" font-size="30" font-weight="700" fill="#0B3E7A">Проверка взноса</text>
+          <text x="648" y="72" text-anchor="end" font-size="30" font-weight="700" fill="#0B3E7A">до цикла</text>
+          <line x1="52" y1="94" x2="648" y2="94" stroke="#DEEAF7" stroke-width="2"/>
+          <rect x="52" y="112" width="596" height="62" rx="14" fill="#E9F4FF"/>
+          <text x="72" y="150" font-size="24" fill="#38475A">читаем goal и per_week с клавиатуры</text>
+          <rect x="52" y="186" width="596" height="62" rx="14" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="72" y="224" font-size="24" fill="#38475A">per_week &lt;= 0 ?</text>
+          <rect x="52" y="260" width="286" height="118" rx="16" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="72" y="300" font-size="23" font-weight="700" fill="#8A4A00">да: взнос 0</text>
+          <text x="72" y="332" font-size="21" fill="#8A4A00">печатаем подсказку,</text>
+          <text x="72" y="360" font-size="21" fill="#8A4A00">цикл не запускаем</text>
+          <rect x="362" y="260" width="286" height="118" rx="16" fill="#E7F8EE" stroke="#1FA971" stroke-width="2"/>
+          <text x="382" y="300" font-size="23" font-weight="700" fill="#0B6B45">нет: взнос &gt; 0</text>
+          <text x="382" y="332" font-size="21" fill="#0B6B45">считаем недели</text>
+          <text x="382" y="360" font-size="21" fill="#0B6B45">в цикле while</text>
+          <rect x="52" y="398" width="596" height="90" rx="20" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="76" y="436" font-size="24" font-weight="700" fill="#0B3E7A">Без проверки while никогда не закончится</text>
+          <text x="76" y="470" font-size="21" fill="#38475A">saved не растёт — условие всегда истинно</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Шаг 1</p>
+    <h2>Проверка перед циклом</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Сначала проверяем взнос, и только потом считаем недели. Это тот самый случай, который спасает от бесконечного цикла из начала занятия.</div>
+    <div class="run r" data-run="d1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Цель 10000 · по 0</button><button class="chip" type="button" data-val="b">Цель 10000 · по -500</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">goal = int(input('Сколько нужно накопить? '))</span><span class="ln" data-no="2">per_week = int(input('Сколько откладываем за неделю? '))</span><span class="ln" data-no="3">if per_week &lt;= 0:</span><span class="ln" data-no="4">    print('Взнос должен быть больше нуля')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Дополнительное задание · Полное решение</p>
+    <h2>Ветка else с циклом</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Взнос больше нуля — считаем недели, как в задаче 3. Взнос 0 или меньше — печатаем подсказку и цикл не запускаем совсем.</div>
+    <div class="run r sm" data-run="df" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Цель 10000 · по 0</button><button class="chip" type="button" data-val="b">Цель 10000 · по 5000</button><button class="chip" type="button" data-val="c">Цель 10000 · по -500</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">saved = 0</span><span class="ln" data-no="2">week = 0</span><span class="ln" data-no="3">goal = int(input('Сколько нужно накопить? '))</span><span class="ln" data-no="4">per_week = int(input('Сколько откладываем за неделю? '))</span><span class="ln" data-no="5">if per_week &lt;= 0:</span><span class="ln" data-no="6">    print('Взнос должен быть больше нуля')</span><span class="ln" data-no="7">else:</span><span class="ln" data-no="8">    while saved &lt; goal:</span><span class="ln" data-no="9">        saved += per_week</span><span class="ln" data-no="10">        week += 1</span><span class="ln" data-no="11">    print('Недель понадобилось:', week)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite" style="max-height:400px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>while повторяет тело цикла, пока условие истинно; проверка идёт перед каждым повтором.</div>
+      <div>Тело цикла выделяют двоеточие и отступ в 4 пробела — как в блоке if.</div>
+      <div>Счётчик меняется внутри цикла, иначе условие не станет ложным и программа не остановится.</div>
+      <div>Накопитель собирает результат по частям: total += i.</div>
+      <div>Цикл умеет читать числа, пока не введут 0, и выходить по составному условию saved &lt; goal and week &lt; 3.</div>
+      <div>Копилка показала: одна и та же программа даёт разный результат при разных взносах.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">23</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    'countdown': [
+      { val:'3', label:'Старт 3', steps:[
+        { ln:1, out:{ t:'n = 3' } },
+        { ln:2, out:{ t:'3 &gt; 0  →  True', kind:'true', wait:400 } },
+        { ln:3, out:{ t:'3', kind:'p', wait:340 } },
+        { ln:4, out:{ t:'n -= 1  →  2', wait:340 } },
+        { ln:2, out:{ t:'2 &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'2', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  1' } },
+        { ln:2, out:{ t:'1 &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'0 &gt; 0  →  False', kind:'false' }, badge:'Условие стало ложным — выходим из цикла' },
+        { ln:5, out:{ t:'Поехали!', kind:'p' } }
+      ]},
+      { val:'1', label:'Старт 1', steps:[
+        { ln:1, out:{ t:'n = 1' } },
+        { ln:2, out:{ t:'1 &gt; 0  →  True', kind:'true', wait:400 } },
+        { ln:3, out:{ t:'1', kind:'p', wait:340 } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'0 &gt; 0  →  False', kind:'false' }, badge:'Тело цикла выполнилось один раз — и хватит' },
+        { ln:5, out:{ t:'Поехали!', kind:'p' } }
+      ]}
+    ],
+    'infinite': [
+      { val:'1', label:'Забыли n += 1', steps:[
+        { ln:1, out:{ t:'n = 1' } },
+        { ln:2, out:{ t:'1 &lt;= 5  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:2, out:{ t:'1 &lt;= 5  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:2, out:{ t:'1 &lt;= 5  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' }, badge:'Печатает единицу и не останавливается — прервать программу можно в терминале: Ctrl+C' }
+      ]}
+    ],
+    'sum': [
+      { val:'5', label:'Ввод 5', steps:[
+        { ln:1, out:{ t:'n = 5' } },
+        { ln:2, out:{ t:'total = 0' } },
+        { ln:3, out:{ t:'i = 1' } },
+        { ln:4, out:{ t:'1 &lt;= 5  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 1  →  1', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  2', wait:330 } },
+        { ln:4, out:{ t:'2 &lt;= 5  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 2  →  3', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  3', wait:330 } },
+        { ln:4, out:{ t:'3 &lt;= 5  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 3  →  6', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  4', wait:330 } },
+        { ln:4, out:{ t:'4 &lt;= 5  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 4  →  10', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  5', wait:330 } },
+        { ln:4, out:{ t:'5 &lt;= 5  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 5  →  15', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  6', wait:330 } },
+        { ln:4, out:{ t:'6 &lt;= 5  →  False', kind:'false' }, badge:'Пять чисел сложили — выходим из цикла' },
+        { ln:7, out:{ t:'Сумма: 15', kind:'p' } }
+      ]},
+      { val:'3', label:'Ввод 3', steps:[
+        { ln:1, out:{ t:'n = 3' } },
+        { ln:2, out:{ t:'total = 0' } },
+        { ln:3, out:{ t:'i = 1' } },
+        { ln:4, out:{ t:'1 &lt;= 3  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 1  →  1', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  2', wait:330 } },
+        { ln:4, out:{ t:'2 &lt;= 3  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 2  →  3', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  3', wait:330 } },
+        { ln:4, out:{ t:'3 &lt;= 3  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += 3  →  6', wait:330 } },
+        { ln:6, out:{ t:'i += 1  →  4', wait:330 } },
+        { ln:4, out:{ t:'4 &lt;= 3  →  False', kind:'false' }, badge:'Счётчик перешагнул n — выходим из цикла' },
+        { ln:7, out:{ t:'Сумма: 6', kind:'p' } }
+      ]}
+    ],
+    'until': [
+      { val:'a', label:'Ввод: 2, 3, 0', steps:[
+        { ln:1, out:{ t:'total = 0' } },
+        { ln:2, out:{ t:'x = 2' } },
+        { ln:3, out:{ t:'2 != 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += 2  →  2' } },
+        { ln:5, out:{ t:'x = 3' } },
+        { ln:3, out:{ t:'3 != 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += 3  →  5' } },
+        { ln:5, out:{ t:'x = 0' } },
+        { ln:3, out:{ t:'0 != 0  →  False', kind:'false' }, badge:'Ввели 0 — цикл закончился' },
+        { ln:6, out:{ t:'Итог: 5', kind:'p' } }
+      ]},
+      { val:'b', label:'Ввод: 7, 0', steps:[
+        { ln:1, out:{ t:'total = 0' } },
+        { ln:2, out:{ t:'x = 7' } },
+        { ln:3, out:{ t:'7 != 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += 7  →  7' } },
+        { ln:5, out:{ t:'x = 0' } },
+        { ln:3, out:{ t:'0 != 0  →  False', kind:'false' }, badge:'Ввели 0 — цикл закончился' },
+        { ln:6, out:{ t:'Итог: 7', kind:'p' } }
+      ]}
+    ],
+    'z1': [
+      { val:'a', label:'Считаем от 3', steps:[
+        { ln:1, out:{ t:'n = 3  →  3' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  2' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'2', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  1' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'n &gt; 0  →  False', kind:'false' }, badge:'Вышли из цикла: n стало 0' }
+      ]}
+    ],
+    'zf': [
+      { val:'a', label:'Старт 3', steps:[
+        { ln:1, out:{ t:'n = 3' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  2' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'2', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  1' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'n &gt; 0  →  False', kind:'false' } },
+        { ln:5, out:{ t:'Поехали!', kind:'p' }, badge:'Последняя строка печатается один раз' }
+      ]},
+      { val:'b', label:'Старт 5', steps:[
+        { ln:1, out:{ t:'n = 5' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'5', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  4' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'4', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  3' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  2' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'2', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  1' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'n &gt; 0  →  False', kind:'false' } },
+        { ln:5, out:{ t:'Поехали!', kind:'p' }, badge:'Последняя строка печатается один раз' }
+      ]},
+      { val:'c', label:'Старт 1', steps:[
+        { ln:1, out:{ t:'n = 1' } },
+        { ln:2, out:{ t:'n &gt; 0  →  True', kind:'true' } },
+        { ln:3, out:{ t:'1', kind:'p' } },
+        { ln:4, out:{ t:'n -= 1  →  0' } },
+        { ln:2, out:{ t:'n &gt; 0  →  False', kind:'false' } },
+        { ln:5, out:{ t:'Поехали!', kind:'p' }, badge:'Последняя строка печатается один раз' }
+      ]}
+    ],
+    's1': [
+      { val:'a', label:'Считаем до 5', steps:[
+        { ln:1, out:{ t:'total = 0  →  0' } },
+        { ln:2, out:{ t:'i = 1  →  1' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += i  →  1' } },
+        { ln:5, out:{ t:'i += 1  →  2' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += i  →  3' } },
+        { ln:5, out:{ t:'i += 1  →  3' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += i  →  6' } },
+        { ln:5, out:{ t:'i += 1  →  4' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += i  →  10' } },
+        { ln:5, out:{ t:'i += 1  →  5' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  True', kind:'true' } },
+        { ln:4, out:{ t:'total += i  →  15' } },
+        { ln:5, out:{ t:'i += 1  →  6' } },
+        { ln:3, out:{ t:'i &lt;= 5  →  False', kind:'false' } },
+        { ln:6, out:{ t:'Сумма: 15', kind:'p' }, badge:'Накопитель собрал сумму' }
+      ]}
+    ],
+    'sf': [
+      { val:'a', label:'Чисел: 5', steps:[
+        { ln:1, out:{ t:'n = 5' } },
+        { ln:2, out:{ t:'total = 0  →  0' } },
+        { ln:3, out:{ t:'i = 1  →  1' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  1' } },
+        { ln:6, out:{ t:'i += 1  →  2' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  3' } },
+        { ln:6, out:{ t:'i += 1  →  3' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  6' } },
+        { ln:6, out:{ t:'i += 1  →  4' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  10' } },
+        { ln:6, out:{ t:'i += 1  →  5' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  15' } },
+        { ln:6, out:{ t:'i += 1  →  6' } },
+        { ln:4, out:{ t:'i &lt;= n  →  False', kind:'false' } },
+        { ln:7, out:{ t:'Сумма: 15', kind:'p' }, badge:'Печатаем сумму один раз — после цикла' }
+      ]},
+      { val:'b', label:'Чисел: 3', steps:[
+        { ln:1, out:{ t:'n = 3' } },
+        { ln:2, out:{ t:'total = 0  →  0' } },
+        { ln:3, out:{ t:'i = 1  →  1' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  1' } },
+        { ln:6, out:{ t:'i += 1  →  2' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  3' } },
+        { ln:6, out:{ t:'i += 1  →  3' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  6' } },
+        { ln:6, out:{ t:'i += 1  →  4' } },
+        { ln:4, out:{ t:'i &lt;= n  →  False', kind:'false' } },
+        { ln:7, out:{ t:'Сумма: 6', kind:'p' }, badge:'Печатаем сумму один раз — после цикла' }
+      ]},
+      { val:'c', label:'Чисел: 1', steps:[
+        { ln:1, out:{ t:'n = 1' } },
+        { ln:2, out:{ t:'total = 0  →  0' } },
+        { ln:3, out:{ t:'i = 1  →  1' } },
+        { ln:4, out:{ t:'i &lt;= n  →  True', kind:'true' } },
+        { ln:5, out:{ t:'total += i  →  1' } },
+        { ln:6, out:{ t:'i += 1  →  2' } },
+        { ln:4, out:{ t:'i &lt;= n  →  False', kind:'false' } },
+        { ln:7, out:{ t:'Сумма: 1', kind:'p' }, badge:'Печатаем сумму один раз — после цикла' }
+      ]}
+    ],
+    'piggy': [
+      { val:'a', label:'Цель 10000 · по 5000', steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 5000' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  5000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  10000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  False', kind:'false' } },
+        { ln:8, out:{ t:'Недель понадобилось: 2', kind:'p' }, badge:'Условие стало ложным — выходим из цикла' }
+      ]},
+      { val:'b', label:'Цель 9000 · по 3000', steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 9000' } },
+        { ln:4, out:{ t:'per_week = 3000' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  3000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  6000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  9000' } },
+        { ln:7, out:{ t:'week += 1  →  3' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  False', kind:'false' } },
+        { ln:8, out:{ t:'Недель понадобилось: 3', kind:'p' }, badge:'Условие стало ложным — выходим из цикла' }
+      ]}
+    ],
+    'p2': [
+      { val:'a', label:'Копим по 4000', steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 4000' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  4000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  8000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  12000' } },
+        { ln:7, out:{ t:'week += 1  →  3' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  False', kind:'false' } },
+        { ln:8, out:{ t:'Недель понадобилось: 3', kind:'p' } },
+        { ln:9, out:{ t:'В копилке: 12000', kind:'p' }, badge:'Копилка перескочила цель: 12000 вместо 10000' }
+      ]},
+      { val:'b', label:'Копим по 6000', steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 6000' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  6000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  12000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal  →  False', kind:'false' } },
+        { ln:8, out:{ t:'Недель понадобилось: 2', kind:'p' } },
+        { ln:9, out:{ t:'В копилке: 12000', kind:'p' }, badge:'Копилка перескочила цель: 12000 вместо 10000' }
+      ]}
+    ],
+    'piggyfull': [
+      { val:'a', label:'Цель 10000 · по 5000', skip:[10,11], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 5000' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  5000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  10000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  False', kind:'false' } },
+        { ln:8, out:{ t:'saved &gt;= goal  →  True', kind:'true' } },
+        { ln:9, out:{ t:'Недель понадобилось: 2', kind:'p' } }
+      ]},
+      { val:'b', label:'Цель 10000 · по 3000', skip:[9,10], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 3000' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  3000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  6000' } },
+        { ln:7, out:{ t:'week += 1  →  2' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  9000' } },
+        { ln:7, out:{ t:'week += 1  →  3' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  False', kind:'false' } },
+        { ln:8, out:{ t:'saved &gt;= goal  →  False', kind:'false' } },
+        { ln:11, out:{ t:'Цель не достигнута за 3 недели', kind:'p' } }
+      ]},
+      { val:'c', label:'Цель 10000 · по 10000', skip:[10,11], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 10000' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  True', kind:'true' } },
+        { ln:6, out:{ t:'saved += per_week  →  10000' } },
+        { ln:7, out:{ t:'week += 1  →  1' } },
+        { ln:5, out:{ t:'saved &lt; goal and week &lt; 3  →  False', kind:'false' } },
+        { ln:8, out:{ t:'saved &gt;= goal  →  True', kind:'true' } },
+        { ln:9, out:{ t:'Недель понадобилось: 1', kind:'p' } }
+      ]}
+    ],
+    'd1': [
+      { val:'a', label:'Цель 10000 · по 0', steps:[
+        { ln:1, out:{ t:'goal = 10000' } },
+        { ln:2, out:{ t:'per_week = 0' } },
+        { ln:3, out:{ t:'per_week &lt;= 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'Взнос должен быть больше нуля', kind:'p' }, badge:'Цикл не запускаем: взнос не растёт' }
+      ]},
+      { val:'b', label:'Цель 10000 · по -500', steps:[
+        { ln:1, out:{ t:'goal = 10000' } },
+        { ln:2, out:{ t:'per_week = -500' } },
+        { ln:3, out:{ t:'per_week &lt;= 0  →  True', kind:'true' } },
+        { ln:4, out:{ t:'Взнос должен быть больше нуля', kind:'p' }, badge:'Цикл не запускаем: взнос не растёт' }
+      ]}
+    ],
+    'df': [
+      { val:'a', label:'Цель 10000 · по 0', skip:[7,8,9,10,11], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 0' } },
+        { ln:5, out:{ t:'per_week &lt;= 0  →  True', kind:'true' } },
+        { ln:6, out:{ t:'Взнос должен быть больше нуля', kind:'p' }, badge:'Взнос больше нуля — считаем недели' }
+      ]},
+      { val:'b', label:'Цель 10000 · по 5000', skip:[6,7], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = 5000' } },
+        { ln:5, out:{ t:'per_week &lt;= 0  →  False', kind:'false' } },
+        { ln:8, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:9, out:{ t:'saved += per_week  →  5000' } },
+        { ln:10, out:{ t:'week += 1  →  1' } },
+        { ln:8, out:{ t:'saved &lt; goal  →  True', kind:'true' } },
+        { ln:9, out:{ t:'saved += per_week  →  10000' } },
+        { ln:10, out:{ t:'week += 1  →  2' } },
+        { ln:8, out:{ t:'saved &lt; goal  →  False', kind:'false' } },
+        { ln:11, out:{ t:'Недель понадобилось: 2', kind:'p' }, badge:'Взнос больше нуля — считаем недели' }
+      ]},
+      { val:'c', label:'Цель 10000 · по -500', skip:[7,8,9,10,11], steps:[
+        { ln:1, out:{ t:'saved = 0  →  0' } },
+        { ln:2, out:{ t:'week = 0  →  0' } },
+        { ln:3, out:{ t:'goal = 10000' } },
+        { ln:4, out:{ t:'per_week = -500' } },
+        { ln:5, out:{ t:'per_week &lt;= 0  →  True', kind:'true' } },
+        { ln:6, out:{ t:'Взнос должен быть больше нуля', kind:'p' }, badge:'Взнос больше нуля — считаем недели' }
+      ]}
+    ],
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+</body>
+</html>

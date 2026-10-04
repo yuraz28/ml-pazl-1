@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 5. Целочисленная арифметика — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+/* плеер на слайдах практики: длинное решение — компактнее */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* ---------- титул: сверху шапка, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tstrip{display:flex; flex-wrap:wrap; align-items:center; gap:12px}
+.tstrip .lbl, .tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.tstrip .t{border:1px solid var(--soft); border-radius:14px; padding:9px 20px; background:#fff; font-family:var(--mono); font-size:21px; color:var(--blue-900)}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+
+/* ---------- полное решение: код слева, тесты справа ---------- */
+.sol{display:grid; grid-template-columns:minmax(0,1fr) 560px; gap:34px; align-items:start}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл &#183; ML</p>
+    <p class="lead">Занятие 5</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Целочисленная арифметика</h1>
+  </div>
+</section>
+<!-- 2 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Целые числа</h3><p>int записывают без кавычек, а размер числа в Python не ограничен.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Семь операций</h3><p>+ - * / // % ** — сложение, вычитание, умножение, деление, нацело, остаток, степень.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Порядок и скобки</h3><p>Сначала скобки, потом **, потом * / // %, потом + и −.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>int() и str()</h3><p>input() отдаёт строку, поэтому число берём через int().</p></div>
+    </div>
+  </div>
+</section>
+<!-- 3 -->
+<section class="slide" data-title="Числа и строки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Целые числа</p>
+    <h2>Число и строка рядом</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="types" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="num">Числа 7 и 10</button>
+          <button class="chip" type="button" data-val="str">Строка '7'</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">num1 = 7</span><span class="ln" data-no="2">num2 = 10</span><span class="ln" data-no="3">num3 = num1 + num2</span><span class="ln" data-no="4">print(num3)</span><span class="ln" data-no="5">s = '7'</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Число пишут без кавычек, строку — в кавычках. Слово <b>int</b> — от английского integer, «целый».</div>
+  </div>
+</section>
+<!-- 4 -->
+<section class="slide" data-title="Размер целого числа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Целые числа</p>
+    <h2>Размер числа не ограничен</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">другие языки</div><h3>C#: от -2⁶³ до 2⁶³ - 1</h3><p>Там целое число жёстко ограничено диапазоном значений.</p></div>
+      <div class="card r" style="--d:140"><div class="num">Python</div><h3>длинная арифметика</h3><p>Ограничений практически нет: 2 ** 100 вычисляется без проблем.</p></div>
+    </div>
+    <div class="acc r" style="--d:210">Переменную целого типа создаёт значение, записанное без кавычек: num1 = 7.</div>
+  </div>
+</section>
+<!-- 5 -->
+<section class="slide" data-title="Семь операторов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Операции</p>
+    <h2>Семь знаков арифметики</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:60"><div class="num">сложение</div><h3>7 + 3</h3><p>даёт 10</p></div>
+      <div class="card r" style="--d:100"><div class="num">вычитание</div><h3>7 - 3</h3><p>даёт 4</p></div>
+      <div class="card r" style="--d:140"><div class="num">умножение</div><h3>7 * 3</h3><p>даёт 21</p></div>
+      <div class="card r" style="--d:180"><div class="num">деление</div><h3>7 / 2</h3><p>даёт 3.5</p></div>
+    </div>
+    <div class="cards c3">
+      <div class="card r" style="--d:220"><div class="num">целочисленное деление</div><h3>7 // 2</h3><p>даёт 3 — дробная часть отброшена</p></div>
+      <div class="card r" style="--d:260"><div class="num">остаток от деления</div><h3>7 % 2</h3><p>даёт 1, потому что 7 = 2 * 3 + 1</p></div>
+      <div class="card r" style="--d:300"><div class="num">возведение в степень</div><h3>2 ** 3</h3><p>даёт 8</p></div>
+    </div>
+    <div class="note r" style="--d:340">Обычное деление <b>/</b> всегда даёт дробное число: даже 8 / 2 выводится как 4.0.</div>
+  </div>
+</section>
+<!-- 6 -->
+<section class="slide" data-title="Операции вживую">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Операции</p>
+    <h2>Проверяем на числах</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="ops" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="all">Все пять строк</button>
+          <button class="chip" type="button" data-val="idiv">Только // и %</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(7 + 3)</span><span class="ln" data-no="2">print(7 / 2)</span><span class="ln" data-no="3">print(7 // 2)</span><span class="ln" data-no="4">print(7 % 2)</span><span class="ln" data-no="5">print(2 ** 3)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">// и % смотрят на одно и то же деление с двух сторон: 2 целиком помещается в 7 три раза, и ещё 1 остаётся.</div>
+  </div>
+</section>
+<!-- 7 -->
+<section class="slide" data-title="Минус и деление на ноль">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Операции</p>
+    <h2>Минус в двух ролях</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">унарный минус</div><h3>num1 = -6</h3><p>Стоит перед одним числом и делает его отрицательным.</p></div>
+      <div class="card r" style="--d:130"><div class="num">бинарный минус</div><h3>num2 = 17 - 7</h3><p>Стоит между двумя числами и выполняет вычитание.</p></div>
+      <div class="card r" style="--d:190"><div class="num">деление на ноль</div><h3>5 / 0</h3><p>Программа остановится с ошибкой ZeroDivisionError.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Остальные знаки — +, *, /, //, %, ** — всегда стоят между двумя значениями. Для отрицательных // округляет вниз: -7 // 2 даёт -4. На этом занятии считаем положительные числа.</div>
+  </div>
+</section>
+<!-- 8 -->
+<section class="slide" data-title="Порядок вычислений">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Порядок действий</p>
+    <h2>Порядок как в математике</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="order" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="order">Без скобок</button>
+          <button class="chip" type="button" data-val="paren">Со скобками</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(2 + 3 * 4)</span><span class="ln" data-no="2">print(10 - 4 - 3)</span><span class="ln" data-no="3">print(100 / 10 * 2)</span><span class="ln" data-no="4">print(2 + 3 * 4 ** 2)</span><span class="ln" data-no="5">print((2 + 3) * 4)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Сначала возведение в степень, потом умножение, деление, // и %, в конце сложение и вычитание. Операции одного приоритета идут слева направо.</div>
+  </div>
+</section>
+<!-- 9 -->
+<section class="slide" data-title="Скобки и короткая запись">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Порядок действий</p>
+    <h2>Скобки и короткая запись</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">забыли скобки</div><h3>a + b / 2</h3><p>Это a плюс половина b, а не среднее. Частая ошибка новичков.</p></div>
+      <div class="card r" style="--d:130"><div class="num">среднее арифметическое</div><h3>(a + b) / 2</h3><p>Скобки вычисляются первыми и меняют порядок действий.</p></div>
+      <div class="card r" style="--d:190"><div class="num">короче на пять знаков</div><h3>x += 5</h3><p>Это то же самое, что x = x + 5. Так же работают -=, *=, //=, %=.</p></div>
+    </div>
+    <div class="chips r" style="--d:250">
+      <span class="chip">num1 = 2 + 3 * 4 → 14</span>
+      <span class="chip">num2 = (2 + 3) * 4 → 20</span>
+      <span class="chip">скобки ставят и для понятности</span>
+    </div>
+  </div>
+</section>
+<!-- 10 -->
+<section class="slide" data-title="int() и str()">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразование типов</p>
+    <h2>int() и str()</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="cast" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="toint">Строка → число</button>
+          <button class="chip" type="button" data-val="tostr">Число → строка</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">s = '1992'</span><span class="ln" data-no="2">year = int(s)</span><span class="ln" data-no="3">print(year)</span><span class="ln" data-no="4">num = 17</span><span class="ln" data-no="5">text = str(num)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">int() означает: возьми то, что в скобках, и преврати в целое число. str() делает обратное — из числа получается строка.</div>
+  </div>
+</section>
+<!-- 11 -->
+<section class="slide" data-title="Зачем нужен int(input())">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Преобразование типов</p>
+    <h2>Почему input() нужен int()</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="input" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="str">Без int(): 3 и 4</button>
+          <button class="chip" type="button" data-val="int">С int(): 3 и 4</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">num1 = input()</span><span class="ln" data-no="2">num2 = input()</span><span class="ln" data-no="3">print(num1 + num2)</span><span class="ln" data-no="4">print(int(num1) + int(num2))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">input() всегда возвращает строку. Одно целое число читают так: <b>num = int(input())</b>.</div>
+  </div>
+</section>
+<!-- 12 -->
+<section class="slide" data-title="Зачем нужны деление нацело и остаток">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Деление и остаток</p>
+    <h2>Зачем нужны // и %</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">чётность</div><h3>n % 2</h3><p>У чётных остаток 0, у нечётных 1. Остаток 0 от деления на любое число значит, что делится нацело.</p></div>
+      <div class="card r" style="--d:130"><div class="num">разряды числа</div><h3>n % 10 и n // 10</h3><p>Остаток от деления на 10 — последняя цифра, деление на 10 убирает её.</p></div>
+      <div class="card r" style="--d:190"><div class="num">величины по кругу</div><h3>(20 + 30) % 24</h3><p>Часы, дни недели, минуты ходят по кругу: получится 2 часа ночи.</p></div>
+      <div class="card r" style="--d:250"><div class="num">разбиение на части</div><h3>// и %</h3><p>// показывает, сколько полных групп получится, % — что останется.</p></div>
+    </div>
+    <div class="note r" style="--d:300">При делении a на b: // говорит, сколько раз b целиком помещается в a, а % — что осталось.</div>
+  </div>
+</section>
+<!-- 13 -->
+<section class="slide" data-title="Разряды числа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Деление и остаток</p>
+    <h2>Достаём цифры числа</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="digits" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="last">Последняя цифра</button>
+          <button class="chip" type="button" data-val="all">Все разряды</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = 4172</span><span class="ln" data-no="2">print(n % 10)</span><span class="ln" data-no="3">print(n // 10)</span><span class="ln" data-no="4">print(n // 10 % 10)</span><span class="ln" data-no="5">print(n // 100 % 10)</span><span class="ln" data-no="6">print(n // 1000)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">// отбрасывает цифры справа, % оставляет последнюю. Так из числа достают любой разряд.</div>
+  </div>
+</section>
+<!-- 14 -->
+<section class="slide" data-title="Чётность и величины по кругу">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Деление и остаток</p>
+    <h2>Чётность и часы</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="parity" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="even">4172 — чётное</button>
+          <button class="chip" type="button" data-val="odd">7 — нечётное</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(4172 % 2)</span><span class="ln" data-no="2">print(7 % 2)</span><span class="ln" data-no="3">print((20 + 30) % 24)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Остаток от деления на 2 — самый простой способ проверить чётность.</div>
+  </div>
+</section>
+<!-- 15 -->
+<section class="slide" data-title="Частые ошибки">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Частые ошибки</p>
+    <h2>На чём спотыкаются</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">ошибка 1</div><h3>Забыли int()</h3><p>Вместо сложения получится склейка: '3' + '4' даёт '34'.</p></div>
+      <div class="card r" style="--d:130"><div class="num">ошибка 2</div><h3>Перепутали / и //</h3><p>Вместо целого числа выйдет дробное. В этих задачах нужен //.</p></div>
+      <div class="card r" style="--d:190"><div class="num">ошибка 3</div><h3>Забыли скобки</h3><p>Порядок действий окажется другим, чем задумано.</p></div>
+      <div class="card r" style="--d:250"><div class="num">ошибка 4</div><h3>Делитель равен нулю</h3><p>Программа остановится с ошибкой ZeroDivisionError.</p></div>
+    </div>
+    <div class="note r" style="--d:300">Первые три ошибки видны сразу по результату: он просто не тот, что ожидали.</div>
+  </div>
+</section>
+<!-- 16 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Купюры и монеты</h3><p>Раскладываем сумму покупки: сколько купюр и монет каждого номинала.</p></div>
+      <div class="card r" style="--d:130"><div class="num">задача 2</div><h3>Секунды в часы</h3><p>Переводим секунды в формат чч:мм:сс.</p></div>
+      <div class="card r" style="--d:190"><div class="num">задача 3</div><h3>Последняя цифра</h3><p>Остаток от деления на 10 — последняя цифра числа.</p></div>
+      <div class="card r" style="--d:250"><div class="num">доп. задание</div><h3>Цифры числа</h3><p>Достаём цифры трёхзначного числа и складываем их.</p></div>
+    </div>
+    <div class="note r" style="--d:320">Работаем в VS Code: файл <b>lesson5.py</b>.</div>
+  </div>
+</section>
+<!-- 17 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно целое число — сумма покупки в рублях. Читаем с клавиатуры: <code>amount = int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Сколько купюр и монет каждого номинала нужно, чтобы собрать эту сумму: 1000, 500, 100, 50, 10 и 1 рубль. Каждая строка вывода — свой номинал.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">1787</span><span class="ar">&#8594;</span><span class="out">1000 руб.: 1, 500 руб.: 1, 100 руб.: 2, 50 руб.: 1, 10 руб.: 3, 1 руб.: 7</span></div>
+          <div class="trow"><span class="in">999</span><span class="ar">&#8594;</span><span class="out">1000 руб.: 0, 500 руб.: 1, 100 руб.: 4, 50 руб.: 1, 10 руб.: 4, 1 руб.: 9</span></div>
+          <div class="trow"><span class="in">512</span><span class="ar">&#8594;</span><span class="out">1000 руб.: 0, 500 руб.: 1, 100 руб.: 0, 50 руб.: 0, 10 руб.: 1, 1 руб.: 2</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 520" role="img" aria-label="Игрушечные купюры по 1000, 500 и 100 рублей и монеты по 50, 10 и 1 рублю">
+          <rect x="20" y="20" width="300" height="150" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <rect x="36" y="36" width="268" height="118" rx="12" fill="#CDE5FF"/>
+          <circle cx="110" cy="95" r="40" fill="#E9F4FF"/>
+          <text x="230" y="112" text-anchor="middle" font-size="48" font-weight="700" fill="#0B3E7A">1000</text>
+          <rect x="360" y="20" width="300" height="150" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <rect x="376" y="36" width="268" height="118" rx="12" fill="#CDE5FF"/>
+          <circle cx="450" cy="95" r="40" fill="#E9F4FF"/>
+          <text x="575" y="112" text-anchor="middle" font-size="48" font-weight="700" fill="#0B3E7A">500</text>
+          <rect x="20" y="200" width="300" height="150" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <rect x="36" y="216" width="268" height="118" rx="12" fill="#CDE5FF"/>
+          <circle cx="110" cy="275" r="40" fill="#E9F4FF"/>
+          <text x="230" y="292" text-anchor="middle" font-size="48" font-weight="700" fill="#0B3E7A">100</text>
+          <circle cx="400" cy="275" r="66" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="400" y="290" text-anchor="middle" font-size="38" font-weight="700" fill="#8A4A00">50</text>
+          <circle cx="520" cy="275" r="52" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="520" y="288" text-anchor="middle" font-size="34" font-weight="700" fill="#8A4A00">10</text>
+          <circle cx="620" cy="275" r="40" fill="#FFF3E2" stroke="#FF8E00" stroke-width="3"/>
+          <text x="620" y="288" text-anchor="middle" font-size="30" font-weight="700" fill="#8A4A00">1</text>
+          <rect x="20" y="380" width="640" height="122" rx="22" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="340" y="420" text-anchor="middle" font-size="30" fill="#8A4A00">сумма 1787 руб.</text>
+          <text x="340" y="458" text-anchor="middle" font-size="25" fill="#6E7E92">4 купюры: 1000, 500, 100 + 100</text>
+          <text x="340" y="489" text-anchor="middle" font-size="25" fill="#6E7E92">11 монет: 50, 10 + 10 + 10, 1 &#215; 7</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 18 -->
+<section class="slide" data-title="Задача 1: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 1</p>
+    <h2>Считаем сумму с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">input() всегда отдаёт строку, поэтому сразу превращаем её в число через int(). Дальше сумму называем <b>amount</b>.</div>
+    <div class="run r" data-run="t1s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="1787">1787 руб.</button><button class="chip" type="button" data-val="999">999 руб.</button><button class="chip" type="button" data-val="512">512 руб.</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input('Введите сумму в рублях: '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 19 -->
+<section class="slide" data-title="Задача 1: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 2</p>
+    <h2>Тысячные и пятисотые купюры</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">// отвечает на вопрос «сколько купюр помещается целиком», % — «что осталось». После каждой пары строк в <b>amount</b> лежит остаток, который ещё не разобрали.</div>
+    <div class="run r" data-run="t1s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="1787">1787 руб.</button><button class="chip" type="button" data-val="999">999 руб.</button><button class="chip" type="button" data-val="512">512 руб.</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n1000 = amount // 1000</span><span class="ln" data-no="2">amount = amount % 1000</span><span class="ln" data-no="3">n500 = amount // 500</span><span class="ln" data-no="4">amount = amount % 500</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 3</p>
+    <h2>Сотни, полтинники, десятки и рубли</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Остаток после крупных купюр меньше 100, поэтому дальше работают сотни, полтинники и десятки. Последний остаток — монеты по рублю: десятков в нём уже нет.</div>
+    <div class="run r" data-run="t1s3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="1787">1787 руб.</button><button class="chip" type="button" data-val="999">999 руб.</button><button class="chip" type="button" data-val="512">512 руб.</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n100 = amount // 100</span><span class="ln" data-no="2">amount = amount % 100</span><span class="ln" data-no="3">n50 = amount // 50</span><span class="ln" data-no="4">amount = amount % 50</span><span class="ln" data-no="5">n10 = amount // 10</span><span class="ln" data-no="6">n1 = amount % 10</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 21 -->
+<section class="slide" data-title="Задача 1: шаг 4">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1 &#183; Шаг 4</p>
+    <h2>Печатаем результат</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">f-строка подставляет значение переменной прямо в текст. Каждый номинал печатаем своей строкой.</div>
+    <div class="run r" data-run="t1s4" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="1787">1787 руб.</button><button class="chip" type="button" data-val="999">999 руб.</button><button class="chip" type="button" data-val="512">512 руб.</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(f'1000 руб.: {n1000}')</span><span class="ln" data-no="2">print(f'500 руб.: {n500}')</span><span class="ln" data-no="3">print(f'100 руб.: {n100}')</span><span class="ln" data-no="4">print(f'50 руб.: {n50}')</span><span class="ln" data-no="5">print(f'10 руб.: {n10}')</span><span class="ln" data-no="6">print(f'1 руб.: {n1}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 22 -->
+<section class="slide" data-title="Задача 1: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 1</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r sm" data-run="t1full" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="1787">1787 руб.</button><button class="chip" type="button" data-val="999">999 руб.</button><button class="chip" type="button" data-val="512">512 руб.</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">amount = int(input('Введите сумму в рублях: '))</span><span class="ln" data-no="2">n1000 = amount // 1000</span><span class="ln" data-no="3">amount = amount % 1000</span><span class="ln" data-no="4">n500 = amount // 500</span><span class="ln" data-no="5">amount = amount % 500</span><span class="ln" data-no="6">n100 = amount // 100</span><span class="ln" data-no="7">amount = amount % 100</span><span class="ln" data-no="8">n50 = amount // 50</span><span class="ln" data-no="9">amount = amount % 50</span><span class="ln" data-no="10">n10 = amount // 10</span><span class="ln" data-no="11">n1 = amount % 10</span><span class="ln" data-no="12">print(f'1000 руб.: {n1000}')</span><span class="ln" data-no="13">print(f'500 руб.: {n500}')</span><span class="ln" data-no="14">print(f'100 руб.: {n100}')</span><span class="ln" data-no="15">print(f'50 руб.: {n50}')</span><span class="ln" data-no="16">print(f'10 руб.: {n10}')</span><span class="ln" data-no="17">print(f'1 руб.: {n1}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 23 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно целое число — количество секунд. Читаем с клавиатуры: <code>total = int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>То же время в формате чч:мм:сс — по две цифры на часы, минуты и секунды.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">4000</span><span class="ar">&#8594;</span><span class="out">01:06:40</span></div>
+          <div class="trow"><span class="in">61</span><span class="ar">&#8594;</span><span class="out">00:01:01</span></div>
+          <div class="trow"><span class="in">7265</span><span class="ar">&#8594;</span><span class="out">02:01:05</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 480" role="img" aria-label="Игрушечные часы показывают 1 час 6 минут 40 секунд">
+          <circle cx="200" cy="240" r="170" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="4"/>
+          <line x1="200" y1="70" x2="200" y2="90" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="285" y1="92.8" x2="275" y2="110.1" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="347.2" y1="155" x2="329.9" y2="165" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="370" y1="240" x2="350" y2="240" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="347.2" y1="325" x2="329.9" y2="315" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="285" y1="387.2" x2="275" y2="369.9" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="200" y1="410" x2="200" y2="390" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="115" y1="387.2" x2="125" y2="369.9" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="52.8" y1="325" x2="70.1" y2="315" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="30" y1="240" x2="50" y2="240" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="52.8" y1="155" x2="70.1" y2="165" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="115" y1="92.8" x2="125" y2="110.1" stroke="#A8D3FF" stroke-width="4"/>
+          <line x1="200" y1="240" x2="249" y2="165" stroke="#0B3E7A" stroke-width="13" stroke-linecap="round"/>
+          <line x1="200" y1="240" x2="287" y2="137" stroke="#1E7EE8" stroke-width="9" stroke-linecap="round"/>
+          <line x1="200" y1="240" x2="70" y2="315" stroke="#FF8E00" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="200" cy="240" r="13" fill="#0B3E7A"/>
+          <rect x="410" y="60" width="270" height="90" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="434" y="117" font-size="24" fill="#6E7E92">часы</text>
+          <text x="656" y="121" text-anchor="end" font-size="40" font-weight="700" fill="#0B3E7A">01</text>
+          <rect x="410" y="170" width="270" height="90" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="434" y="227" font-size="24" fill="#6E7E92">минуты</text>
+          <text x="656" y="231" text-anchor="end" font-size="40" font-weight="700" fill="#0B3E7A">06</text>
+          <rect x="410" y="280" width="270" height="90" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/>
+          <text x="434" y="337" font-size="24" fill="#6E7E92">секунды</text>
+          <text x="656" y="341" text-anchor="end" font-size="40" font-weight="700" fill="#0B3E7A">40</text>
+          <text x="545" y="425" text-anchor="middle" font-size="26" fill="#6E7E92">4000 с = 01:06:40</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 24 -->
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 1</p>
+    <h2>Считаем секунды с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Секунды тоже приходят строкой, int() превращает их в число. Дальше работаем с <b>total</b>.</div>
+    <div class="run r" data-run="t2s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="4000">4000 с</button><button class="chip" type="button" data-val="61">61 с</button><button class="chip" type="button" data-val="7265">7265 с</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">total = int(input('Введите количество секунд: '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 25 -->
+<section class="slide" data-title="Задача 2: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 2</p>
+    <h2>Считаем целые часы</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">В одном часе 3600 секунд. Целых часов ровно столько, сколько раз 3600 помещается в total.</div>
+    <div class="run r" data-run="t2s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="4000">4000 с</button><button class="chip" type="button" data-val="61">61 с</button><button class="chip" type="button" data-val="7265">7265 с</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">hours = total // 3600</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 26 -->
+<section class="slide" data-title="Задача 2: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 3</p>
+    <h2>Минуты и секунды из остатка</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Остаток после часов — это минуты и секунды. Целые минуты даёт <b>total % 3600 // 60</b>, а что меньше минуты — <b>total % 60</b>.</div>
+    <div class="run r" data-run="t2s3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="4000">4000 с</button><button class="chip" type="button" data-val="61">61 с</button><button class="chip" type="button" data-val="7265">7265 с</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">minutes = total % 3600 // 60</span><span class="ln" data-no="2">seconds = total % 60</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 27 -->
+<section class="slide" data-title="Задача 2: шаг 4">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2 &#183; Шаг 4</p>
+    <h2>Печатаем время</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Запись :02 печатает минимум две цифры: если число меньше десяти, спереди подставляется ноль. Двоеточия вставляем прямо в f-строку.</div>
+    <div class="run r" data-run="t2s4" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="4000">4000 с</button><button class="chip" type="button" data-val="61">61 с</button><button class="chip" type="button" data-val="7265">7265 с</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(f'{hours:02}:{minutes:02}:{seconds:02}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 28 -->
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 2</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t2full" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="4000">4000 с</button><button class="chip" type="button" data-val="61">61 с</button><button class="chip" type="button" data-val="7265">7265 с</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">total = int(input('Введите количество секунд: '))</span><span class="ln" data-no="2">hours = total // 3600</span><span class="ln" data-no="3">minutes = total % 3600 // 60</span><span class="ln" data-no="4">seconds = total % 60</span><span class="ln" data-no="5">print(f'{hours:02}:{minutes:02}:{seconds:02}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 29 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно натуральное число — целое и положительное. Читаем с клавиатуры: <code>n = int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Последняя цифра этого числа — одно число от 0 до 9.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">574</span><span class="ar">&#8594;</span><span class="out">Последняя цифра числа 574: 4</span></div>
+          <div class="trow"><span class="in">4172</span><span class="ar">&#8594;</span><span class="out">Последняя цифра числа 4172: 2</span></div>
+          <div class="trow"><span class="in">9</span><span class="ar">&#8594;</span><span class="out">Последняя цифра числа 9: 9</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 460" role="img" aria-label="Число 4172: последняя цифра выделена, остаток от деления на 10 даёт 2">
+          <rect x="40" y="40" width="620" height="180" rx="24" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <rect x="60" y="60" width="140" height="140" rx="18" fill="#fff" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="130" y="156" text-anchor="middle" font-size="84" font-weight="700" fill="#0B3E7A">4</text>
+          <rect x="210" y="60" width="140" height="140" rx="18" fill="#fff" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="280" y="156" text-anchor="middle" font-size="84" font-weight="700" fill="#0B3E7A">1</text>
+          <rect x="360" y="60" width="140" height="140" rx="18" fill="#fff" stroke="#DEEAF7" stroke-width="2"/>
+          <text x="430" y="156" text-anchor="middle" font-size="84" font-weight="700" fill="#0B3E7A">7</text>
+          <rect x="510" y="60" width="140" height="140" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="4"/>
+          <text x="580" y="156" text-anchor="middle" font-size="84" font-weight="700" fill="#8A4A00">2</text>
+          <text x="580" y="256" text-anchor="middle" font-size="26" fill="#6E7E92">последняя цифра</text>
+          <rect x="330" y="290" width="340" height="90" rx="20" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="500" y="348" text-anchor="middle" font-size="36" font-weight="700" fill="#8A4A00">n % 10 = 2</text>
+          <text x="60" y="330" font-size="24" fill="#6E7E92">остаток от деления</text>
+          <text x="60" y="362" font-size="24" fill="#6E7E92">на 10 — это</text>
+          <text x="60" y="394" font-size="24" fill="#6E7E92">последняя цифра</text>
+          <text x="350" y="436" text-anchor="middle" font-size="26" fill="#6E7E92">для 4172 последняя цифра — 2</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 30 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Шаг 1</p>
+    <h2>Считаем число с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Читаем число с клавиатуры и превращаем строку в число. Дальше оно называется <b>n</b>.</div>
+    <div class="run r" data-run="t3s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="4172">4172</button><button class="chip" type="button" data-val="9">9</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Введите число: '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 31 -->
+<section class="slide" data-title="Задача 3: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Шаг 2</p>
+    <h2>Берём остаток от деления на 10</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Остаток от деления на 10 — всегда одна последняя цифра: у 574 это 4, у 4172 — 2, у 9 — сама девятка.</div>
+    <div class="run r" data-run="t3s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="4172">4172</button><button class="chip" type="button" data-val="9">9</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">last = n % 10</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 32 -->
+<section class="slide" data-title="Задача 3: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3 &#183; Шаг 3</p>
+    <h2>Печатаем ответ</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Одной строкой печатаем и само число, и его последнюю цифру.</div>
+    <div class="run r" data-run="t3s3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="4172">4172</button><button class="chip" type="button" data-val="9">9</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(f'Последняя цифра числа {n}: {last}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 33 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Задача 3</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t3full" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="4172">4172</button><button class="chip" type="button" data-val="9">9</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Введите число: '))</span><span class="ln" data-no="2">last = n % 10</span><span class="ln" data-no="3">print(f'Последняя цифра числа {n}: {last}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 34 -->
+<section class="slide" data-title="Доп. задание: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Дополнительное задание</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Что на вход</div><p>Одно трёхзначное число. Читаем с клавиатуры: <code>n = int(input())</code></p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Четыре строки: сотни, десятки, единицы и их сумма.</p></div>
+        <div class="tlist r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">574</span><span class="ar">&#8594;</span><span class="out">Сотни: 5, Десятки: 7, Единицы: 4, Сумма цифр: 16</span></div>
+          <div class="trow"><span class="in">903</span><span class="ar">&#8594;</span><span class="out">Сотни: 9, Десятки: 0, Единицы: 3, Сумма цифр: 12</span></div>
+          <div class="trow"><span class="in">100</span><span class="ar">&#8594;</span><span class="out">Сотни: 1, Десятки: 0, Единицы: 0, Сумма цифр: 1</span></div>
+        </div>
+      </div>
+      <div class="r" style="--d:250">
+        <svg class="ill" viewBox="0 0 700 460" role="img" aria-label="Число 574 разложено на цифры: 5 — сотни, 7 — десятки, 4 — единицы, сумма 16">
+          <rect x="120" y="40" width="140" height="140" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="190" y="136" text-anchor="middle" font-size="80" font-weight="700" fill="#0B3E7A">5</text>
+          <rect x="280" y="40" width="140" height="140" rx="18" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/>
+          <text x="350" y="136" text-anchor="middle" font-size="80" font-weight="700" fill="#0B3E7A">7</text>
+          <rect x="440" y="40" width="140" height="140" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="4"/>
+          <text x="510" y="136" text-anchor="middle" font-size="80" font-weight="700" fill="#8A4A00">4</text>
+          <text x="190" y="226" text-anchor="middle" font-size="24" fill="#6E7E92">сотни</text>
+          <text x="350" y="226" text-anchor="middle" font-size="24" fill="#6E7E92">десятки</text>
+          <text x="510" y="226" text-anchor="middle" font-size="24" fill="#6E7E92">единицы</text>
+          <text x="190" y="266" text-anchor="middle" font-size="22" fill="#6E7E92">n // 100</text>
+          <text x="350" y="266" text-anchor="middle" font-size="22" fill="#6E7E92">n // 10 % 10</text>
+          <text x="510" y="266" text-anchor="middle" font-size="22" fill="#6E7E92">n % 10</text>
+          <rect x="60" y="310" width="580" height="90" rx="20" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+          <text x="350" y="368" text-anchor="middle" font-size="36" font-weight="700" fill="#8A4A00">5 + 7 + 4 = 16</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 35 -->
+<section class="slide" data-title="Доп. задание: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 1</p>
+    <h2>Считаем число с экрана</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Читаем трёхзначное число с клавиатуры и превращаем строку в число.</div>
+    <div class="run r" data-run="t4s1" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="903">903</button><button class="chip" type="button" data-val="100">100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Введите трёхзначное число: '))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 36 -->
+<section class="slide" data-title="Доп. задание: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 2</p>
+    <h2>Сотни и десятки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70"><b>n // 100</b> отбрасывает две последние цифры и оставляет сотни. Десятки берутся в два действия: сначала убрать последнюю цифру, потом взять остаток от деления на 10.</div>
+    <div class="run r" data-run="t4s2" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="903">903</button><button class="chip" type="button" data-val="100">100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">hundreds = n // 100</span><span class="ln" data-no="2">tens = n // 10 % 10</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 37 -->
+<section class="slide" data-title="Доп. задание: шаг 3">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 3</p>
+    <h2>Единицы и сумма цифр</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Единицы — снова остаток от деления на 10. Три найденные цифры складываем: получилась сумма цифр числа.</div>
+    <div class="run r" data-run="t4s3" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="903">903</button><button class="chip" type="button" data-val="100">100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">ones = n % 10</span><span class="ln" data-no="2">digit_sum = hundreds + tens + ones</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 38 -->
+<section class="slide" data-title="Доп. задание: шаг 4">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Доп. задание &#183; Шаг 4</p>
+    <h2>Печатаем цифры и сумму</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Каждую цифру печатаем отдельной строкой, последней строкой — сумму.</div>
+    <div class="run r" data-run="t4s4" style="--d:140">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="903">903</button><button class="chip" type="button" data-val="100">100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">print(f'Сотни: {hundreds}')</span><span class="ln" data-no="2">print(f'Десятки: {tens}')</span><span class="ln" data-no="3">print(f'Единицы: {ones}')</span><span class="ln" data-no="4">print(f'Сумма цифр: {digit_sum}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 39 -->
+<section class="slide" data-title="Доп. задание: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика &#183; Дополнительное задание</p>
+    <h2>Полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="t4full" style="--d:70">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="574">574</button><button class="chip" type="button" data-val="903">903</button><button class="chip" type="button" data-val="100">100</button></div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">n = int(input('Введите трёхзначное число: '))</span><span class="ln" data-no="2">hundreds = n // 100</span><span class="ln" data-no="3">tens = n // 10 % 10</span><span class="ln" data-no="4">ones = n % 10</span><span class="ln" data-no="5">digit_sum = hundreds + tens + ones</span><span class="ln" data-no="6">print(f'Сотни: {hundreds}')</span><span class="ln" data-no="7">print(f'Десятки: {tens}')</span><span class="ln" data-no="8">print(f'Единицы: {ones}')</span><span class="ln" data-no="9">print(f'Сумма цифр: {digit_sum}')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div></section>
+<!-- 40 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Целые числа (int) пишут без кавычек, строки — в кавычках. Размер целого числа в Python не ограничен.</div>
+      <div>Операции: +, -, *, /, //, %, **. Результат обычного деления / всегда дробный.</div>
+      <div>Порядок вычислений как в математике, а скобки позволяют его изменить.</div>
+      <div>int() превращает строку в число, str() — число в строку. Число читают так: int(input()).</div>
+      <div>// показывает, сколько раз число помещается целиком, а % — что осталось.</div>
+      <div>С // и % определяют чётность, находят цифры числа, разбивают величины на части и считают то, что ходит по кругу.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">40</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    'types': [
+      { val:'num', label:'Числа 7 и 10', skip:[5], steps:[
+        { ln:1, out:{ t:'num1 = 7  →  тип int' } },
+        { ln:2, out:{ t:'num2 = 10  →  тип int' } },
+        { ln:3, out:{ t:'num3 = 7 + 10  →  17' } },
+        { ln:4, out:{ t:'17', kind:'p' }, badge:'7 + 10 = 17 — числа сложились' }
+      ]},
+      { val:'str', label:"Строка '7'", skip:[1,2,3,4], steps:[
+        { ln:5, out:{ t:"s = '7'  →  тип str, а не число" }, badge:'В кавычках — текст: для вычислений не годится' }
+      ]}
+    ],
+    'ops': [
+      { val:'all', label:'Все пять строк', skip:[], steps:[
+        { ln:1, out:{ t:'10', kind:'p' } },
+        { ln:2, out:{ t:'3.5', kind:'p' }, badge:'Обычное деление / даёт дробное число' },
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'1', kind:'p' }, badge:'7 = 2 * 3 + 1' },
+        { ln:5, out:{ t:'8', kind:'p' }, badge:'2 в третьей степени — восемь' }
+      ]},
+      { val:'idiv', label:'Только // и %', skip:[1,2,5], steps:[
+        { ln:3, out:{ t:'3', kind:'p' } },
+        { ln:4, out:{ t:'1', kind:'p' }, badge:'2 помещается в 7 три раза, и ещё 1 остаётся' }
+      ]}
+    ],
+    'order': [
+      { val:'order', label:'Без скобок', skip:[5], steps:[
+        { ln:1, out:{ t:'14', kind:'p' }, badge:'Сначала 3 * 4, только потом сложение' },
+        { ln:2, out:{ t:'3', kind:'p' } },
+        { ln:3, out:{ t:'20.0', kind:'p' }, badge:'Умножение и деление равны — идут слева направо' },
+        { ln:4, out:{ t:'50', kind:'p' }, badge:'Сначала степень: 4 ** 2 = 16' }
+      ]},
+      { val:'paren', label:'Со скобками', skip:[2,3,4], steps:[
+        { ln:1, out:{ t:'14', kind:'p' } },
+        { ln:5, out:{ t:'20', kind:'p' }, badge:'Скобки посчитались первыми: 2 + 3 = 5' }
+      ]}
+    ],
+    'cast': [
+      { val:'toint', label:'Строка → число', skip:[4,5], steps:[
+        { ln:1, out:{ t:"s = '1992'  →  тип str" } },
+        { ln:2, out:{ t:'year = 1992  →  тип int' }, badge:'int() взял текст в скобках и сделал число' },
+        { ln:3, out:{ t:'1992', kind:'p' } }
+      ]},
+      { val:'tostr', label:'Число → строка', skip:[1,2,3], steps:[
+        { ln:4, out:{ t:'num = 17  →  тип int' } },
+        { ln:5, out:{ t:"text = '17'  →  тип str" }, badge:'num остался числом, text — строкой' }
+      ]}
+    ],
+    'input': [
+      { val:'str', label:'Без int(): 3 и 4', skip:[4], steps:[
+        { ln:1, out:{ t:"num1 = '3'  →  строка" } },
+        { ln:2, out:{ t:"num2 = '4'  →  строка" } },
+        { ln:3, out:{ t:'34', kind:'p' }, badge:'Строки склеились: 34, а не 7' }
+      ]},
+      { val:'int', label:'С int(): 3 и 4', skip:[3], steps:[
+        { ln:1, out:{ t:"num1 = '3'  →  строка" } },
+        { ln:2, out:{ t:"num2 = '4'  →  строка" } },
+        { ln:4, out:{ t:'7', kind:'p' }, badge:'int() превратил текст в числа: 3 + 4 = 7' }
+      ]}
+    ],
+    'digits': [
+      { val:'last', label:'Последняя цифра', skip:[3,4,5,6], steps:[
+        { ln:1, out:{ t:'n = 4172' } },
+        { ln:2, out:{ t:'2', kind:'p' }, badge:'Остаток от деления на 10 — последняя цифра' }
+      ]},
+      { val:'all', label:'Все разряды', skip:[], steps:[
+        { ln:1, out:{ t:'n = 4172' } },
+        { ln:2, out:{ t:'2', kind:'p' }, badge:'последняя цифра' },
+        { ln:3, out:{ t:'417', kind:'p' }, badge:'число без последней цифры' },
+        { ln:4, out:{ t:'7', kind:'p' }, badge:'предпоследняя цифра' },
+        { ln:5, out:{ t:'1', kind:'p' }, badge:'третья цифра с конца' },
+        { ln:6, out:{ t:'4', kind:'p' }, badge:'первая цифра' }
+      ]}
+    ],
+    'parity': [
+      { val:'even', label:'4172 — чётное', skip:[2], steps:[
+        { ln:1, out:{ t:'0', kind:'p' }, badge:'Остаток 0 — число чётное' },
+        { ln:3, out:{ t:'2', kind:'p' }, badge:'Если сейчас 20 часов, через 30 часов будет 2 часа ночи' }
+      ]},
+      { val:'odd', label:'7 — нечётное', skip:[1,3], steps:[
+        { ln:2, out:{ t:'1', kind:'p' }, badge:'Остаток 1 — число нечётное' }
+      ]}
+    ],
+    "t1s1": [
+      { val:"1787", label:"1787 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 1787  →  тип int" }, badge:"Сумма прочитана с клавиатуры" }
+      ]},
+      { val:"999", label:"999 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 999  →  тип int" }, badge:"Сумма прочитана с клавиатуры" }
+      ]},
+      { val:"512", label:"512 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 512  →  тип int" }, badge:"Сумма прочитана с клавиатуры" }
+      ]}
+    ],
+    "t1s2": [
+      { val:"1787", label:"1787 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n1000 = 1787 // 1000  →  1" } },
+        { ln:2, out:{ t:"amount = 1787 % 1000  →  787" } },
+        { ln:3, out:{ t:"n500 = 787 // 500  →  1" } },
+        { ln:4, out:{ t:"amount = 787 % 500  →  287" }, badge:"Крупные купюры разобраны, осталось 287 руб." }
+      ]},
+      { val:"999", label:"999 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n1000 = 999 // 1000  →  0" } },
+        { ln:2, out:{ t:"amount = 999 % 1000  →  999" } },
+        { ln:3, out:{ t:"n500 = 999 // 500  →  1" } },
+        { ln:4, out:{ t:"amount = 999 % 500  →  499" }, badge:"Крупные купюры разобраны, осталось 499 руб." }
+      ]},
+      { val:"512", label:"512 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n1000 = 512 // 1000  →  0" } },
+        { ln:2, out:{ t:"amount = 512 % 1000  →  512" } },
+        { ln:3, out:{ t:"n500 = 512 // 500  →  1" } },
+        { ln:4, out:{ t:"amount = 512 % 500  →  12" }, badge:"Крупные купюры разобраны, осталось 12 руб." }
+      ]}
+    ],
+    "t1s3": [
+      { val:"1787", label:"1787 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n100 = 287 // 100  →  2" } },
+        { ln:2, out:{ t:"amount = 287 % 100  →  87" } },
+        { ln:3, out:{ t:"n50 = 87 // 50  →  1" } },
+        { ln:4, out:{ t:"amount = 87 % 50  →  37" } },
+        { ln:5, out:{ t:"n10 = 37 // 10  →  3" } },
+        { ln:6, out:{ t:"n1 = 37 % 10  →  7" }, badge:"37 руб. = 3 × 10 руб. + 7 × 1 руб." }
+      ]},
+      { val:"999", label:"999 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n100 = 499 // 100  →  4" } },
+        { ln:2, out:{ t:"amount = 499 % 100  →  99" } },
+        { ln:3, out:{ t:"n50 = 99 // 50  →  1" } },
+        { ln:4, out:{ t:"amount = 99 % 50  →  49" } },
+        { ln:5, out:{ t:"n10 = 49 // 10  →  4" } },
+        { ln:6, out:{ t:"n1 = 49 % 10  →  9" }, badge:"49 руб. = 4 × 10 руб. + 9 × 1 руб." }
+      ]},
+      { val:"512", label:"512 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"n100 = 12 // 100  →  0" } },
+        { ln:2, out:{ t:"amount = 12 % 100  →  12" } },
+        { ln:3, out:{ t:"n50 = 12 // 50  →  0" } },
+        { ln:4, out:{ t:"amount = 12 % 50  →  12" } },
+        { ln:5, out:{ t:"n10 = 12 // 10  →  1" } },
+        { ln:6, out:{ t:"n1 = 12 % 10  →  2" }, badge:"12 руб. = 1 × 10 руб. + 2 × 1 руб." }
+      ]}
+    ],
+    "t1s4": [
+      { val:"1787", label:"1787 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"1000 руб.: 1", kind:"p" } },
+        { ln:2, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:3, out:{ t:"100 руб.: 2", kind:"p" } },
+        { ln:4, out:{ t:"50 руб.: 1", kind:"p" } },
+        { ln:5, out:{ t:"10 руб.: 3", kind:"p" } },
+        { ln:6, out:{ t:"1 руб.: 7", kind:"p" }, badge:"1787 руб. разложены по номиналам" }
+      ]},
+      { val:"999", label:"999 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"1000 руб.: 0", kind:"p" } },
+        { ln:2, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:3, out:{ t:"100 руб.: 4", kind:"p" } },
+        { ln:4, out:{ t:"50 руб.: 1", kind:"p" } },
+        { ln:5, out:{ t:"10 руб.: 4", kind:"p" } },
+        { ln:6, out:{ t:"1 руб.: 9", kind:"p" }, badge:"999 руб. разложены по номиналам" }
+      ]},
+      { val:"512", label:"512 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"1000 руб.: 0", kind:"p" } },
+        { ln:2, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:3, out:{ t:"100 руб.: 0", kind:"p" } },
+        { ln:4, out:{ t:"50 руб.: 0", kind:"p" } },
+        { ln:5, out:{ t:"10 руб.: 1", kind:"p" } },
+        { ln:6, out:{ t:"1 руб.: 2", kind:"p" }, badge:"512 руб. разложены по номиналам" }
+      ]}
+    ],
+    "t1full": [
+      { val:"1787", label:"1787 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 1787  →  тип int" } },
+        { ln:2, out:{ t:"n1000 = 1787 // 1000  →  1" } },
+        { ln:3, out:{ t:"amount = 1787 % 1000  →  787" } },
+        { ln:4, out:{ t:"n500 = 787 // 500  →  1" } },
+        { ln:5, out:{ t:"amount = 787 % 500  →  287" } },
+        { ln:6, out:{ t:"n100 = 287 // 100  →  2" } },
+        { ln:7, out:{ t:"amount = 287 % 100  →  87" } },
+        { ln:8, out:{ t:"n50 = 87 // 50  →  1" } },
+        { ln:9, out:{ t:"amount = 87 % 50  →  37" } },
+        { ln:10, out:{ t:"n10 = 37 // 10  →  3" } },
+        { ln:11, out:{ t:"n1 = 37 % 10  →  7" } },
+        { ln:12, out:{ t:"1000 руб.: 1", kind:"p" } },
+        { ln:13, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:14, out:{ t:"100 руб.: 2", kind:"p" } },
+        { ln:15, out:{ t:"50 руб.: 1", kind:"p" } },
+        { ln:16, out:{ t:"10 руб.: 3", kind:"p" } },
+        { ln:17, out:{ t:"1 руб.: 7", kind:"p" }, badge:"Тест 1787 пройден: вывод совпал с условием" }
+      ]},
+      { val:"999", label:"999 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 999  →  тип int" } },
+        { ln:2, out:{ t:"n1000 = 999 // 1000  →  0" } },
+        { ln:3, out:{ t:"amount = 999 % 1000  →  999" } },
+        { ln:4, out:{ t:"n500 = 999 // 500  →  1" } },
+        { ln:5, out:{ t:"amount = 999 % 500  →  499" } },
+        { ln:6, out:{ t:"n100 = 499 // 100  →  4" } },
+        { ln:7, out:{ t:"amount = 499 % 100  →  99" } },
+        { ln:8, out:{ t:"n50 = 99 // 50  →  1" } },
+        { ln:9, out:{ t:"amount = 99 % 50  →  49" } },
+        { ln:10, out:{ t:"n10 = 49 // 10  →  4" } },
+        { ln:11, out:{ t:"n1 = 49 % 10  →  9" } },
+        { ln:12, out:{ t:"1000 руб.: 0", kind:"p" } },
+        { ln:13, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:14, out:{ t:"100 руб.: 4", kind:"p" } },
+        { ln:15, out:{ t:"50 руб.: 1", kind:"p" } },
+        { ln:16, out:{ t:"10 руб.: 4", kind:"p" } },
+        { ln:17, out:{ t:"1 руб.: 9", kind:"p" }, badge:"Тест 999 пройден: вывод совпал с условием" }
+      ]},
+      { val:"512", label:"512 руб.", skip:[], steps:[
+        { ln:1, out:{ t:"amount = 512  →  тип int" } },
+        { ln:2, out:{ t:"n1000 = 512 // 1000  →  0" } },
+        { ln:3, out:{ t:"amount = 512 % 1000  →  512" } },
+        { ln:4, out:{ t:"n500 = 512 // 500  →  1" } },
+        { ln:5, out:{ t:"amount = 512 % 500  →  12" } },
+        { ln:6, out:{ t:"n100 = 12 // 100  →  0" } },
+        { ln:7, out:{ t:"amount = 12 % 100  →  12" } },
+        { ln:8, out:{ t:"n50 = 12 // 50  →  0" } },
+        { ln:9, out:{ t:"amount = 12 % 50  →  12" } },
+        { ln:10, out:{ t:"n10 = 12 // 10  →  1" } },
+        { ln:11, out:{ t:"n1 = 12 % 10  →  2" } },
+        { ln:12, out:{ t:"1000 руб.: 0", kind:"p" } },
+        { ln:13, out:{ t:"500 руб.: 1", kind:"p" } },
+        { ln:14, out:{ t:"100 руб.: 0", kind:"p" } },
+        { ln:15, out:{ t:"50 руб.: 0", kind:"p" } },
+        { ln:16, out:{ t:"10 руб.: 1", kind:"p" } },
+        { ln:17, out:{ t:"1 руб.: 2", kind:"p" }, badge:"Тест 512 пройден: вывод совпал с условием" }
+      ]}
+    ],
+    "t2s1": [
+      { val:"4000", label:"4000 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 4000  →  тип int" }, badge:"Секунды прочитаны с клавиатуры" }
+      ]},
+      { val:"61", label:"61 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 61  →  тип int" }, badge:"Секунды прочитаны с клавиатуры" }
+      ]},
+      { val:"7265", label:"7265 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 7265  →  тип int" }, badge:"Секунды прочитаны с клавиатуры" }
+      ]}
+    ],
+    "t2s2": [
+      { val:"4000", label:"4000 с", skip:[], steps:[
+        { ln:1, out:{ t:"hours = 4000 // 3600  →  1" }, badge:"4000 с — это 1 ч и ещё 400 с" }
+      ]},
+      { val:"61", label:"61 с", skip:[], steps:[
+        { ln:1, out:{ t:"hours = 61 // 3600  →  0" }, badge:"61 с — это 0 ч и ещё 61 с" }
+      ]},
+      { val:"7265", label:"7265 с", skip:[], steps:[
+        { ln:1, out:{ t:"hours = 7265 // 3600  →  2" }, badge:"7265 с — это 2 ч и ещё 65 с" }
+      ]}
+    ],
+    "t2s3": [
+      { val:"4000", label:"4000 с", skip:[], steps:[
+        { ln:1, out:{ t:"minutes = 4000 % 3600 // 60  →  6" } },
+        { ln:2, out:{ t:"seconds = 4000 % 60  →  40" } }
+      ]},
+      { val:"61", label:"61 с", skip:[], steps:[
+        { ln:1, out:{ t:"minutes = 61 % 3600 // 60  →  1" } },
+        { ln:2, out:{ t:"seconds = 61 % 60  →  1" } }
+      ]},
+      { val:"7265", label:"7265 с", skip:[], steps:[
+        { ln:1, out:{ t:"minutes = 7265 % 3600 // 60  →  1" } },
+        { ln:2, out:{ t:"seconds = 7265 % 60  →  5" } }
+      ]}
+    ],
+    "t2s4": [
+      { val:"4000", label:"4000 с", skip:[], steps:[
+        { ln:1, out:{ t:"01:06:40", kind:"p" }, badge:"Запись :02 держит две цифры — ноль подставляется сам" }
+      ]},
+      { val:"61", label:"61 с", skip:[], steps:[
+        { ln:1, out:{ t:"00:01:01", kind:"p" }, badge:"Запись :02 держит две цифры — ноль подставляется сам" }
+      ]},
+      { val:"7265", label:"7265 с", skip:[], steps:[
+        { ln:1, out:{ t:"02:01:05", kind:"p" }, badge:"Запись :02 держит две цифры — ноль подставляется сам" }
+      ]}
+    ],
+    "t2full": [
+      { val:"4000", label:"4000 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 4000  →  тип int" } },
+        { ln:2, out:{ t:"hours = 4000 // 3600  →  1" } },
+        { ln:3, out:{ t:"minutes = 4000 % 3600 // 60  →  6" } },
+        { ln:4, out:{ t:"seconds = 4000 % 60  →  40" } },
+        { ln:5, out:{ t:"01:06:40", kind:"p" }, badge:"Тест 4000 пройден: вывод совпал с условием" }
+      ]},
+      { val:"61", label:"61 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 61  →  тип int" } },
+        { ln:2, out:{ t:"hours = 61 // 3600  →  0" } },
+        { ln:3, out:{ t:"minutes = 61 % 3600 // 60  →  1" } },
+        { ln:4, out:{ t:"seconds = 61 % 60  →  1" } },
+        { ln:5, out:{ t:"00:01:01", kind:"p" }, badge:"Тест 61 пройден: вывод совпал с условием" }
+      ]},
+      { val:"7265", label:"7265 с", skip:[], steps:[
+        { ln:1, out:{ t:"total = 7265  →  тип int" } },
+        { ln:2, out:{ t:"hours = 7265 // 3600  →  2" } },
+        { ln:3, out:{ t:"minutes = 7265 % 3600 // 60  →  1" } },
+        { ln:4, out:{ t:"seconds = 7265 % 60  →  5" } },
+        { ln:5, out:{ t:"02:01:05", kind:"p" }, badge:"Тест 7265 пройден: вывод совпал с условием" }
+      ]}
+    ],
+    "t3s1": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"n = 574  →  тип int" }, badge:"Число прочитано с клавиатуры" }
+      ]},
+      { val:"4172", label:"4172", skip:[], steps:[
+        { ln:1, out:{ t:"n = 4172  →  тип int" }, badge:"Число прочитано с клавиатуры" }
+      ]},
+      { val:"9", label:"9", skip:[], steps:[
+        { ln:1, out:{ t:"n = 9  →  тип int" }, badge:"Число прочитано с клавиатуры" }
+      ]}
+    ],
+    "t3s2": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"last = 574 % 10  →  4" }, badge:"Остаток от деления на 10 — это последняя цифра" }
+      ]},
+      { val:"4172", label:"4172", skip:[], steps:[
+        { ln:1, out:{ t:"last = 4172 % 10  →  2" }, badge:"Остаток от деления на 10 — это последняя цифра" }
+      ]},
+      { val:"9", label:"9", skip:[], steps:[
+        { ln:1, out:{ t:"last = 9 % 10  →  9" }, badge:"Остаток от деления на 10 — это последняя цифра" }
+      ]}
+    ],
+    "t3s3": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"Последняя цифра числа 574: 4", kind:"p" }, badge:"Последняя цифра найдена и напечатана" }
+      ]},
+      { val:"4172", label:"4172", skip:[], steps:[
+        { ln:1, out:{ t:"Последняя цифра числа 4172: 2", kind:"p" }, badge:"Последняя цифра найдена и напечатана" }
+      ]},
+      { val:"9", label:"9", skip:[], steps:[
+        { ln:1, out:{ t:"Последняя цифра числа 9: 9", kind:"p" }, badge:"Последняя цифра найдена и напечатана" }
+      ]}
+    ],
+    "t3full": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"n = 574  →  тип int" } },
+        { ln:2, out:{ t:"last = 574 % 10  →  4" } },
+        { ln:3, out:{ t:"Последняя цифра числа 574: 4", kind:"p" }, badge:"Тест 574 пройден: вывод совпал с условием" }
+      ]},
+      { val:"4172", label:"4172", skip:[], steps:[
+        { ln:1, out:{ t:"n = 4172  →  тип int" } },
+        { ln:2, out:{ t:"last = 4172 % 10  →  2" } },
+        { ln:3, out:{ t:"Последняя цифра числа 4172: 2", kind:"p" }, badge:"Тест 4172 пройден: вывод совпал с условием" }
+      ]},
+      { val:"9", label:"9", skip:[], steps:[
+        { ln:1, out:{ t:"n = 9  →  тип int" } },
+        { ln:2, out:{ t:"last = 9 % 10  →  9" } },
+        { ln:3, out:{ t:"Последняя цифра числа 9: 9", kind:"p" }, badge:"Тест 9 пройден: вывод совпал с условием" }
+      ]}
+    ],
+    "t4s1": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"n = 574  →  тип int" }, badge:"Трёхзначное число прочитано с клавиатуры" }
+      ]},
+      { val:"903", label:"903", skip:[], steps:[
+        { ln:1, out:{ t:"n = 903  →  тип int" }, badge:"Трёхзначное число прочитано с клавиатуры" }
+      ]},
+      { val:"100", label:"100", skip:[], steps:[
+        { ln:1, out:{ t:"n = 100  →  тип int" }, badge:"Трёхзначное число прочитано с клавиатуры" }
+      ]}
+    ],
+    "t4s2": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"hundreds = 574 // 100  →  5" } },
+        { ln:2, out:{ t:"tens = 574 // 10 % 10  →  7" } }
+      ]},
+      { val:"903", label:"903", skip:[], steps:[
+        { ln:1, out:{ t:"hundreds = 903 // 100  →  9" } },
+        { ln:2, out:{ t:"tens = 903 // 10 % 10  →  0" } }
+      ]},
+      { val:"100", label:"100", skip:[], steps:[
+        { ln:1, out:{ t:"hundreds = 100 // 100  →  1" } },
+        { ln:2, out:{ t:"tens = 100 // 10 % 10  →  0" } }
+      ]}
+    ],
+    "t4s3": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"ones = 574 % 10  →  4" } },
+        { ln:2, out:{ t:"digit_sum = 5 + 7 + 4  →  16" }, badge:"Сумма цифр числа 574 — 16" }
+      ]},
+      { val:"903", label:"903", skip:[], steps:[
+        { ln:1, out:{ t:"ones = 903 % 10  →  3" } },
+        { ln:2, out:{ t:"digit_sum = 9 + 0 + 3  →  12" }, badge:"Сумма цифр числа 903 — 12" }
+      ]},
+      { val:"100", label:"100", skip:[], steps:[
+        { ln:1, out:{ t:"ones = 100 % 10  →  0" } },
+        { ln:2, out:{ t:"digit_sum = 1 + 0 + 0  →  1" }, badge:"Сумма цифр числа 100 — 1" }
+      ]}
+    ],
+    "t4s4": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"Сотни: 5", kind:"p" } },
+        { ln:2, out:{ t:"Десятки: 7", kind:"p" } },
+        { ln:3, out:{ t:"Единицы: 4", kind:"p" } },
+        { ln:4, out:{ t:"Сумма цифр: 16", kind:"p" }, badge:"574: 5 + 7 + 4 = 16" }
+      ]},
+      { val:"903", label:"903", skip:[], steps:[
+        { ln:1, out:{ t:"Сотни: 9", kind:"p" } },
+        { ln:2, out:{ t:"Десятки: 0", kind:"p" } },
+        { ln:3, out:{ t:"Единицы: 3", kind:"p" } },
+        { ln:4, out:{ t:"Сумма цифр: 12", kind:"p" }, badge:"903: 9 + 0 + 3 = 12" }
+      ]},
+      { val:"100", label:"100", skip:[], steps:[
+        { ln:1, out:{ t:"Сотни: 1", kind:"p" } },
+        { ln:2, out:{ t:"Десятки: 0", kind:"p" } },
+        { ln:3, out:{ t:"Единицы: 0", kind:"p" } },
+        { ln:4, out:{ t:"Сумма цифр: 1", kind:"p" }, badge:"100: 1 + 0 + 0 = 1" }
+      ]}
+    ],
+    "t4full": [
+      { val:"574", label:"574", skip:[], steps:[
+        { ln:1, out:{ t:"n = 574  →  тип int" } },
+        { ln:2, out:{ t:"hundreds = 574 // 100  →  5" } },
+        { ln:3, out:{ t:"tens = 574 // 10 % 10  →  7" } },
+        { ln:4, out:{ t:"ones = 574 % 10  →  4" } },
+        { ln:5, out:{ t:"digit_sum = 5 + 7 + 4  →  16" } },
+        { ln:6, out:{ t:"Сотни: 5", kind:"p" } },
+        { ln:7, out:{ t:"Десятки: 7", kind:"p" } },
+        { ln:8, out:{ t:"Единицы: 4", kind:"p" } },
+        { ln:9, out:{ t:"Сумма цифр: 16", kind:"p" }, badge:"Тест 574 пройден: вывод совпал с условием" }
+      ]},
+      { val:"903", label:"903", skip:[], steps:[
+        { ln:1, out:{ t:"n = 903  →  тип int" } },
+        { ln:2, out:{ t:"hundreds = 903 // 100  →  9" } },
+        { ln:3, out:{ t:"tens = 903 // 10 % 10  →  0" } },
+        { ln:4, out:{ t:"ones = 903 % 10  →  3" } },
+        { ln:5, out:{ t:"digit_sum = 9 + 0 + 3  →  12" } },
+        { ln:6, out:{ t:"Сотни: 9", kind:"p" } },
+        { ln:7, out:{ t:"Десятки: 0", kind:"p" } },
+        { ln:8, out:{ t:"Единицы: 3", kind:"p" } },
+        { ln:9, out:{ t:"Сумма цифр: 12", kind:"p" }, badge:"Тест 903 пройден: вывод совпал с условием" }
+      ]},
+      { val:"100", label:"100", skip:[], steps:[
+        { ln:1, out:{ t:"n = 100  →  тип int" } },
+        { ln:2, out:{ t:"hundreds = 100 // 100  →  1" } },
+        { ln:3, out:{ t:"tens = 100 // 10 % 10  →  0" } },
+        { ln:4, out:{ t:"ones = 100 % 10  →  0" } },
+        { ln:5, out:{ t:"digit_sum = 1 + 0 + 0  →  1" } },
+        { ln:6, out:{ t:"Сотни: 1", kind:"p" } },
+        { ln:7, out:{ t:"Десятки: 0", kind:"p" } },
+        { ln:8, out:{ t:"Единицы: 0", kind:"p" } },
+        { ln:9, out:{ t:"Сумма цифр: 1", kind:"p" }, badge:"Тест 100 пройден: вывод совпал с условием" }
+      ]}
+    ],
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+</body>
+</html>
