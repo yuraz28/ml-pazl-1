@@ -26,6 +26,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CLASSES = REPO_ROOT / "classes"
 INDEX = REPO_ROOT / "index.html"
+CONFIG = REPO_ROOT / "config.yaml"
 
 OPEN_MARK = "<!--lessons:data-->"
 CLOSE_MARK = "<!--/lessons:data-->"
@@ -76,7 +77,81 @@ def pick_deck(lesson_dir: Path, n: int) -> Path | None:
     return chosen
 
 
+OPEN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def load_config() -> dict:
+    """Общий config.yaml (course + lessons). Нет файла/нет PyYAML — работаем без него."""
+    if not CONFIG.exists():
+        return {}
+    try:
+        import yaml
+    except ImportError:
+        print(f"  ! {CONFIG.name} есть, но PyYAML не установлен — пропускаю (pip install pyyaml)",
+              file=sys.stderr)
+        return {}
+    try:
+        data = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 — конфиг пишут руками, ошибка не должна ронять сборку
+        print(f"  ! не разобрал {CONFIG.name}: {exc}", file=sys.stderr)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def config_by_lesson(cfg: dict) -> dict:
+    """Список lessons из конфига → {номер: запись}."""
+    by_n = {}
+    items = cfg.get("lessons")
+    if not isinstance(items, list):
+        return by_n
+    for item in items:
+        if not isinstance(item, dict) or item.get("n") is None:
+            continue
+        try:
+            by_n[int(item["n"])] = item
+        except (TypeError, ValueError):
+            print(f"  ! пропускаю урок с некорректным n: {item.get('n')!r}", file=sys.stderr)
+    return by_n
+
+
+def apply_overrides(entry: dict, c: dict) -> None:
+    """Наложить поля урока из config.yaml поверх данных, снятых с деки."""
+    if not isinstance(c, dict) or not c:
+        return
+
+    pres = c.get("presentation")
+    if pres:
+        pres = str(pres).strip()
+        path = REPO_ROOT / pres
+        if path.is_file():
+            title, slides = deck_meta(path)
+            entry.update(
+                file=path.name,
+                dir=path.parent.name,
+                path=pres,
+                slides=slides,
+                title=title,
+            )
+        else:
+            print(f"  ! занятие {entry['n']}: презентация из config.yaml не найдена: {pres}",
+                  file=sys.stderr)
+
+    if c.get("title"):
+        entry["title"] = str(c["title"]).strip()
+
+    opens = c.get("opens")
+    if opens is not None:
+        val = str(opens).strip()
+        if val:
+            if val != "soon" and not OPEN_RE.match(val):
+                print(f"  ! занятие {entry['n']}: opens не дата и не soon: {val!r}", file=sys.stderr)
+            entry["opens"] = val
+
+
 def collect() -> dict:
+    cfg = load_config()
+    by_n = config_by_lesson(cfg)
+
     lessons = []
     for lesson_dir in sorted(CLASSES.iterdir(), key=lambda p: p.name):
         if not lesson_dir.is_dir():
@@ -96,11 +171,25 @@ def collect() -> dict:
                 path=f"classes/{lesson_dir.name}/{deck.name}",
             )
         lessons.append(entry)
+
+    # занятия, объявленные только в config.yaml (папки нет / ещё не завели)
+    known = {e["n"] for e in lessons}
+    for n in sorted(by_n):
+        if n not in known:
+            lessons.append({"n": n, "dir": f"{n:02d}-lessons", "file": None, "title": "", "slides": 0})
+
     lessons.sort(key=lambda e: e["n"])
+    for entry in lessons:
+        apply_overrides(entry, by_n.get(entry["n"], {}))
+
+    course = cfg.get("course")
+    if not isinstance(course, dict):
+        course = {}
     return {
         "schema": 1,
-        "branch": "main",
+        "branch": str(course.get("branch") or "main"),
         "gh": git_origin(),
+        "title": str(course.get("title") or "Все занятия курса"),
         "lessons": lessons,
     }
 

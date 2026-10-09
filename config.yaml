@@ -1,0 +1,136 @@
+# Общий конфиг материалов курса.
+#
+# Поля урока:
+#   n            — номер занятия (обязателен, это ключ)
+#   title        — название; если не задано, берётся из <title> деки
+#   opens        — "YYYY-MM-DD" (дата открытия) ИЛИ "soon" (дата неизвестна)
+#   presentation — путь до презентации от корня репозитория
+#
+# Правило: дата opens уже наступила → занятие открыто (как только есть дека);
+# дата впереди → карточка закрыта и показывает дату и отсчёт.
+#
+# ВАЖНО: правки этого файла подхватываются только после пересборки:
+#     uv run python scripts/build_lesson_index.py
+# На GitHub это делает workflow автоматически при пуше в main.
+
+course:
+  title: "Машинное обучение"
+  branch: main
+
+lessons:
+  - n: 1
+    title: "Вводное занятие"
+    opens: 2026-10-05
+  - n: 2
+    title: "Введение в профессию и инструменты"
+    opens: 2026-10-12
+    presentation: classes/02-lessons/02-vvedenie-v-professiyu.html
+  - n: 3
+    title: "Профессии в IT: AI, бэкенд и фронтенд"
+    opens: 2026-10-12
+    presentation: classes/03-lessons/03-proficii-v-it.html
+  - n: 4
+    title: "Первые шаги в Python"
+    opens: 2026-10-19
+    presentation: classes/04-lessons/04-pervye-shagi-v-python.html
+  - n: 5
+    title: "Ввод и вывод данных"
+    opens: 2026-10-19
+    presentation: classes/05-lessons/05-vvod-i-vyvod-dannyh.html
+  - n: 6
+    title: "Целочисленная арифметика"
+    opens: 2026-11-02
+    presentation: classes/06-lessons/06-celochislennaya-arifmetika.html
+  - n: 7
+    title: "Условный оператор"
+    opens: 2026-11-09
+    presentation: classes/07-lessons/07-uslovnyy-operator.html
+  - n: 8
+    title: "Типы данных"
+    opens: 2026-11-09
+    presentation: classes/08-lessons/08-tipy-dannyh.html
+  - n: 9
+    title: "Цикл for"
+    opens: 2026-11-16
+    presentation: classes/09-lessons/09-cikl-for.html
+  - n: 10
+    title: "Цикл while"
+    opens: 2026-11-16
+    presentation: classes/10-lessons/10-cikl-while.html
+  - n: 11
+    title: "Строки"
+    opens: 2026-11-23
+    presentation: classes/11-lessons/11-stroki.html
+  - n: 12
+    title: "Списки"
+    opens: 2026-11-23
+    presentation: classes/12-lessons/12-spiski.html
+  - n: 13
+    title: "Функции"
+    opens: 2026-11-30
+    presentation: classes/13-lessons/13-funkcii.html
+
+  - n: 14
+    opens: soon
+  - n: 15
+    opens: soon
+  - n: 16
+    opens: soon
+  - n: 17
+    opens: soon
+  - n: 18
+    opens: soon
+  - n: 19
+    opens: soon
+  - n: 20
+    opens: soon
+  - n: 21
+    opens: soon
+  - n: 22
+    opens: soon
+  - n: 23
+    opens: soon
+  - n: 24
+    opens: soon
+  - n: 25
+    opens: soon
+  - n: 26
+    opens: soon
+  - n: 27
+    opens: soon
+  - n: 28
+    opens: soon
+  - n: 29
+    opens: soon
+  - n: 30
+    opens: soon
+  - n: 31
+    opens: soon
+  - n: 32
+    opens: soon
+  - n: 33
+    opens: soon
+  - n: 34
+    opens: soon
+  - n: 35
+    opens: soon
+  - n: 36
+    opens: soon
+  - n: 37
+    opens: soon
+  - n: 38
+    opens: soon
+  - n: 39
+    opens: soon
+  - n: 40
+    opens: soon
+  - n: 41
+    opens: soon
+  - n: 42
+    opens: soon
+  - n: 43
+    opens: soon
+  - n: 44
+    opens: soon
+  - n: 45
+    opens: soon
