@@ -1,4 +1,4 @@
-# Пересобирает оглавление classes/index.html, когда появляется новая презентация.
+# Пересобирает оглавление index.html в корне репозитория, когда появляется новая презентация.
 #
 # Нужен только в одном случае: если сайт публикуется из ПРИВАТНОГО репозитория.
 # Тогда страница не может сама узнать список файлов (для этого GitHub-API
@@ -41,12 +41,12 @@ jobs:
       - name: Закоммитить, если что-то изменилось
         continue-on-error: true
         run: |
-          if [ -z "$(git status --porcelain classes/index.html)" ]; then
+          if [ -z "$(git status --porcelain index.html)" ]; then
             echo "Оглавление уже актуально — коммит не нужен"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add classes/index.html
+          git add index.html
           git commit -m "chore: обновить оглавление занятий [skip ci]"
           git push

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Собирает данные для оглавления classes/index.html.
+"""Собирает данные для оглавления index.html в корне репозитория.
 
 Сканирует classes/<NN>-lessons/, вытаскивает из презентаций название
 (<title>) и число слайдов и переписывает JSON-блок внутри
-classes/index.html между маркерами <!--lessons:data--> … <!--/lessons:data-->.
+index.html между маркерами <!--lessons:data--> … <!--/lessons:data-->.
 
 Скрипт детерминированный: без дат и прочего, что меняется от запуска к запуску,
 поэтому повторный прогон на неизменном репозитории ничего не меняет и в CI
@@ -25,7 +25,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CLASSES = REPO_ROOT / "classes"
-INDEX = CLASSES / "index.html"
+INDEX = REPO_ROOT / "index.html"
 
 OPEN_MARK = "<!--lessons:data-->"
 CLOSE_MARK = "<!--/lessons:data-->"
@@ -93,7 +93,7 @@ def collect() -> dict:
                 file=deck.name,
                 title=title,
                 slides=slides,
-                path=f"{lesson_dir.name}/{deck.name}",
+                path=f"classes/{lesson_dir.name}/{deck.name}",
             )
         lessons.append(entry)
     lessons.sort(key=lambda e: e["n"])

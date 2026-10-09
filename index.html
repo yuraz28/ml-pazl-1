@@ -3,26 +3,692 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Код и пазл — презентации занятий</title>
-<link rel="canonical" href="classes/">
+<title>Материалы курса — ПАЗЛ</title>
+<meta name="description" content="Материалы курса «ПАЗЛ»: Python и ML.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E7EE8'/%3E%3Ccircle cx='11' cy='11' r='4.2' fill='%23fff'/%3E%3Ccircle cx='21' cy='21' r='4.2' fill='%23FF8E00'/%3E%3C/svg%3E">
-<meta http-equiv="refresh" content="0; url=classes/">
-<script>location.replace("classes/");</script>
 <style>
-  body{
-    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
-    color:#fff; background:radial-gradient(1200px 700px at 15% -10%, #12508F 0%, #0A3160 40%, #082A52 65%, #061D38 100%);
-  }
-  .box{text-align:center; padding:40px}
-  a{color:#9CCBFF; font-weight:600}
-  p{color:rgba(255,255,255,.7); line-height:1.6; margin:12px 0 0}
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html{
+  scroll-behavior:smooth;
+  /* фон на html, без background-attachment:fixed — иначе при печати и в
+     полноэкранных скриншотах низ страницы остаётся белым */
+  background:radial-gradient(1300px 760px at 12% -12%, #12508F 0%, #0A3160 38%, var(--night) 62%, #061D38 100%) #061D38;
+  min-height:100%;
+}
+body{
+  margin:0; min-height:100%;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  color:#fff; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+a{color:inherit}
+.wrap{max-width:1560px; margin:0 auto; padding:56px 40px 72px}
+
+/* --- шапка --- */
+.brand{display:flex; align-items:center; gap:12px; font-size:17px; font-weight:600; letter-spacing:.02em; color:rgba(255,255,255,.86)}
+.brand .dot{width:11px; height:11px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 5px rgba(255,142,0,.18)}
+.brand span.pill{
+  font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  padding:4px 10px; border-radius:999px; color:#BFE1FF; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14)
+}
+
+.head{margin:34px 0 6px}
+.head .eyebrow{font-size:15px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#7FC0FF; margin-bottom:16px}
+.head h1{margin:0; font-size:clamp(38px,4.6vw,68px); line-height:1.02; font-weight:800; letter-spacing:-.025em}
+
+/* --- прогресс --- */
+.progress{display:flex; align-items:center; gap:18px; margin:30px 0 0; max-width:1000px}
+.progress .bar{flex:1; height:6px; border-radius:6px; background:rgba(255,255,255,.16); overflow:hidden}
+.progress .bar i{display:block; height:100%; width:0; border-radius:6px; background:linear-gradient(90deg,var(--blue) 0%, #59A6FF 100%); transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.progress .cnt{font-family:var(--mono); font-size:14px; letter-spacing:.04em; color:rgba(255,255,255,.78); white-space:nowrap}
+
+/* --- фильтры --- */
+.tools{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:34px 0 28px}
+.search{position:relative; flex:0 1 340px}
+.search input{
+  width:100%; padding:13px 16px 13px 42px; border-radius:14px; font:inherit; font-size:15px;
+  color:#fff; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); outline:none
+}
+.search input::placeholder{color:rgba(255,255,255,.45)}
+.search input:focus{border-color:var(--blue); background:rgba(255,255,255,.12)}
+.search svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); width:17px; height:17px; opacity:.5}
+.chip{
+  padding:11px 18px; border-radius:999px; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  color:rgba(255,255,255,.8); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); transition:.18s
+}
+.chip:hover{background:rgba(255,255,255,.13); color:#fff}
+.chip[aria-pressed="true"]{background:#fff; border-color:#fff; color:var(--blue-900)}
+.spacer{flex:1}
+.status{font-size:13px; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:8px}
+.status .led{width:7px; height:7px; border-radius:50%; background:#57D08A}
+.status.file .led{background:rgba(255,255,255,.35)}
+
+/* --- сетка занятий --- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px}
+.card{
+  position:relative; display:flex; flex-direction:column; gap:12px; min-height:156px;
+  padding:22px 22px 18px; border-radius:22px; background:#fff; color:var(--ink);
+  border:1px solid transparent; box-shadow:0 14px 34px rgba(3,17,34,.28);
+  text-decoration:none; transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s, border-color .18s
+}
+a.card:hover{transform:translateY(-3px); border-color:var(--blue); box-shadow:0 20px 44px rgba(3,17,34,.36)}
+a.card:focus-visible{outline:3px solid var(--orange); outline-offset:2px}
+.num{
+  align-self:flex-start; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.06em;
+  padding:5px 11px; border-radius:9px; background:var(--tint); color:var(--blue-700); border:1px solid #D5E9FF
+}
+.ttl{font-size:19px; line-height:1.26; font-weight:700; letter-spacing:-.01em; color:var(--ink); margin:0}
+.meta{margin-top:auto; display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted)}
+.meta .go{color:var(--blue-700); font-weight:600}
+.meta .soon{font-weight:600; color:#93A3B6}
+.slides{font-family:var(--mono); font-size:12px; letter-spacing:.02em}
+.tag{
+  position:absolute; top:16px; right:16px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  padding:4px 9px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); border:1px solid #FFD9A8
+}
+.card.off{
+  background:rgba(255,255,255,.055); border:1px dashed rgba(255,255,255,.22); box-shadow:none; color:rgba(255,255,255,.55)
+}
+.card.off .num{background:rgba(255,255,255,.09); color:rgba(255,255,255,.62); border-color:rgba(255,255,255,.16)}
+.card.off .ttl{color:rgba(255,255,255,.62)}
+.card.off .meta{color:rgba(255,255,255,.42)}
+.card.off .meta .soon{color:rgba(255,255,255,.45)}
+.card.hidden{display:none}
+
+.empty{grid-column:1/-1; padding:40px 4px; color:rgba(255,255,255,.6); font-size:16px}
+
+/* --- подвал --- */
+@media (max-width:640px){ .wrap{padding:36px 20px 56px} }
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
 </style>
 </head>
 <body>
-  <div class="box">
-    <h1 style="margin:0;font-size:30px;font-weight:800">Код и пазл</h1>
-    <p>Открываю список занятий… <a href="classes/">перейти вручную</a></p>
+<div class="wrap">
+
+  <div class="brand"><span class="dot"></span>ПАЗЛ<span class="pill">Python · ML</span></div>
+
+  <header class="head">
+    <div class="eyebrow">Материалы курса</div>
+    <h1>Все занятия курса</h1>
+      </header>
+
+  <div class="progress">
+    <div class="bar"><i id="bar"></i></div>
+    <div class="cnt" id="cnt">— / —</div>
   </div>
+
+  <div class="tools">
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      <input id="q" type="search" placeholder="Номер или тема занятия…" autocomplete="off" aria-label="Поиск занятия">
+    </label>
+    <button class="chip" id="f-all" aria-pressed="true">Все занятия</button>
+    <button class="chip" id="f-ready" aria-pressed="false">Готовые</button>
+    <span class="spacer"></span>
+    <span class="status file" id="status"><span class="led"></span><span id="status-text">список из файла</span></span>
+  </div>
+
+  <main class="grid" id="grid" aria-live="polite"></main>
+
+</div>
+
+<!--lessons:data-->
+  <script id="lessons" type="application/json">
+{
+  "schema": 1,
+  "branch": "main",
+  "gh": "yuraz28/ml-pazl-1",
+  "lessons": [
+    {
+      "n": 1,
+      "dir": "01-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 2,
+      "dir": "02-lessons",
+      "file": "02-vvedenie-v-professiyu.html",
+      "title": "Введение в профессию и инструменты",
+      "slides": 18,
+      "path": "classes/02-lessons/02-vvedenie-v-professiyu.html"
+    },
+    {
+      "n": 3,
+      "dir": "03-lessons",
+      "file": "03-proficii-v-it.html",
+      "title": "Профессии в IT: AI, бэкенд и фронтенд",
+      "slides": 24,
+      "path": "classes/03-lessons/03-proficii-v-it.html"
+    },
+    {
+      "n": 4,
+      "dir": "04-lessons",
+      "file": "04-pervye-shagi-v-python.html",
+      "title": "Первые шаги в Python",
+      "slides": 31,
+      "path": "classes/04-lessons/04-pervye-shagi-v-python.html"
+    },
+    {
+      "n": 5,
+      "dir": "05-lessons",
+      "file": "05-vvod-i-vyvod-dannyh.html",
+      "title": "Ввод и вывод данных",
+      "slides": 26,
+      "path": "classes/05-lessons/05-vvod-i-vyvod-dannyh.html"
+    },
+    {
+      "n": 6,
+      "dir": "06-lessons",
+      "file": "06-celochislennaya-arifmetika.html",
+      "title": "Целочисленная арифметика",
+      "slides": 41,
+      "path": "classes/06-lessons/06-celochislennaya-arifmetika.html"
+    },
+    {
+      "n": 7,
+      "dir": "07-lessons",
+      "file": "07-uslovnyy-operator.html",
+      "title": "Условный оператор",
+      "slides": 31,
+      "path": "classes/07-lessons/07-uslovnyy-operator.html"
+    },
+    {
+      "n": 8,
+      "dir": "08-lessons",
+      "file": "08-tipy-dannyh.html",
+      "title": "Типы данных",
+      "slides": 35,
+      "path": "classes/08-lessons/08-tipy-dannyh.html"
+    },
+    {
+      "n": 9,
+      "dir": "09-lessons",
+      "file": "09-cikl-for.html",
+      "title": "Цикл for",
+      "slides": 24,
+      "path": "classes/09-lessons/09-cikl-for.html"
+    },
+    {
+      "n": 10,
+      "dir": "10-lessons",
+      "file": "10-cikl-while.html",
+      "title": "Цикл while",
+      "slides": 24,
+      "path": "classes/10-lessons/10-cikl-while.html"
+    },
+    {
+      "n": 11,
+      "dir": "11-lessons",
+      "file": "11-stroki.html",
+      "title": "Строки",
+      "slides": 32,
+      "path": "classes/11-lessons/11-stroki.html"
+    },
+    {
+      "n": 12,
+      "dir": "12-lessons",
+      "file": "12-spiski.html",
+      "title": "Списки",
+      "slides": 27,
+      "path": "classes/12-lessons/12-spiski.html"
+    },
+    {
+      "n": 13,
+      "dir": "13-lessons",
+      "file": "13-funkcii.html",
+      "title": "Функции",
+      "slides": 29,
+      "path": "classes/13-lessons/13-funkcii.html"
+    },
+    {
+      "n": 14,
+      "dir": "14-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 15,
+      "dir": "15-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 16,
+      "dir": "16-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 17,
+      "dir": "17-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 18,
+      "dir": "18-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 19,
+      "dir": "19-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 20,
+      "dir": "20-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 21,
+      "dir": "21-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 22,
+      "dir": "22-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 23,
+      "dir": "23-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 24,
+      "dir": "24-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 25,
+      "dir": "25-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 26,
+      "dir": "26-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 27,
+      "dir": "27-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 28,
+      "dir": "28-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 29,
+      "dir": "29-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 30,
+      "dir": "30-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 31,
+      "dir": "31-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 32,
+      "dir": "32-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 33,
+      "dir": "33-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 34,
+      "dir": "34-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 35,
+      "dir": "35-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 36,
+      "dir": "36-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 37,
+      "dir": "37-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 38,
+      "dir": "38-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 39,
+      "dir": "39-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 40,
+      "dir": "40-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 41,
+      "dir": "41-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 42,
+      "dir": "42-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 43,
+      "dir": "43-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 44,
+      "dir": "44-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    },
+    {
+      "n": 45,
+      "dir": "45-lessons",
+      "file": null,
+      "title": "",
+      "slides": 0
+    }
+  ]
+}
+  </script>
+  <!--/lessons:data-->
+
+<script>
+(function () {
+  "use strict";
+
+  var PAGE = JSON.parse((document.getElementById("lessons") || {}).textContent || "{}");
+  var LESSONS = Array.isArray(PAGE.lessons) ? PAGE.lessons : [];
+  var BRANCH = PAGE.branch || "main";
+  var state = { q: "", onlyReady: false, fresh: {} };
+
+  var grid = document.getElementById("grid");
+  var bar = document.getElementById("bar");
+  var cnt = document.getElementById("cnt");
+  var status = document.getElementById("status");
+  var statusText = document.getElementById("status-text");
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function plural(n, one, few, many) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+    return many;
+  }
+
+  function lessonCount() { return LESSONS.length; }
+  function readyCount() { return LESSONS.filter(function (l) { return !!l.file; }).length; }
+
+  function text(el, s) { el.textContent = s; } // всегда через textContent — содержимое деков не доверяем
+
+  function render() {
+    var q = state.q.trim().toLowerCase();
+    var shown = 0;
+    grid.innerHTML = "";
+
+    LESSONS.forEach(function (l) {
+      var ready = !!l.file;
+      var hay = ("занятие " + l.n + " занятие " + pad(l.n) + " " + pad(l.n) + " " + (l.title || "")).toLowerCase();
+      var match = (!q || hay.indexOf(q) !== -1) && (!state.onlyReady || ready);
+      var card;
+
+      if (ready) {
+        card = document.createElement("a");
+        card.className = "card";
+        card.href = l.path || ("classes/" + l.dir + "/" + l.file);
+        card.setAttribute("aria-label", "Занятие " + l.n + (l.title ? ". " + l.title : "") + " — открыть презентацию");
+      } else {
+        card = document.createElement("div");
+        card.className = "card off";
+        card.setAttribute("aria-disabled", "true");
+        card.title = "Презентация этого занятия ещё не готова";
+      }
+
+      var num = document.createElement("span");
+      num.className = "num";
+      text(num, "Занятие " + pad(l.n));
+      card.appendChild(num);
+
+      var ttl = document.createElement("p");
+      ttl.className = "ttl";
+      text(ttl, ready ? (l.title || "Материалы занятия") : "Презентация готовится");
+      card.appendChild(ttl);
+
+      var meta = document.createElement("span");
+      meta.className = "meta";
+      var sl = document.createElement("span");
+      sl.className = "slides";
+      text(sl, ready && l.slides ? l.slides + " " + plural(l.slides, "слайд", "слайда", "слайдов") : "—");
+      meta.appendChild(sl);
+      var right = document.createElement("span");
+      right.className = ready ? "go" : "soon";
+      text(right, ready ? "Открыть →" : "скоро");
+      meta.appendChild(right);
+      card.appendChild(meta);
+
+      if (state.fresh[l.n]) {
+        var tag = document.createElement("span");
+        tag.className = "tag";
+        text(tag, "новое");
+        card.appendChild(tag);
+      }
+
+      if (!match) { card.classList.add("hidden"); } else { shown++; }
+      grid.appendChild(card);
+    });
+
+    if (!shown) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      text(empty, lessonCount()
+        ? "Ничего не нашлось. Сбрось фильтр или измени запрос."
+        : "Список занятий пока не собран.");
+      grid.appendChild(empty);
+    }
+
+    var ready = readyCount(), total = lessonCount();
+    bar.style.width = (total ? Math.round(ready / total * 100) : 0) + "%";
+    text(cnt, ready + " / " + total + " " + plural(total, "занятие", "занятия", "занятий"));
+  }
+
+  function setStatus(text_, live) {
+    statusText.textContent = text_;
+    status.className = "status" + (live ? "" : " file");
+  }
+
+  /* --- необязательное живое обновление списка с GitHub ---
+     Работает только когда страница опубликована на github.io (или указан
+     ?gh=owner/repo) и репозиторий публичный. Любая ошибка — молча остаёмся
+     на данных, собранных скриптом. */
+  function repoRef() {
+    var qs = new URLSearchParams(location.search);
+    if (qs.get("gh")) return qs.get("gh");
+    var host = location.hostname;
+    var local = !host || host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host);
+    if (local) return "";                       // локальный просмотр — в сеть не ходим
+    var m = host.match(/^([^.]+)\.github\.io$/i);
+    var seg = location.pathname.split("/").filter(Boolean);
+    if (m && seg.length) return m[1] + "/" + seg[0];
+    return PAGE.gh || "";
+  }
+
+  function deckTitle(html, fallback) {
+    var t = "";
+    try {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      t = (doc.title || "").replace(/\s*[—–-]\s*Код\s*и\s*пазл\s*$/i, "").replace(/^\s*Занятие\s*\d+\s*[.:—–-]?\s*/, "").trim();
+      var slides = doc.querySelectorAll("section.slide").length;
+      return { title: t || fallback, slides: slides };
+    } catch (e) {
+      return { title: t || fallback, slides: 0 };
+    }
+  }
+
+  function refresh() {
+    var ref = repoRef();
+    if (!ref || !/^https?:$/.test(location.protocol)) return;
+    var api = "https://api.github.com/repos/" + ref + "/git/trees/" + BRANCH + "?recursive=1";
+    fetch(api, { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.json(); })
+      .then(function (data) {
+        var found = {};
+        (data.tree || []).forEach(function (node) {
+          var m = /^classes\/(\d+)-lessons\/([^/]+\.html)$/.exec(node.path || "");
+          if (m) found[parseInt(m[1], 10)] = { dir: m[1] + "-lessons", file: m[2], raw: node.path };
+        });
+        var fresh = [], known = {};
+        LESSONS.forEach(function (l) { known[l.n] = l; });
+
+        Object.keys(found).forEach(function (k) {
+          var n = parseInt(k, 10), f = found[k], cur = known[n];
+          if (cur && cur.file === f.file) return;   // занятие уже в списке
+          fresh.push({ n: n, dir: f.dir, file: f.file, raw: f.raw, title: "", slides: 0 });
+        });
+
+        // появившееся занятие тянем целиком, чтобы показать название и число слайдов
+        return Promise.all(fresh.slice(0, 20).map(function (l) {
+          var url = "https://raw.githubusercontent.com/" + ref + "/" + BRANCH + "/" + l.raw;
+          return fetch(url).then(function (r) { return r.ok ? r.text() : ""; })
+            .then(function (html) {
+              if (html) { var d = deckTitle(html, ""); l.title = d.title; l.slides = d.slides; }
+              return l;
+            })
+            .catch(function () { return l; });
+        })).then(function (list) {
+          list.forEach(function (l) {
+            var rel = "classes/" + l.dir + "/" + l.file;
+            var cur = known[l.n];
+            state.fresh[l.n] = true;
+            if (cur) {
+              cur.file = l.file; cur.path = rel; cur.dir = l.dir;
+              if (l.title) cur.title = l.title;
+              if (l.slides) cur.slides = l.slides;
+            } else {
+              LESSONS.push({ n: l.n, dir: l.dir, file: l.file, path: rel, title: l.title, slides: l.slides });
+            }
+          });
+          LESSONS.sort(function (a, b) { return a.n - b.n; });
+          render();
+          setStatus(list.length ? "список обновлён с GitHub (+" + list.length + ")" : "список актуален", true);
+        });
+      })
+      .catch(function () { setStatus("список из файла", false); });
+  }
+
+  /* --- управление --- */
+  document.getElementById("q").addEventListener("input", function (e) {
+    state.q = e.target.value; render();
+  });
+  document.getElementById("f-all").addEventListener("click", function () {
+    state.onlyReady = false;
+    this.setAttribute("aria-pressed", "true");
+    document.getElementById("f-ready").setAttribute("aria-pressed", "false");
+    render();
+  });
+  document.getElementById("f-ready").addEventListener("click", function () {
+    state.onlyReady = true;
+    this.setAttribute("aria-pressed", "true");
+    document.getElementById("f-all").setAttribute("aria-pressed", "false");
+    render();
+  });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target.tagName;
+    if (e.key === "/" && t !== "INPUT" && t !== "TEXTAREA") {
+      e.preventDefault();
+      document.getElementById("q").focus();
+    }
+  });
+
+  render();
+  refresh();
+})();
+</script>
 </body>
 </html>
