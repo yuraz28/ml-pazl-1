@@ -129,6 +129,37 @@ h3{font-size:31px; line-height:1.16; font-weight:700}
 .cue .q.shown .ans{display:block; animation:rpop .22s ease both}
 @keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
 </style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+</style>
 </head>
 <body>
 <style>
@@ -240,6 +271,36 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 <!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 3 -->
 <section class="slide" data-title="Раздел: Теория">
   <header class="sh r">
     <p class="eyebrow">Часть 1</p>
@@ -284,7 +345,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
       </div>
     </div>
   </section>
-<!-- 3 -->
+<!-- 4 -->
 <section class="slide" data-title="Что такое искусственный интеллект">
   <header class="sh r">
     <p class="eyebrow">Теория · AI и ML</p>
@@ -295,7 +356,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div><svg class="ill r" style="--d:130" viewBox="0 0 1520 380" aria-hidden="true"><rect x="30" y="35" width="340" height="310" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(180 80) scale(0.833333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a6 6 0 016-6h20a6 6 0 016 6v13a6 6 0 01-6 6H22l-10 8v-8H14a6 6 0 01-6-6z"/><path d="M16 19h16M16 25h10"/></g><text x="200" y="200" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">понимает речь</text><text x="200" y="234" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">и текст</text><text x="200" y="292" font-size="19" fill="#6E7E92" text-anchor="middle">Алиса и чат-боты</text><rect x="410" y="35" width="340" height="310" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(560 80) scale(0.833333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="29" height="22" rx="6"/><path d="M33 25l9-5v14l-9-5z"/></g><text x="580" y="200" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">распознаёт</text><text x="580" y="234" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">изображения</text><text x="580" y="292" font-size="19" fill="#6E7E92" text-anchor="middle">камеры и номера машин</text><rect x="790" y="35" width="340" height="310" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(940 80) scale(0.833333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="35" r="6"/><circle cx="34" cy="31" r="6"/><path d="M21 35V12l19-5v24"/></g><text x="960" y="200" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">подбирает</text><text x="960" y="234" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">музыку и видео</text><text x="960" y="292" font-size="19" fill="#6E7E92" text-anchor="middle">Яндекс Музыка</text><rect x="1170" y="35" width="340" height="310" rx="26" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(1320 80) scale(0.833333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="38" height="26" rx="6"/><path d="M5 20h38M12 29h9"/></g><text x="1340" y="200" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">принимает</text><text x="1340" y="234" font-size="27" fill="#0B3E7A" text-anchor="middle" font-weight="700">решения</text><text x="1340" y="292" font-size="19" fill="#6E7E92" text-anchor="middle">банки ловят мошенничество</text></svg></div>
   </div>
 </section>
-<!-- 4 -->
+<!-- 5 -->
 <section class="slide" data-title="Как связаны AI, ML и LLM">
   <header class="sh r">
     <p class="eyebrow">Теория · AI и ML</p>
@@ -313,7 +374,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 5 -->
+<!-- 6 -->
 <section class="slide" data-title="Обычная программа и ML-модель">
   <header class="sh r">
     <p class="eyebrow">Теория · AI и ML</p>
@@ -323,7 +384,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div><svg class="ill r" style="--d:70" viewBox="0 0 1520 380" aria-hidden="true"><rect x="30" y="10" width="700" height="290" rx="22" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><text x="380" y="60" font-size="30" fill="#0B3E7A" text-anchor="middle" font-weight="700">Обычная программа</text><text x="380" y="90" font-size="21" fill="#6E7E92" text-anchor="middle">правила пишет человек</text><rect x="70" y="118" width="190" height="74" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="165" y="151" font-size="24" fill="#0B3E7A" text-anchor="middle" font-weight="700">правила</text><text x="165" y="178" font-size="17" fill="#6E7E92" text-anchor="middle">их пишет программист</text><path d="M268 155L325 155" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M340 155L325 164.3L325 145.7Z" fill="#A8D3FF"/><rect x="350" y="118" width="190" height="74" rx="22" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="445" y="163.16" font-size="24" fill="#FFFFFF" text-anchor="middle" font-weight="700">программа</text><path d="M548 155L603 155" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M618 155L603 164.3L603 145.7Z" fill="#A8D3FF"/><rect x="628" y="118" width="95" height="74" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="675.5" y="163.16" font-size="24" fill="#0B3E7A" text-anchor="middle" font-weight="700">ответ</text><text x="380" y="252" font-size="22" fill="#6E7E92" text-anchor="middle">Работает по шагам, которые описали заранее</text><rect x="790" y="10" width="700" height="290" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="1140" y="60" font-size="30" fill="#0B3E7A" text-anchor="middle" font-weight="700">ML-модель</text><text x="1140" y="90" font-size="21" fill="#6E7E92" text-anchor="middle">правила находит сама</text><rect x="830" y="118" width="190" height="74" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="925" y="151" font-size="24" fill="#0B3E7A" text-anchor="middle" font-weight="700">данные</text><text x="925" y="178" font-size="17" fill="#6E7E92" text-anchor="middle">примеры и подписи</text><path d="M1028 155L1085 155" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M1100 155L1085 164.3L1085 145.7Z" fill="#A8D3FF"/><rect x="1110" y="118" width="190" height="74" rx="22" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="1205" y="163.16" font-size="24" fill="#FFFFFF" text-anchor="middle" font-weight="700">модель</text><path d="M1308 155L1363 155" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M1378 155L1363 164.3L1363 145.7Z" fill="#A8D3FF"/><rect x="1388" y="118" width="95" height="74" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="1435.5" y="163.16" font-size="24" fill="#0B3E7A" text-anchor="middle" font-weight="700">ответ</text><text x="1140" y="252" font-size="22" fill="#6E7E92" text-anchor="middle">Находит закономерности по примерам</text><rect x="30" y="320" width="1460" height="60" rx="26" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="760" y="358" font-size="26" fill="#FFFFFF" text-anchor="middle" font-weight="700">Главное отличие: в программе правила пишет человек, а модель находит их в данных</text></svg></div>
   </div>
 </section>
-<!-- 6 -->
+<!-- 7 -->
 <section class="slide" data-title="Как обучают ML-модель">
   <header class="sh r">
     <p class="eyebrow">Теория · AI и ML</p>
@@ -334,7 +395,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Порядок такой: данные — обучение — проверка на новых данных — продукт.</div>
   </div>
 </section>
-<!-- 7 -->
+<!-- 8 -->
 <section class="slide" data-title="С какими данными работают модели">
   <header class="sh r">
     <p class="eyebrow">Теория · AI и ML</p>
@@ -366,7 +427,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">У моделей есть ограничения: они могут ошибаться и зависят от качества данных — результат нужно проверять.</div>
   </div>
 </section>
-<!-- 8 -->
+<!-- 9 -->
 <section class="slide" data-title="Данные и модели">
   <header class="sh r">
     <p class="eyebrow">Теория · Профессии в AI</p>
@@ -396,7 +457,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">В создании AI-продуктов участвуют разные специалисты — начнём с тех, кто отвечает за данные и обучение.</div>
   </div>
 </section>
-<!-- 9 -->
+<!-- 10 -->
 <section class="slide" data-title="Продукт и запуск">
   <header class="sh r">
     <p class="eyebrow">Теория · Профессии в AI</p>
@@ -426,7 +487,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Эти специалисты доводят модель до работающего сервиса и придумывают новые методы.</div>
   </div>
 </section>
-<!-- 10 -->
+<!-- 11 -->
 <section class="slide" data-title="Как в сервисе появляются рекомендации">
   <header class="sh r">
     <p class="eyebrow">Теория · Профессии в AI</p>
@@ -437,7 +498,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Все эти специалисты работают в одной команде: один готовит данные, другой обучает модель, третий запускает её в сервисе.</div>
   </div>
 </section>
-<!-- 11 -->
+<!-- 12 -->
 <section class="slide" data-title="Что нужно, чтобы работать в AI">
   <header class="sh r">
     <p class="eyebrow">Теория · Профессии в AI</p>
@@ -464,7 +525,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
 <div class="logorow"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOmNjPSJodHRwOi8vd2ViLnJlc291cmNlLm9yZy9jYy8iIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIxMTBweCIgaGVpZ2h0PSIxMTBweCIgdmlld0JveD0iMC4yMSAtMC4wNzcgMTEwIDExMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwLjIxIC0wLjA3NyAxMTAgMTEwIiB4bWw6c3BhY2U9InByZXNlcnZlIj48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzFfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjYzLjgxNTkiIHkxPSI1Ni42ODI5IiB4Mj0iMTE4LjQ5MzQiIHkyPSIxLjgyMjUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgLTEgLTUzLjI5NzQgNjYuNDMyMSkiPiA8c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiMzODdFQjgiLz4gPHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMzY2OTk0Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBmaWxsPSJ1cmwoI1NWR0lEXzFfKSIgZD0iTTU1LjAyMy0wLjA3N2MtMjUuOTcxLDAtMjYuMjUsMTAuMDgxLTI2LjI1LDEyLjE1NmMwLDMuMTQ4LDAsMTIuNTk0LDAsMTIuNTk0aDI2Ljc1djMuNzgxIGMwLDAtMjcuODUyLDAtMzcuMzc1LDBjLTcuOTQ5LDAtMTcuOTM4LDQuODMzLTE3LjkzOCwyNi4yNWMwLDE5LjY3Myw3Ljc5MiwyNy4yODEsMTUuNjU2LDI3LjI4MWMyLjMzNSwwLDkuMzQ0LDAsOS4zNDQsMCBzMC05Ljc2NSwwLTEzLjEyNWMwLTUuNDkxLDIuNzIxLTE1LjY1NiwxNS40MDYtMTUuNjU2YzE1LjkxLDAsMTkuOTcxLDAsMjYuNTMxLDBjMy45MDIsMCwxNC45MDYtMS42OTYsMTQuOTA2LTE0LjQwNiBjMC0xMy40NTIsMC0xNy44OSwwLTI0LjIxOUM4Mi4wNTQsMTEuNDI2LDgxLjUxNS0wLjA3Nyw1NS4wMjMtMC4wNzd6IE00MC4yNzMsOC4zOTJjMi42NjIsMCw0LjgxMywyLjE1LDQuODEzLDQuODEzIGMwLDIuNjYxLTIuMTUxLDQuODEzLTQuODEzLDQuODEzcy00LjgxMy0yLjE1MS00LjgxMy00LjgxM0MzNS40NiwxMC41NDIsMzcuNjExLDguMzkyLDQwLjI3Myw4LjM5MnoiLz48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzJfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9Ijk3LjA0NDQiIHkxPSIyMS42MzIxIiB4Mj0iMTU1LjY2NjUiIHkyPSItMzQuNTMwOCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAtNTMuMjk3NCA2Ni40MzIxKSI+IDxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRTA1MiIvPiA8c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNGRkMzMzEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjU1ZHSURfMl8pIiBkPSJNNTUuMzk3LDEwOS45MjNjMjUuOTU5LDAsMjYuMjgyLTEwLjI3MSwyNi4yODItMTIuMTU2YzAtMy4xNDgsMC0xMi41OTQsMC0xMi41OTRINTQuODk3di0zLjc4MSBjMCwwLDI4LjAzMiwwLDM3LjM3NSwwYzguMDA5LDAsMTcuOTM4LTQuOTU0LDE3LjkzOC0yNi4yNWMwLTIzLjMyMi0xMC41MzgtMjcuMjgxLTE1LjY1Ni0yNy4yODFjLTIuMzM2LDAtOS4zNDQsMC05LjM0NCwwIHMwLDEwLjIxNiwwLDEzLjEyNWMwLDUuNDkxLTIuNjMxLDE1LjY1Ni0xNS40MDYsMTUuNjU2Yy0xNS45MSwwLTE5LjQ3NiwwLTI2LjUzMiwwYy0zLjg5MiwwLTE0LjkwNiwxLjg5Ni0xNC45MDYsMTQuNDA2IGMwLDE0LjQ3NSwwLDE4LjI2NSwwLDI0LjIxOUMyOC4zNjYsMTAwLjQ5NywzMS41NjIsMTA5LjkyMyw1NS4zOTcsMTA5LjkyM3ogTTcwLjE0OCwxMDEuNDU0Yy0yLjY2MiwwLTQuODEzLTIuMTUxLTQuODEzLTQuODEzIHMyLjE1LTQuODEzLDQuODEzLTQuODEzYzIuNjYxLDAsNC44MTMsMi4xNTEsNC44MTMsNC44MTNTNzIuODA5LDEwMS40NTQsNzAuMTQ4LDEwMS40NTR6Ii8+PC9zdmc+" alt=""><img src="data:image/svg+xml;base64,PHN2ZyBpZD0iQXJ0d29yayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmlld0JveD0iMCAwIDY2OS4zNiA0MjcuOCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOm5vbmU7fS5jbHMtMntjbGlwLXBhdGg6dXJsKCNjbGlwLXBhdGgpO30uY2xzLTN7ZmlsbDp1cmwoI2xpbmVhci1ncmFkaWVudCk7fS5jbHMtNHtjbGlwLXBhdGg6dXJsKCNjbGlwLXBhdGgtMik7fS5jbHMtNXtmaWxsOnVybCgjbGluZWFyLWdyYWRpZW50LTIpO30uY2xzLTZ7ZmlsbDojNDI1MDY2O308L3N0eWxlPjxjbGlwUGF0aCBpZD0iY2xpcC1wYXRoIj48cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iNDAyIDExMi41OSAzMzcuNDcgNzUuNzIgMzM3LjQ3IDIyNi44NCAzNjMuMjUgMjExLjg4IDM2My4yNSAxNjkuMzYgMzgyLjcyIDE4MC42MyAzODIuNjEgMTUxLjU0IDM2My4yNSAxNDAuNDggMzYzLjI1IDEyMy41OSA0MDIuMDkgMTQ2LjAzIDQwMiAxMTIuNTkiLz48L2NsaXBQYXRoPjxsaW5lYXJHcmFkaWVudCBpZD0ibGluZWFyLWdyYWRpZW50IiB4MT0iMjYxLjE4IiB5MT0iMTUxLjEiIHgyPSI0MTkuNjUiIHkyPSIxNTEuMSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmNmYwMCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmYTgwMCIvPjwvbGluZWFyR3JhZGllbnQ+PGNsaXBQYXRoIGlkPSJjbGlwLXBhdGgtMiI+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjI2Ny4xNCAxMTIuNTkgMzMxLjY3IDc1LjcyIDMzMS42NyAyMjYuODQgMzA1Ljg5IDIxMS44OCAzMDUuODkgMTIzLjU5IDI2Ny4wNSAxNDYuMDMgMjY3LjE0IDExMi41OSIvPjwvY2xpcFBhdGg+PGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXItZ3JhZGllbnQtMiIgeDE9IjI2MC4xMSIgeTE9IjE1MS4xIiB4Mj0iNDE4LjU4IiB5Mj0iMTUxLjEiIHhsaW5rOmhyZWY9IiNsaW5lYXItZ3JhZGllbnQiLz48L2RlZnM+PHRpdGxlPkZ1bGxDb2xvclByaW1hcnkgVmVydGljYWw8L3RpdGxlPjxnIGNsYXNzPSJjbHMtMiI+PHJlY3QgY2xhc3M9ImNscy0zIiB4PSIyNjEuMTgiIHk9Ijc1LjE3IiB3aWR0aD0iMTU4LjQ3IiBoZWlnaHQ9IjE1MS44NiIvPjwvZz48ZyBjbGFzcz0iY2xzLTQiPjxyZWN0IGNsYXNzPSJjbHMtNSIgeD0iMjYwLjExIiB5PSI3NS4xNyIgd2lkdGg9IjE1OC40NyIgaGVpZ2h0PSIxNTEuODYiLz48L2c+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNMTM3LjMyLDI4Ny42SDExNHY2NC4yM0gxMDEuMTVWMjg3LjZINzguMDdWMjc3LjE0aDU5LjI1WiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTE1Mi43NywzNTIuODVxLTExLjg1LDAtMTkuMjEtNy40NnQtNy4zNi0xOS44OFYzMjRhMzMuNCwzMy40LDAsMCwxLDMuMi0xNC44NSwyNC40LDI0LjQsMCwwLDEsOS0xMC4xOCwyMy43NiwyMy43NiwwLDAsMSwxMi45Mi0zLjY0cTExLjM0LDAsMTcuNTIsNy4yM1QxNzUsMzIzdjVIMTM4Ljc2cS41Nyw2Ljg5LDQuNiwxMC44OGExMy43NiwxMy43NiwwLDAsMCwxMC4xMyw0QTE2Ljg5LDE2Ljg5LDAsMCwwLDE2Ny40NCwzMzZsNi43Miw2LjQxYTIyLjQxLDIyLjQxLDAsMCwxLTguOSw3LjcyQTI3Ljg0LDI3Ljg0LDAsMCwxLDE1Mi43NywzNTIuODVabS0xLjQ5LTQ3LjU1YTEwLjQ5LDEwLjQ5LDAsMCwwLTguMjgsMy41OXEtMy4xNywzLjU4LTQsMTBoMjMuNzVWMzE4cS0uNDEtNi4yNS0zLjMzLTkuNDZBMTAuNDEsMTAuNDEsMCwwLDAsMTUxLjI4LDMwNS4zWiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTE5Ni4yNywyOTYuMzJsLjM2LDYuNDFhMjAsMjAsMCwwLDEsMTYuMTYtNy40M3ExNy4zNCwwLDE3LjY0LDE5Ljg1djM2LjY4SDIxOHYtMzZjMC0zLjUzLS43Ni02LjEzLTIuMjgtNy44M3MtNC0yLjU0LTcuNDctMi41NHEtNy41MywwLTExLjIzLDYuODN2MzkuNUgxODQuNTJWMjk2LjMyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTI3MC44OCwzMzYuNzVhNS42NCw1LjY0LDAsMCwwLTIuNzQtNS4wOHEtMi43NS0xLjc2LTkuMTEtMy4wOGE0Ni43OCw0Ni43OCwwLDAsMS0xMC42Mi0zLjM5cS05LjMzLTQuNTEtOS4zMy0xMy4wOGExNC43NCwxNC43NCwwLDAsMSw2LTEycTYuMDYtNC44MywxNS4zOS00LjgyLDkuOTQsMCwxNi4wOCw0LjkyQTE1LjYxLDE1LjYxLDAsMCwxLDI4Mi43MywzMTNIMjcwLjI3YTcuNjcsNy42NywwLDAsMC0yLjY3LTYsMTAuMjMsMTAuMjMsMCwwLDAtNy4wOC0yLjM5LDExLDExLDAsMCwwLTYuNjksMS45LDYsNiwwLDAsMC0yLjYsNS4wOCw1LjA2LDUuMDYsMCwwLDAsMi40Miw0LjQ2cTIuNCwxLjU5LDkuNzQsMy4yMWE0Ni4yMiw0Ni4yMiwwLDAsMSwxMS41MiwzLjg1LDE2LjI3LDE2LjI3LDAsMCwxLDYuMjEsNS4zNiwxMy42NCwxMy42NCwwLDAsMSwyLDcuNTksMTQuNDUsMTQuNDUsMCwwLDEtNi4yMSwxMi4xM3EtNi4xOSw0LjY1LTE2LjI2LDQuNjRhMjguNjYsMjguNjYsMCwwLDEtMTIuMTUtMi40NiwyMCwyMCwwLDAsMS04LjMxLTYuNzcsMTYsMTYsMCwwLDEtMy05LjI5aDEyLjExYTguNzcsOC43NywwLDAsMCwzLjMzLDYuOCwxMywxMywwLDAsMCw4LjE2LDIuMzlxNC45MiwwLDcuNDktMS44OEE1Ljc3LDUuNzcsMCwwLDAsMjcwLjg4LDMzNi43NVoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik0yODkuNTYsMzIzLjU2YTMyLjY2LDMyLjY2LDAsMCwxLDMuMjMtMTQuNywyMy41NCwyMy41NCwwLDAsMSw5LjA4LTEwLjA1LDI1LjYxLDI1LjYxLDAsMCwxLDEzLjQ0LTMuNTFxMTEuMjQsMCwxOC4yMyw3LjIzdDcuNTcsMTkuMThsLjA1LDIuOTNBMzMuMDcsMzMuMDcsMCwwLDEsMzM4LDMzOS4zMWEyMy4zOSwyMy4zOSwwLDAsMS05LDEwLDI1Ljc4LDI1Ljc4LDAsMCwxLTEzLjU3LDMuNTRxLTExLjc1LDAtMTguOC03LjgydC03LjA1LTIwLjg1Wk0zMDIsMzI0LjY0cTAsOC41NywzLjU0LDEzLjQxYTExLjQ5LDExLjQ5LDAsMCwwLDkuODUsNC44NSwxMS4zNywxMS4zNywwLDAsMCw5LjgyLTQuOTJxMy41Mi00Ljk0LDMuNTItMTQuNDIsMC04LjQyLTMuNjItMTMuMzRhMTIuMTksMTIuMTksMCwwLDAtMTkuNTItLjA3UTMwMiwzMTUsMzAyLDMyNC42NFoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik0zNzguNjYsMzA3LjcxYTMxLjE2LDMxLjE2LDAsMCwwLTUuMDctLjQxcS04LjU4LDAtMTEuNTUsNi41N3YzOEgzNDkuNThWMjk2LjMyaDExLjlsLjMxLDYuMjFxNC41MS03LjIzLDEyLjUxLTcuMjNhMTEuODMsMTEuODMsMCwwLDEsNC40MS43MVoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik00MzAuNzgsMzIwLjE4SDQwMC43MnYzMS42NWgtMTNWMjc3LjE0aDQ3LjQ1VjI4Ny42SDQwMC43MnYyMi4yMWgzMC4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik00NTUuNDEsMzUxLjgzSDQ0Mi45NFYyNzdoMTIuNDdaIi8+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNNDY0LjU0LDMyMy41NmEzMi43OSwzMi43OSwwLDAsMSwzLjIzLTE0LjcsMjMuNiwyMy42LDAsMCwxLDkuMDgtMTAuMDUsMjUuNjEsMjUuNjEsMCwwLDEsMTMuNDQtMy41MXExMS4yMywwLDE4LjI0LDcuMjN0Ny41NywxOS4xOGwwLDIuOTNBMzIuOTMsMzIuOTMsMCwwLDEsNTEzLDMzOS4zMWEyMy4yNiwyMy4yNiwwLDAsMS05LDEwLDI1LjcyLDI1LjcyLDAsMCwxLTEzLjU2LDMuNTRxLTExLjc2LDAtMTguODEtNy44MnQtNy0yMC44NVpNNDc3LDMyNC42NHEwLDguNTcsMy41NCwxMy40MWExMi4zNCwxMi4zNCwwLDAsMCwxOS42Ny0uMDdxMy41MS00Ljk0LDMuNTEtMTQuNDIsMC04LjQyLTMuNjEtMTMuMzRhMTEuNTYsMTEuNTYsMCwwLDAtOS44My00LjkyLDExLjQzLDExLjQzLDAsMCwwLTkuNjksNC44NVE0NzcsMzE1LDQ3NywzMjQuNjRaIi8+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNNTcyLjQsMzM0LjY0bDguODItMzguMzJoMTIuMTZsLTE1LjEzLDU1LjUxSDU2OGwtMTEuOS0zOC4xMi0xMS43LDM4LjEySDUzNC4xM0w1MTksMjk2LjMyaDEyLjE2bDksMzcuOTEsMTEuMzktMzcuOTFoOS4zOVoiLz48L3N2Zz4=" alt=""><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwLjYgMTA2Ny45IDkwLjMgMTA5LjEiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMC42IDEwNjcuOSA5MC4zIDEwOS4xIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxwYXRoIGZpbGw9IiNFRTRDMkMiIGQ9Ik03Ny42LDEwOTkuNmwtOC4xLDguMWMxMy4zLDEzLjMsMTMuMywzNC43LDAsNDcuOGMtMTMuMywxMy4zLTM0LjcsMTMuMy00Ny44LDANCgkJYy0xMy4zLTEzLjMtMTMuMy0zNC43LDAtNDcuOGwwLDBsMjEuMS0yMS4xbDMtM2wwLDB2LTE1LjlsLTMxLjgsMzEuOGMtMTcuNywxNy43LTE3LjcsNDYuMywwLDY0YzE3LjcsMTcuNyw0Ni4zLDE3LjcsNjMuNywwDQoJCUM5NS4zLDExNDUuOCw5NS4zLDExMTcuNCw3Ny42LDEwOTkuNnoiLz4NCgk8Y2lyY2xlIGZpbGw9IiNFRTRDMkMiIGN4PSI2MS43IiBjeT0iMTA5MS44IiByPSI1LjkiLz4NCjwvZz4NCjwvc3ZnPg0K" alt=""><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgIHZlcnNpb249IjEuMSIKICAgd2lkdGg9IjYxMCIKICAgaGVpZ2h0PSIxNDUiCiAgIGlkPSJzdmcyIj4KICA8bWV0YWRhdGEKICAgICBpZD0ibWV0YWRhdGE0Ij4KICAgIDxyZGY6UkRGPgogICAgICA8Y2M6V29yawogICAgICAgICByZGY6YWJvdXQ9IiI+CiAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9zdmcreG1sPC9kYzpmb3JtYXQ+CiAgICAgICAgPGRjOnR5cGUKICAgICAgICAgICByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIiAvPgogICAgICAgIDxkYzp0aXRsZT48L2RjOnRpdGxlPgogICAgICA8L2NjOldvcms+CiAgICA8L3JkZjpSREY+CiAgPC9tZXRhZGF0YT4KICA8ZGVmcwogICAgIGlkPSJkZWZzNiI+CiAgICA8Y2xpcFBhdGgKICAgICAgIGlkPSJjbGlwUGF0aDgiPgogICAgICA8cGF0aAogICAgICAgICBkPSJtIDc2LDIgMCw0NiAtMjIsMCAwLDIzIC0xOC40MTkyNjMsMCBjIC0wLjA3ODE4LDAuNjY1Njk0IC0wLjE0MTQ4NSwxLjMzMjg2OSAtMC4yMDU3MzcsMiAtMS4xNTExNjIsMTIuNTMwOTYzIDEuMDM2NDIyLDI0LjA4NzU0NiA2LjA2MjUsMzMuOTY4NzUgTCA0My4xMjUsMTEwIGMgMS4wMTE0MDMsMS44MTY3OCAyLjE5MTI0MSwzLjUyMjk3IDMuNDM3NSw1LjE4NzUgMS4yNDQ3MjUsMS42NjI0OCAxLjY4NTcxNiwyLjU4MjYyIDIuNDY4NzUsMy42ODc1IEMgNjIuMzE5OTExLDEzMy44MTA4MyA4Mi4xMjk0NzMsMTQxIDEwNSwxNDEgMTU1LjY0ODM2LDE0MSAxOTguNjMyOTksMTE4LjU2MjAxIDIxNy42NTYyNSw2OC4xNTYyNSAyMzEuMTUzMDIsNjkuNTQxMjIgMjQ0LjA5OTY4LDY2LjA4MDM1OCAyNTAsNTQuNTYyNSAyNDAuNjAxMzcsNDkuMTM4ODM1IDIyOC41MjE2Myw1MC44NzcyMjYgMjIxLjU2MjUsNTQuMzc1IEwgMjQwLDIgMTY4LDQ4IDE0NSw0OCAxNDUsMiB6IgogICAgICAgICBpZD0icGF0aDEwIiAvPgogICAgPC9jbGlwUGF0aD4KICA8L2RlZnM+CiAgPHBhdGgKICAgICBkPSJtIDQ2Ny44MiwxMTMuMjQwOTIgLTAuMDQyMiwtMjUuNTU3ODYyIC0wLjEyNjg3LC00NS42NTcxOCBtIDI1Ljg1NDA2LDE5LjY3NjE3IC0yNS43MjcxMiwyNS45ODEwMSAyNS44NTQwNywyNS42NDI0OTIgTSAzMjEuMjg1NDcsODguMDIxNTczIGMgMC4xMjQxNywtNS40ODA5MzMgLTEuNDY5MDQsLTExLjA4MTQzIC00LjY5Njg5LC0xNS42MTM5OTQgLTQuNjUxMjYsLTYuNTMxMzIgLTEyLjE3OTE5LC0xMC45OTA0IC0yMC40Mzc4MywtMTEuMDg2MzYgLTAuNTUwNTksMCAtMS4wOTU1OCwwIC0xLjY1MDI2LDAuMDQyMjUgLTMuMjY0ODEsMC4yMDE3IC02LjQyNjYyLDAuNjU1Mzc4IC05LjIyNDUzLDEuODE5NTE3IC0xOC40MDA1Nyw3LjY1NiAtMjEuNjYwODIsMzMuMjA3OTYyIC02LjEzNTU4LDQ0Ljc2ODU3NSAxMy40NDQ3NCwxMC4wMTEzOSAzMy4wMDE1NSw1LjkyMzY1IDM5Ljc3NTQ5LC05LjM1MTQ2NiAxLjQzMTQ0LC0zLjIyNzg4NyAyLjM2OTYsLTcuMjk3MTMyIDIuMzY5NiwtMTAuNTc4NTU0IGwgMCwtNDYuMjA3MjM2IE0gNDQ1LjQzNyw2NC4zNjc4NTEgYyAtMy44MDk5MywtMi40NjE4IC04LjI1NDU2LC0zLjM0OTk0MiAtMTIuNjUxOTksLTMuMzQyODMzIC0wLjQ3NjgzLDAgLTAuOTY3MDgsMC4wMjM4MyAtMS4zOTYzNywwLjA0MjI1IC0xMi43MTI4OCwwLjU0Njc3IC0yNC41MDAwMSw5LjUzMDM1NSAtMjQuNTAwMDEsMjYuOTU0MjQgMCwyMC42MDAzIDIyLjA4ODA5LDMxLjcxODQ0IDM4LjU5MDY5LDIyLjAwMzQ2IG0gNzQuMTM0NzMsLTIuMjQyNjYgYyAxMy4wMDIwNywtMTEuMTM3NSAzOS4wNTYxNCwtMzMuNDcwNTggMzkuMDU2MTQsLTMzLjQ3MDU4IDAsMCAtMC45NDk4OSwtMS43OTcxNDggLTEuNTY1NjMsLTIuNjIzNDkyIC01LjI1NzM5LC03LjA1NTUxNSAtMTMuMjg5MjksLTEwLjU3ODYgLTIxLjc0OTU3LC0xMC41Nzg2MjcgLTIwLjkwODcxLDAgLTM2LjU4MTU1LDI3LjAzNjUgLTE1Ljc0MDk0LDQ2LjY3MjcgMS40NDMwMSwxLjM1OTYxIDMuNDI1MjMsMi40MjQ1MyA1LjYyNzgxLDMuMzQyODMgNy42NDc0NywzLjE4ODM2IDE4LjExNjU1LDIuOTI2ODUgMjMuNzgwNjYsLTEuMjY5NDMgTSAzNjQuMDIsNjEuMTk0Mjc1IGMgLTAuNTkyNzEsMC4wMTA4MyAtMS4xODE5NCwwLjA3MzY2IC0xLjc3NzIsMC4wODQ2MyAtMTUuODU0NzUsMC4yOTEzNTMgLTI3LjI4NjE1LDE2Ljc1OTE3OCAtMjMuODIyOTgsMzIuMDMxOTYyIDMuMzc0NzgsMTQuODgyOTYzIDE5LjYzNDAzLDIzLjY5NTg4MyAzMy42ODIyMiwxOC44Mjk4ODMgMTYuMzU4NTksLTQuMjg5MjcgMjMuMDMwNjEsLTI0Ljg4ODc1NiAxNC4wNDgzNiwtMzguODAyMjU0IC00LjkxMjYsLTcuNjA5NjQgLTEzLjIzOTI1LC0xMi4zMTMyIC0yMi4xMzA0LC0xMi4xNDQyMiB6IG0gMjQwLjcyNjMxLDAuNTA3NzcyIGMgLTYuNDIwMTIsMC4wMTcyIC0xMi42NzI3MywyLjI2NTgxNSAtMTcuMzA2NTYsNi42MDEwMzggLTcuMzA3NjcsNi4wMzEzMiAtOC44OTQ0OCwxMy42NDc0MSAtOC44MDEzOSwyMy4yNzI5IGwgMC4yMTE1NywyMS44NzY1MjIiCiAgICAgaWQ9InBhdGgxMiIKICAgICBzdHlsZT0iZmlsbDpub25lO3N0cm9rZTojMzk0ZDU0O3N0cm9rZS13aWR0aDoxMC41O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZCIgLz4KICA8cGF0aAogICAgIGQ9Im0gMTQ3LjQ4NzYsNDUuNzMyIDIyLjg2NiwwIDAsMjMuMzc0NzMgMTEuNTYxNzcsMCBjIDUuMzM5MDUsMCAxMC44MzA3MywtMC45NTExNyAxNS44ODcsLTIuNjY0NDQgMi40ODQ0OCwtMC44NDI0NCA1LjI3MzE3LC0yLjAxNDc5IDcuNzIzOTIsLTMuNDg5MiAtMy4yMjc4NSwtNC4yMTQzNiAtNC44NzU3OSwtOS41MzU3NCAtNS4zNjEwMSwtMTQuNzgxMDYgLTAuNjU4NzQsLTcuMTM0MjYgMC43ODAzMiwtMTYuNDIwNDIgNS42MDg5NywtMjIuMDA0MjE2IGwgMi40MDM2MiwtMi43ODAxMTcgMi44NjQyLDIuMzAyMzkzIGMgNy4yMTEzOCw1Ljc5Mzc0IDEzLjI3NjEyLDEzLjg4OTM0IDE0LjM0NTEsMjMuMTE4MTkgOC42ODMxMiwtMi41NTQxMSAxOC44Nzc1OSwtMS45NSAyNi41MzEzNSwyLjQ2NzM1IGwgMy4xNDAwMiwxLjgxMTgyIC0xLjY1Mjc2LDMuMjI1NyBDIDI0Ni45MzI4OSw2OC45NDY1MjQgMjMzLjQwMDc3LDcyLjg1OTg5NiAyMjAuMTcwNzEsNzIuMTY3NDExIDIwMC4zNzM1NiwxMjEuNDc1OCAxNTcuMjcyOSwxNDQuODIgMTA1LjAxMzU2LDE0NC44MiBjIC0yNi45OTg4OTksMCAtNTEuNzY5ODQ1LC0xMC4wOTI3MiAtNjUuODc1NTUyLC0zNC4wNDY5MyAtMC44MjcwMTgsLTEuNDg3OTggLTEuNTM1MjMzLC0zLjA0MzkgLTIuMjg2MzI2LC00LjU3MjEyIEMgMzIuMDgzNTQ4LDk1LjY1Njc0NyAzMC40OTk4ODMsODQuMTA1Njg3IDMxLjU3NDIyNiw3Mi41NjQyNjcgbCAwLjMyMjQxLC0zLjQ1NzA3MiAxOS41NTI5MzcsMCAwLC0yMy4zNzQ3MyAyMi44NjYsMCAwLC0yMi44NjYgNDUuNzMyLDAgMCwtMjIuODY2IDI3LjQzOTY3LDAgMCw0NS43MzIiCiAgICAgaWQ9InBhdGgxNCIKICAgICBzdHlsZT0iZmlsbDojMzk0ZDU0IiAvPgogIDxnCiAgICAgY2xpcC1wYXRoPSJ1cmwoI2NsaXBQYXRoOCkiCiAgICAgaWQ9ImcxNiI+CiAgICA8ZwogICAgICAgaWQ9ImcxOCI+CiAgICAgIDxnCiAgICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsLTIyLjg2NikiCiAgICAgICAgIGlkPSJnMjAiPgogICAgICAgIDxwYXRoCiAgICAgICAgICAgZD0ibSAxMjMuODU5MDEsMy44MTEwNzk0IDE5LjgxNzUxLDAgMCwxOS44MTY5NzA2IC0xOS44MTc1MSwwIHoiCiAgICAgICAgICAgaWQ9InBhdGgyMiIKICAgICAgICAgICBzdHlsZT0iZmlsbDojMDBhY2QzIiAvPgogICAgICAgIDxwYXRoCiAgICAgICAgICAgZD0ibSAxMjMuODU5MDEsMjYuNjc2NDg1IDE5LjgxNzUxLDAgMCwxOS44MTgwNDMgLTE5LjgxNzUxLDAgeiIKICAgICAgICAgICBpZD0icGF0aDI0IgogICAgICAgICAgIHN0eWxlPSJmaWxsOiMyMGMyZWYiIC8+CiAgICAgICAgPHBhdGgKICAgICAgICAgICBkPSJtIDEyNi4yOTIzNSwyMS45NzY5MDQgMCwtMTYuNTE1NzQ5MiBtIDIuOTcxODUsMTYuNTE1NzQ5MiAwLC0xNi41MTU3NDkyIG0gMy4wMDE4NCwxNi41MTU3NDkyIDAsLTE2LjUxNTc0OTIgbSAzLjAwMzQ0LDE2LjUxNTc0OTIgMCwtMTYuNTE1NzQ5MiBtIDMuMDAyOTIsMTYuNTE1NzQ5MiAwLC0xNi41MTU3NDkyIG0gMi45NzEzMSwxNi41MTU3NDkyIDAsLTE2LjUxNTc0OTIiCiAgICAgICAgICAgaWQ9InBhdGgyNiIKICAgICAgICAgICBzdHlsZT0ic3Ryb2tlOiMzOTRkNTQ7c3Ryb2tlLXdpZHRoOjEuNTYiIC8+CiAgICAgICAgPHVzZQogICAgICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAsMjIuODY2KSIKICAgICAgICAgICBpZD0idXNlMjgiCiAgICAgICAgICAgeGxpbms6aHJlZj0iI3BhdGgyNiIgLz4KICAgICAgPC9nPgogICAgICA8dXNlCiAgICAgICAgIHRyYW5zZm9ybT0ibWF0cml4KDEsMCwwLC0xLDIyLjg2Niw0LjU3MjY1MSkiCiAgICAgICAgIGlkPSJ1c2UzMCIKICAgICAgICAgeGxpbms6aHJlZj0iI2cyMCIgLz4KICAgIDwvZz4KICAgIDx1c2UKICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC05MS40NjQsNDUuNzMyKSIKICAgICAgIGlkPSJ1c2UzMiIKICAgICAgIHhsaW5rOmhyZWY9IiNnMTgiIC8+CiAgICA8dXNlCiAgICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNDUuNzMyLDQ1LjczMikiCiAgICAgICBpZD0idXNlMzQiCiAgICAgICB4bGluazpocmVmPSIjZzE4IiAvPgogICAgPHVzZQogICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCw0NS43MzIpIgogICAgICAgaWQ9InVzZTM2IgogICAgICAgeGxpbms6aHJlZj0iI2cxOCIgLz4KICA8L2c+CiAgPHBhdGgKICAgICBkPSJtIDIyMS41NzAxNCw1NC4zNzk2NDkgYyAxLjUzMzMyLC0xMS45MTUyNDcgLTcuMzgzODMsLTIxLjI3NDc3OSAtMTIuOTE0MDcsLTI1LjcxODM2IC02LjM3MjY5LDcuMzY3NzY1IC03LjM2Mjk1LDI2LjY3NzU1NiAyLjYzNDk4LDM0LjgwNzQzMSAtNS41Nzk1Miw0Ljk1NjExNyAtMTcuMzM3MzEsOS40NDg0MzUgLTI5LjM3NTc0LDkuNDQ4NDM1IEwgMzQsNzIuOTE3MTU1IEMgMzIuODI5MjU1LDg1LjQ4NDE4NCAzNCwxNDYgMzQsMTQ2IGwgMjE3LDAgLTAuOTg2NTcsLTkxLjQyNCBjIC05LjM5ODYzLC01LjQyMzY2NSAtMjEuNDg0MTksLTMuNjk0MzI2IC0yOC40NDMzMiwtMC4xOTY1NTIiCiAgICAgY2xpcC1wYXRoPSJ1cmwoI2NsaXBQYXRoOCkiCiAgICAgaWQ9InBhdGgzOCIKICAgICBzdHlsZT0iZmlsbDojMTdiNWViIiAvPgogIDxwYXRoCiAgICAgZD0ibSAzNCw4OSAwLDU3IDIxNywwIDAsLTU3IgogICAgIGNsaXAtcGF0aD0idXJsKCNjbGlwUGF0aDgpIgogICAgIGlkPSJwYXRoNDAiCiAgICAgc3R5bGU9ImZpbGwtb3BhY2l0eTowLjE3IiAvPgogIDxwYXRoCiAgICAgZD0iTSAxMTEuMjM3MzYsMTQwLjg4OTk3IEMgOTcuNjk3NzQxLDEzNC40NjQ4IDkwLjI2NTcwNywxMjUuNzMwODEgODYuMTMwNjExLDExNi4xOTU2MiBMIDQ1LDExOCBsIDIxLDI4IDQ1LjIzNzM2LC01LjExMDAzIgogICAgIGNsaXAtcGF0aD0idXJsKCNjbGlwUGF0aDgpIgogICAgIGlkPSJwYXRoNDIiCiAgICAgc3R5bGU9ImZpbGw6I2Q0ZWRmMSIgLz4KICA8cGF0aAogICAgIGQ9Im0gMjIyLjUsNTMuOTM3NSAwLDAuMDMxMjUgYyAtMjAuODYxMTksMjYuODg5MTQ0IC01MC43ODMxMiw1MC4zNzg3MiAtODIuOTA2MjUsNjIuNzE4NzUgLTI4LjY1NDc4LDExLjAwNzY3IC01My42MzgzODEsMTEuMDYwMzkgLTcwLjg3NSwyLjIxODc1IC0xLjg1NjA3LC0xLjA0ODMyIC0zLjY3NTcwMSwtMi4yMTE1MiAtNS41LC0zLjMxMjUgQyA1MC41ODIwOTcsMTA2Ljc2MTc1IDQzLjQ2NDI3NCw5Mi4xNTIzMDggNDQuMDYyNSw3Mi45MDYyNSBMIDM0LDcyLjkwNjI1IDM0LDE0NiBsIDIxNywwIDAsLTk2IC0yNSwwIHoiCiAgICAgY2xpcC1wYXRoPSJ1cmwoI2NsaXBQYXRoOCkiCiAgICAgaWQ9InBhdGg0NCIKICAgICBzdHlsZT0iZmlsbC1vcGFjaXR5OjAuMDg1IiAvPgogIDxwYXRoCiAgICAgZD0ibSA0NS42MjUsMTE3LjAzMTI1IGMgMTQuMTY1MTUzLDAuNzc1MzEgMjkuMjgyNDUsMC45MTQzMyA0Mi40Njg3NSwtMy4yMTg3NSIKICAgICBpZD0icGF0aDQ2IgogICAgIHN0eWxlPSJmaWxsOm5vbmU7c3Ryb2tlOiMzOTRkNTQ7c3Ryb2tlLXdpZHRoOjMuNDtzdHJva2UtbGluZWNhcDpyb3VuZCIgLz4KICA8cGF0aAogICAgIGQ9Im0gMTAyLjE3MDI0LDEwNi45NTkyNiBjIDAsMy4wMTg5OCAtMi40NDc1MjksNS40NjY1MSAtNS40NjY1MDgsNS40NjY1MSAtMy4wMTk1MTQsMCAtNS40Njc1ODEsLTIuNDQ3NTMgLTUuNDY3NTgxLC01LjQ2NjUxIDAsLTMuMDE4OTcgMi40NDgwNjcsLTUuNDY3NTggNS40Njc1ODEsLTUuNDY3NTggMy4wMTg5NzksMCA1LjQ2NjUwOCwyLjQ0ODYxIDUuNDY2NTA4LDUuNDY3NTggeiIKICAgICBpZD0icGF0aDQ4IgogICAgIHN0eWxlPSJmaWxsOiNkNGVkZjEiIC8+CiAgPHBhdGgKICAgICBkPSJtIDk4LjEyMTM3MiwxMDMuMzA3NzggYyAtMC40NzcxODgsMC4yNzU4MiAtMC44MDAxMzMsMC43OTI2NCAtMC44MDAxMzMsMS4zODM5IDAsMC44ODI2MSAwLjcxNTUxNCwxLjU5NzA2IDEuNTk4MTI1LDEuNTk3MDYgMC42MDQ2NTMsMCAxLjEzMDA0NiwtMC4zMzU4IDEuNDAxNTc2LC0wLjgzMTc0IDAuMTkxNzMsMC40NjIyIDAuMjk4MzEsMC45Njk5MSAwLjI5ODMxLDEuNTAyMjYgMCwyLjE2MjA4IC0xLjc1MjkwNywzLjkxNDk4IC0zLjkxNTUxOCwzLjkxNDk4IC0yLjE2MjA3NSwwIC0zLjkxNjA1LC0xLjc1MjkgLTMuOTE2MDUsLTMuOTE0OTggMCwtMi4xNjMxNCAxLjc1Mzk3NSwtMy45MTY1OCAzLjkxNjA1LC0zLjkxNjU4IDAuNTAwMjE4LDAgMC45Nzc0MDYsMC4wOTQzIDEuNDE3NjQsMC4yNjUxIHoiCiAgICAgaWQ9InBhdGg1MCIKICAgICBzdHlsZT0iZmlsbDojMzk0ZDU0IiAvPgogIDxwYXRoCiAgICAgZD0ibSAwLDkwLjE2MjM0MyAyNTQuMzI3NDMsMCBjIC01LjUzNzc0LC0xLjQwNDc4NiAtMTcuNTIxLC0zLjMwMjI5MyAtMTUuNTQ0NzcsLTEwLjU1OTczMiAtMTAuMDY5MTUsMTEuNjUxNzQ5IC0zNC4zNTI3NCw4LjE3NDMyNiAtNDAuNDgxMiwyLjQyODc4NiAtNi44MjQ3MSw5Ljg5ODMxIC00Ni41NTQ1MSw2LjEzNTk2NyAtNDkuMzI1NTMsLTEuNTc1MDk2IC04LjU1NTY1LDEwLjA0MDc3IC0zNS4wNjcxOCwxMC4wNDA3NyAtNDMuNjIzMzYsMCAtMi43NzIwOSw3LjcxMTA2MyAtNDIuNTAxMzU3LDExLjQ3MzQwNiAtNDkuMzI2NTk1LDEuNTc1MDk2IEMgNDkuODk3NTA2LDg3Ljc3NjkzNyAyNS42MTYwNjcsOTEuMjU0MzYgMTUuNTQ1ODQxLDc5LjYwMjYxMSAxNy41MjIwNzUsODYuODYwMDUgNS41Mzg4MTE3LDg4Ljc1NzU1NyAwLDkwLjE2MjM0MyIKICAgICBpZD0icGF0aDUyIgogICAgIHN0eWxlPSJmaWxsOiMzOTRkNTQiIC8+Cjwvc3ZnPgo=" alt=""></div>    <div class="note r" style="--d:300">На курсе мы начинаем с Python, а дальше работаем с данными, API и языковыми моделями.</div>
   </div>
 </section>
-<!-- 12 -->
+<!-- 13 -->
 <section class="slide" data-title="Фронтенд">
   <header class="sh r">
     <p class="eyebrow">Теория · Фронтенд</p>
@@ -484,7 +545,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 13 -->
+<!-- 14 -->
 <section class="slide" data-title="Чем занимается фронтенд-разработчик">
   <header class="sh r">
     <p class="eyebrow">Теория · Фронтенд</p>
@@ -514,7 +575,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Работа фронтенд-разработчика видна сразу: именно её оценивает пользователь, когда открывает сервис.</div>
   </div>
 </section>
-<!-- 14 -->
+<!-- 15 -->
 <section class="slide" data-title="Бэкенд">
   <header class="sh r">
     <p class="eyebrow">Теория · Бэкенд</p>
@@ -532,7 +593,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 15 -->
+<!-- 16 -->
 <section class="slide" data-title="Что делает бэкенд-разработчик">
   <header class="sh r">
     <p class="eyebrow">Теория · Бэкенд</p>
@@ -564,7 +625,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Пользователь бэкенд не видит, но без него сервис не работает: именно там хранятся данные и правила.</div>
   </div>
 </section>
-<!-- 16 -->
+<!-- 17 -->
 <section class="slide" data-title="Как фронтенд и бэкенд работают вместе">
   <header class="sh r">
     <p class="eyebrow">Теория · Фронтенд и бэкенд</p>
@@ -575,7 +636,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Запрос идёт слева направо, ответ возвращается обратно — и пользователь видит результат.</div>
   </div>
 </section>
-<!-- 17 -->
+<!-- 18 -->
 <section class="slide" data-title="Пример: вход в личный кабинет">
   <header class="sh r">
     <p class="eyebrow">Теория · Фронтенд и бэкенд</p>
@@ -586,7 +647,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Фронтенд и бэкенд общаются через API — набор правил, по которым одна программа обращается к другой.</div>
   </div>
 </section>
-<!-- 18 -->
+<!-- 19 -->
 <section class="slide" data-title="Где работают модели AI">
   <header class="sh r">
     <p class="eyebrow">Теория · Фронтенд и бэкенд</p>
@@ -597,7 +658,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="note r" style="--d:300">Модели AI обычно работают на стороне бэкенда: так модель недоступна напрямую пользователю и её проще обновлять.</div>
   </div>
 </section>
-<!-- 19 -->
+<!-- 20 -->
 <section class="slide" data-title="Раздел: Практика">
   <header class="sh r">
     <p class="eyebrow">Часть 2</p>
@@ -632,7 +693,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 20 -->
+<!-- 21 -->
 <section class="slide" data-title="Пример: Яндекс Музыка">
   <header class="sh r">
     <p class="eyebrow">Практика · Сервис 1</p>
@@ -652,7 +713,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 21 -->
+<!-- 22 -->
 <section class="slide" data-title="Госуслуги">
   <header class="sh r">
     <p class="eyebrow">Практика · Сервис 2</p>
@@ -672,7 +733,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 22 -->
+<!-- 23 -->
 <section class="slide" data-title="2ГИС">
   <header class="sh r">
     <p class="eyebrow">Практика · Сервис 3</p>
@@ -692,7 +753,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-<!-- 23 -->
+<!-- 24 -->
 <section class="slide" data-title="Что изучили">
   <header class="sh r">
     <p class="eyebrow">Итоги</p>
@@ -716,7 +777,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
 
 <div class="hud" aria-hidden="true">
   <div class="bar"><i id="bar"></i></div>
-  <div class="cnt"><span id="num">01</span> / <span id="numTotal">23</span></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">24</span></div>
 </div>
 
 <script>
@@ -770,7 +831,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   });
 
   deck.addEventListener('click', function(e){
-    if (e.target.closest && e.target.closest('.run, .quiz')) { return; }
+    if (e.target.closest && e.target.closest('.run, .quiz, .copybtn')) { return; }
     var r = deck.getBoundingClientRect();
     if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
   });
@@ -808,6 +869,42 @@ svg text{font-family:'Inter',Arial,sans-serif}
     if (!t || !t.closest) return;
     var card = t.closest('.quiz');
     if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
   });
 })();
 </script>
