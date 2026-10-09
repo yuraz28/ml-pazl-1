@@ -1,0 +1,52 @@
+# Пересобирает оглавление classes/index.html, когда появляется новая презентация.
+#
+# Нужен только в одном случае: если сайт публикуется из ПРИВАТНОГО репозитория.
+# Тогда страница не может сама узнать список файлов (для этого GitHub-API
+# требует публичный репозиторий) и список обновляет этот бот.
+# Если презентации публикуются из публичного репозитория — файл можно удалить:
+# страница обновляет список сама при открытии.
+#
+# Если в main запрещён прямой push (branch protection), шаг «Коммит» не сработает
+# — тогда запускай scripts/build_lesson_index.py локально перед пушем.
+name: Оглавление занятий
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "classes/**/*.html"
+      - "scripts/build_lesson_index.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lesson-index
+  cancel-in-progress: true
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Пересобрать оглавление
+        run: python3 scripts/build_lesson_index.py
+
+      - name: Закоммитить, если что-то изменилось
+        continue-on-error: true
+        run: |
+          if [ -z "$(git status --porcelain classes/index.html)" ]; then
+            echo "Оглавление уже актуально — коммит не нужен"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add classes/index.html
+          git commit -m "chore: обновить оглавление занятий [skip ci]"
+          git push
