@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Занятие 11. Списки — Код и пазл</title>
+<title>Занятие 12. Списки — Код и пазл</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -205,6 +205,37 @@ svg text{font-family:'Inter',Arial,sans-serif}
 .quiz.shown .ans-btn{display:none}
 .quiz.shown code.ans{display:block; animation:rpop .22s ease both}
 </style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+</style>
 </head>
 <body>
 <div class="stage" id="stage">
@@ -220,8 +251,38 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <h1 class="r" style="--d:120">Списки</h1>
   </div>
 </section>
-
 <!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
 
 <section class="slide" data-title="Раздел: Теория">
   <header class="sh r">
@@ -238,7 +299,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 3 -->
+<!-- 4 -->
 
 <section class="slide" data-title="Список — полка с ячейками">
   <header class="sh r">
@@ -283,7 +344,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 4 -->
+<!-- 5 -->
 
 <section class="slide" data-title="Индекс, −1 и длина">
   <header class="sh r">
@@ -308,7 +369,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 5 -->
+<!-- 6 -->
 
 <section class="slide" data-title="Срезы и оператор in">
   <header class="sh r">
@@ -330,7 +391,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 6 -->
+<!-- 7 -->
 
 <section class="slide" data-title="Список можно менять">
   <header class="sh r">
@@ -352,7 +413,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 7 -->
+<!-- 8 -->
 
 <section class="slide" data-title="append и remove">
   <header class="sh r">
@@ -378,7 +439,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 8 -->
+<!-- 9 -->
 
 <section class="slide" data-title="Сортируем список">
   <header class="sh r">
@@ -403,7 +464,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 9 -->
+<!-- 10 -->
 
 <section class="slide" data-title="a = a.sort() — ошибка">
   <header class="sh r">
@@ -428,7 +489,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 10 -->
+<!-- 11 -->
 
 <section class="slide" data-title="Перебор списка в цикле">
   <header class="sh r">
@@ -454,7 +515,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 11 -->
+<!-- 12 -->
 
 <section class="slide" data-title="Частые ошибки">
   <header class="sh r">
@@ -471,7 +532,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 12 -->
+<!-- 13 -->
 
 <section class="slide" data-title="Проверь себя">
   <header class="sh r">
@@ -489,7 +550,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 13 -->
+<!-- 14 -->
 
 <section class="slide" data-title="Раздел: Практика">
   <header class="sh r">
@@ -506,7 +567,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 14 -->
+<!-- 15 -->
 
 <section class="slide" data-title="Задача 1: условие">
   <header class="sh r">
@@ -555,7 +616,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 15 -->
+<!-- 16 -->
 
 <section class="slide" data-title="Задача 1: шаг 1">
   <header class="sh r">
@@ -577,7 +638,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 16 -->
+<!-- 17 -->
 
 <section class="slide" data-title="Задача 1: шаг 2">
   <header class="sh r">
@@ -599,7 +660,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 17 -->
+<!-- 18 -->
 
 <section class="slide" data-title="Задача 1: полное решение">
   <header class="sh r">
@@ -620,7 +681,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 18 -->
+<!-- 19 -->
 
 <section class="slide" data-title="Задача 2: условие">
   <header class="sh r">
@@ -686,7 +747,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 19 -->
+<!-- 20 -->
 
 <section class="slide" data-title="Задача 2: шаг 1">
   <header class="sh r">
@@ -708,7 +769,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 20 -->
+<!-- 21 -->
 
 <section class="slide" data-title="Задача 2: шаг 2">
   <header class="sh r">
@@ -730,7 +791,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 21 -->
+<!-- 22 -->
 
 <section class="slide" data-title="Задача 2: полное решение">
   <header class="sh r">
@@ -751,7 +812,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 22 -->
+<!-- 23 -->
 
 <section class="slide" data-title="Задача 3: условие">
   <header class="sh r">
@@ -804,7 +865,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 23 -->
+<!-- 24 -->
 
 <section class="slide" data-title="Задача 3: шаг 1">
   <header class="sh r">
@@ -826,7 +887,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 24 -->
+<!-- 25 -->
 
 <section class="slide" data-title="Задача 3: полное решение">
   <header class="sh r">
@@ -847,7 +908,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 25 -->
+<!-- 26 -->
 
 <section class="slide" data-title="Дополнительное задание">
   <header class="sh r">
@@ -864,7 +925,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   </div>
 </section>
 
-<!-- 26 -->
+<!-- 27 -->
 
 <section class="slide" data-title="Что изучили">
   <header class="sh r">
@@ -890,7 +951,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
 
 <div class="hud" aria-hidden="true">
   <div class="bar"><i id="bar"></i></div>
-  <div class="cnt"><span id="num">01</span> / <span id="numTotal">26</span></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">27</span></div>
 </div>
 
 <script>
@@ -945,7 +1006,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
   });
 
   deck.addEventListener('click', function(e){
-    if (e.target.closest('.run, .quiz')) { return; }
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
     var r = deck.getBoundingClientRect();
     if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
   });
@@ -1428,6 +1489,42 @@ svg text{font-family:'Inter',Arial,sans-serif}
     if (!t || !t.closest) return;
     var card = t.closest('.quiz');
     if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
   });
 })();
 </script>
