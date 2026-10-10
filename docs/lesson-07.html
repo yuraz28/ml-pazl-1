@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Условный оператор — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 7. Условный оператор</h1>
+<h2>Цель занятия</h2>
+<p>Изучить условный оператор Python: конструкции <code>if</code>, <code>else</code> и <code>elif</code>, операторы сравнения, логические операторы <code>and</code>, <code>or</code>, <code>not</code> и вложенные условия. Применить их на практике и создать «Калькулятор скидок в магазине», который по сумме покупки, дню недели и наличию карты постоянного клиента рассчитывает скидку и итоговую цену.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Ветвление: условный оператор if-else</h3>
+<p>До сих пор наши программы выполнялись строго сверху вниз: ввод, вычисления, вывод. Теперь научимся управлять ходом выполнения. Для этого программа проверяет <strong>условие</strong>, которое может быть истинным (<code>True</code>) или ложным (<code>False</code>), и в зависимости от результата выбирает, какие действия выполнить. Такая проверка и выбор пути называются <strong>ветвлением</strong>.</p>
+<pre><code class="language-python">age = int(input('Сколько вам лет? '))
+if age &gt;= 18:
+    print('Доступ разрешён')
+    print('Добро пожаловать!')
+</code></pre>
+<p>Двоеточие в конце строки с <code>if</code> сообщает Python, что дальше идёт <strong>блок команд</strong>. В блок входят все строки с отступом под <code>if</code>, вплоть до первой строки без отступа. Если условие истинно, блок выполняется, если ложно – пропускается.</p>
+<p>Чтобы задать действия на случай, когда условие ложно, используют ключевое слово <code>else</code>:</p>
+<pre><code class="language-python">age = int(input('Сколько вам лет? '))
+if age &gt;= 18:
+    print('Доступ разрешён')
+else:
+    print('Доступ запрещён')
+</code></pre>
+<p>В Python отступы – важная часть кода: именно они показывают, где блок начинается и где заканчивается. По соглашению <strong>PEP 8</strong> для отступа используют 4 пробела. Среды разработки (например, VS Code) обычно ставят их автоматически после двоеточия и нажатия Enter.</p>
+<hr />
+<h3>Операторы сравнения</h3>
+<p>Условие обычно строится с помощью операторов сравнения. В Python их шесть.</p>
+<ul>
+<li><code>&gt;</code> – больше: <code>x &gt; 7</code>.</li>
+<li><code>&lt;</code> – меньше: <code>x &lt; 7</code>.</li>
+<li><code>&gt;=</code> – больше либо равно: <code>x &gt;= 7</code>.</li>
+<li><code>&lt;=</code> – меньше либо равно: <code>x &lt;= 7</code>.</li>
+<li><code>==</code> – равно: <code>x == 7</code>.</li>
+<li><code>!=</code> – не равно: <code>x != 7</code>.</li>
+</ul>
+<p>Знак <code>=</code> присваивает значение переменной, а знак <code>==</code> проверяет равенство. Путаница между ними – одна из самых распространённых ошибок в программировании.</p>
+<pre><code class="language-python">price = 500         # присваивание
+if price == 500:    # сравнение
+    print('Ровно 500')
+</code></pre>
+<p>Сравнивать можно не только числа, но и строки: <code>if card == 'да'</code>. Строки сравниваются с учётом регистра, поэтому <code>'Да'</code> и <code>'да'</code> – разные значения.</p>
+<p>Операторы сравнения можно объединять в цепочки, например <code>1 &lt;= x &lt;= 10</code> или <code>a == b == c</code>. Так удобно проверять, что значение попадает в диапазон:</p>
+<pre><code class="language-python">age = int(input())
+if 3 &lt;= age &lt;= 6:
+    print('Дошкольник')
+</code></pre>
+<p>Равенство транзитивно: если <code>a == b</code> и <code>b == c</code>, то <code>a == c</code>. Поэтому цепочка <code>a == b == c</code> действительно проверяет, что все три числа равны. Неравенство <code>!=</code> так не работает: из <code>a != b</code> и <code>b != c</code> не следует, что <code>a != c</code> (например, 1, 2 и 1). Поэтому условие <code>a != b != c</code> не проверяет, что все три числа различны.</p>
+<hr />
+<h3>Логические операторы and, or, not</h3>
+<p>Когда нужно проверить сразу несколько условий, используют логические операторы. Их три.</p>
+<ul>
+<li><code>and</code> – логическое умножение («и»): результат истинен, только если истинны оба условия.</li>
+<li><code>or</code> – логическое сложение («или»): результат истинен, если истинно хотя бы одно условие.</li>
+<li><code>not</code> – логическое отрицание («не»): меняет <code>True</code> на <code>False</code> и наоборот.</li>
+</ul>
+<p>Все возможные комбинации для <code>and</code> и <code>or</code> (таблицы истинности):</p>
+<pre><code class="language-python">True and True    # True
+True and False   # False
+False and True   # False
+False and False  # False
+
+True or True     # True
+True or False    # True
+False or True    # True
+False or False   # False
+
+not True         # False
+not False        # True
+</code></pre>
+<pre><code class="language-python">if amount &gt;= 1000 and card == 'да':
+    print('Скидка по карте')
+if day == 6 or day == 7:
+    print('Сегодня выходной')
+</code></pre>
+<p>Оператор <code>not</code> применяют, когда удобнее сформулировать противоположное условие. Выражение в скобках после <code>not</code> показывает, к чему именно применяется отрицание. Эти два условия равносильны:</p>
+<pre><code class="language-python">if not (amount &lt; 1000):
+if amount &gt;= 1000:
+</code></pre>
+<p>Логические операторы имеют приоритет, как и арифметические. Сначала выполняется <code>not</code>, затем <code>and</code>, и в последнюю очередь <code>or</code>. Порядок можно изменить скобками.</p>
+<pre><code class="language-python">print(True or False and False)    # True, сначала False and False
+print((True or False) and False)  # False, скобки изменили порядок
+</code></pre>
+<p>Операторы <code>and</code> и <code>or</code> вычисляются по <strong>укороченной схеме</strong>: если результат понятен уже по левой части, правая часть не проверяется. В выражении <code>5 &gt; 100 and 10 &gt; 0</code> вторая часть не вычисляется, потому что первая ложна и результат точно <code>False</code>. В выражении <code>10 &gt; 0 or 5 &gt; 100</code> вторая часть тоже не вычисляется, потому что первая истинна и результат точно <code>True</code>. Это можно использовать для защиты от ошибок:</p>
+<pre><code class="language-python">if b != 0 and a // b &gt; 2:
+    print('Частное больше 2')
+</code></pre>
+<hr />
+<h3>Вложенные условия</h3>
+<p>Внутри блока <code>if</code> или <code>else</code> можно писать любые инструкции, в том числе другой условный оператор. Получается <strong>вложенное ветвление</strong>. Вложенные блоки сдвигаются ещё на 4 пробела на каждом уровне.</p>
+<pre><code class="language-python">if amount &gt;= 1000:
+    if card == 'да':
+        print('Скидка 10%')
+    else:
+        print('Скидка 5%')
+else:
+    print('Скидки нет')
+</code></pre>
+<p>Два вложенных <code>if</code> подряд без ветки <code>else</code> у внешнего условия – это то же самое, что одно условие с <code>and</code>. Например, программа определения координатной четверти точки может быть записана и через вложенные условия, и через <code>and</code>:</p>
+<pre><code class="language-python">x = int(input())
+y = int(input())
+
+if x &gt; 0:
+    if y &gt; 0:
+        print('Первая четверть')
+    else:
+        print('Четвёртая четверть')
+else:
+    if y &gt; 0:
+        print('Вторая четверть')
+    else:
+        print('Третья четверть')
+</code></pre>
+<p>При двух уровнях вложенности программа хорошо читается в любом виде. Но когда уровней становится больше, код быстро превращается в лесенку, которую трудно понять.</p>
+<hr />
+<h3>Каскадный оператор if-elif-else</h3>
+<p>Если нужно выбрать один вариант из нескольких, вместо глубокой вложенности используют <strong>каскадный условный оператор</strong>. Его запись:</p>
+<pre><code class="language-python">if условие1:
+    блок кода
+elif условие2:
+    блок кода
+elif условие3:
+    блок кода
+else:
+    блок кода
+</code></pre>
+<p>Условия проверяются сверху вниз. Как только найдено первое истинное условие, выполняется его блок, а вся остальная часть конструкции пропускается. Если ни одно условие не истинно, выполняется блок <code>else</code>. Слова <code>if</code>, <code>elif</code> и <code>else</code> выравниваются по одному уровню, поэтому код короче по ширине и читается проще, чем вложенные <code>if-else</code>.</p>
+<pre><code class="language-python">grade = int(input('Введите отметку по 100-балльной системе: '))
+
+if grade &gt;= 90:
+    print(5)
+elif grade &gt;= 80:
+    print(4)
+elif grade &gt;= 70:
+    print(3)
+elif grade &gt;= 60:
+    print(2)
+else:
+    print(1)
+</code></pre>
+<p>Заключительный блок <code>else</code> необязателен. Если его нет и ни одно условие не подошло, программа просто ничего не выполнит и продолжит работу без ошибок.</p>
+<pre><code class="language-python">signal = input('Введите сигнал светофора: ')
+if signal == 'красный':
+    print('Стой!')
+elif signal == 'жёлтый':
+    print('Приготовься...')
+elif signal == 'зелёный':
+    print('Иди!')
+</code></pre>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Калькулятор скидок в магазине</h3>
+<p>Создадим программу, которая по сумме покупки, дню недели и наличию карты постоянного клиента считает скидку и итоговую цену. Правила скидок такие:</p>
+<ul>
+<li><strong>Скидка по сумме покупки:</strong> до 1000 руб. — 0%, от 1000 до 4999 руб. — 5%, от 5000 руб. — 10%.</li>
+<li>В выходные (суббота и воскресенье) добавляется ещё 5%.</li>
+<li>Карта постоянного клиента даёт ещё 5%, но только если сумма покупки не меньше 1000 руб.</li>
+</ul>
+<p>Скидку считаем в целых процентах, а цену — в целых рублях с помощью целочисленного деления из прошлого занятия: цена со скидкой равна <code>amount - amount * discount // 100</code>. Программу будем строить по шагам.</p>
+<h4>Шаг 1. Скидка по сумме покупки</h4>
+<p>Вариантов несколько, и подходит ровно один, поэтому используем каскад <code>if-elif-else</code>. Условия идут от большей суммы к меньшей.</p>
+<pre><code class="language-python">amount = int(input('Введите сумму покупки в рублях: '))
+
+if amount &gt;= 5000:
+    discount = 10
+elif amount &gt;= 1000:
+    discount = 5
+else:
+    discount = 0
+</code></pre>
+<h4>Шаг 2. День недели</h4>
+<p>День недели вводим числом от 1 (понедельник) до 7 (воскресенье). Выходные – это 6 и 7, поэтому нужен оператор <code>or</code>. Скидку увеличиваем записью <code>+=</code>.</p>
+<pre><code class="language-python">day = int(input('Введите день недели (1-7): '))
+
+if day == 6 or day == 7:
+    discount += 5
+</code></pre>
+<h4>Шаг 3. Карта постоянного клиента</h4>
+<p>Скидка по карте действует, только если выполняются оба условия: карта есть и сумма не меньше 1000. Для этого подходит оператор <code>and</code>.</p>
+<pre><code class="language-python">card = input('Есть карта? (да/нет): ')
+
+if card == 'да' and amount &gt;= 1000:
+    discount += 5
+</code></pre>
+<p>То же самое можно записать вложенными условиями. Результат одинаковый, но запись с <code>and</code> короче:</p>
+<pre><code class="language-python">if card == 'да':
+    if amount &gt;= 1000:
+        discount += 5
+</code></pre>
+<h4>Полная программа</h4>
+<pre><code class="language-python">amount = int(input('Введите сумму покупки в рублях: '))
+day = int(input('Введите день недели (1-7): '))
+card = input('Есть карта? (да/нет): ')
+
+if amount &gt;= 5000:
+    discount = 10
+elif amount &gt;= 1000:
+    discount = 5
+else:
+    discount = 0
+
+if day == 6 or day == 7:
+    discount += 5
+if card == 'да' and amount &gt;= 1000:
+    discount += 5
+
+price = amount - amount * discount // 100
+
+print(f'Скидка: {discount}%')
+print(f'К оплате: {price} руб.')
+</code></pre>
+<p>Проверим программу на нескольких наборах данных.</p>
+<ul>
+<li>6000 руб., суббота (6), карта есть: 10% + 5% + 5% = 20%. К оплате 4800 руб.</li>
+<li>3000 руб., среда (3), карты нет: скидка 5%. К оплате 2850 руб.</li>
+<li>800 руб., воскресенье (7), карта есть: по сумме скидки нет, за выходной 5%, а по карте скидки нет, так как сумма меньше 1000. К оплате 760 руб.</li>
+</ul>
+<p><strong>Дополнительное задание:</strong> добавьте скидку 2% по средам (<code>day == 3</code>). Затем сделайте так, чтобы при вводе дня недели не от 1 до 7 программа выводила сообщение об ошибке (подсказка: оператор <code>not</code> и цепочка сравнений).</p>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Условный оператор <code>if-else</code> позволяет программе выбирать, какие действия выполнять. Блок кода задаётся двоеточием и отступом в 4 пробела.</li>
+<li>Операторы сравнения <code>&gt; &lt; &gt;= &lt;= == !=</code> дают результат <code>True</code> или <code>False</code>. Знак <code>=</code> присваивает, а <code>==</code> сравнивает. Сравнения можно объединять в цепочки, например <code>1 &lt;= x &lt;= 10</code>.</li>
+<li>Логические операторы <code>and</code>, <code>or</code>, <code>not</code> объединяют условия. Приоритет: сначала <code>not</code>, затем <code>and</code>, затем <code>or</code>; порядок меняют скобками. <code>and</code> и <code>or</code> вычисляются по укороченной схеме.</li>
+<li>Вложенные условия удобны при небольшой глубине, а для выбора из нескольких вариантов лучше использовать каскад <code>if-elif-else</code>. Порядок условий в каскаде важен, а блок <code>else</code> необязателен.</li>
+<li>В калькуляторе скидок мы объединили эти конструкции с целочисленной арифметикой: программа считает скидку по сумме, дню недели и карте клиента.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

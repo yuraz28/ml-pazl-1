@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цикл while — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 10. Цикл while</h1>
+<h2>Цель занятия</h2>
+<p>Изучить синтаксис цикла <code>while</code> и понять, чем он отличается от <code>for</code>. Узнать, почему бесконечный цикл опасен, и научиться использовать операторы <code>break</code> и <code>continue</code>. Применить цикл <code>while</code> в задачах: сумма вводимых чисел до стоп-слова и игра «Угадай число».</p>
+<hr />
+<h2>Теория</h2>
+<h3>Цикл while: повторяем, пока условие истинно</h3>
+<p>Слово <code>while</code> по-английски означает «пока». Цикл <code>while</code> повторяет тело цикла до тех пор, пока условие остаётся истинным. Запись похожа на <code>if</code>, но тело <code>if</code> выполняется один раз, а тело <code>while</code> – многократно.</p>
+<pre><code class="language-python">while условие:
+    тело цикла
+</code></pre>
+<pre><code class="language-python">i = 0
+while i &lt; 5:
+    print('Привет')
+    i += 1
+</code></pre>
+<p>Как и в <code>for</code>, после условия ставится двоеточие, а тело цикла выделяется отступом. Но есть два важных отличия: переменную <code>i</code> мы создаём сами (начальное значение), и сами же меняем её внутри цикла. В <code>for</code> это делалось автоматически.</p>
+<p>Условие проверяется <strong>до</strong> выполнения тела. Поэтому, если условие ложно с самого начала, тело цикла не выполнится ни разу:</p>
+<pre><code class="language-python">i = -1
+while i &gt; 0:
+    print('Привет')    # не выполнится ни разу
+</code></pre>
+<hr />
+<h3>Чем while отличается от for</h3>
+<p>Цикл <code>for</code> подходит, когда число повторений известно заранее. Цикл <code>while</code> нужен, когда заранее неизвестно, сколько повторений понадобится: цикл работает до наступления события. Например, программа должна считывать числа и выводить их квадраты, пока не введено число <code>-1</code>. Сколько чисел будет введено, мы не знаем, поэтому <code>for</code> здесь не подходит.</p>
+<pre><code class="language-python">num = int(input())
+while num != -1:
+    print('Квадрат:', num * num)
+    num = int(input())
+</code></pre>
+<p>В этом примере важны два момента: переменная <code>num</code> получает начальное значение до цикла, и в теле цикла она изменяется (считывается следующее число). Тогда рано или поздно условие станет ложным и цикл завершится.</p>
+<hr />
+<h3>Бесконечный цикл</h3>
+<p>Если внутри цикла ничто не делает условие ложным, цикл никогда не закончится. Такой цикл называется <strong>бесконечным</strong>. Обычно это ошибка: программа «зависает» и не реагирует, пока её не прервут.</p>
+<pre><code class="language-python">i = 0
+while i &lt; 10:
+    print(i)      # забыли i += 1: цикл бесконечный
+</code></pre>
+<p>Остановить зависшую программу можно сочетанием клавиш <strong>Ctrl + C</strong> или кнопкой остановки в среде программирования. Если такая программа отправлена в проверяющую систему, вы увидите сообщение <strong>Time limit exceeded</strong> (превышен лимит времени).</p>
+<hr />
+<h3>Операторы break и continue</h3>
+<p>Оператор <code>break</code> немедленно прерывает ближайший цикл, после чего выполняется код, следующий за циклом. Оператор <code>continue</code> пропускает остаток тела цикла и переходит к следующей итерации.</p>
+<p>Часто <code>break</code> используют вместе с «намеренно бесконечным» циклом <code>while True</code>. Условие <code>True</code> всегда истинно, а выход из цикла делается внутри тела:</p>
+<pre><code class="language-python">while True:
+    text = input()
+    if text == 'stop':
+        break
+    print('Вы ввели:', text)
+</code></pre>
+<p>Оператор <code>continue</code> удобен, когда нужно пропустить отдельные значения. Например, выведем числа от 1 до 10, кроме кратных 3:</p>
+<pre><code class="language-python">for i in range(1, 11):
+    if i % 3 == 0:
+        continue
+    print(i, end=' ')     # 1 2 4 5 7 8 10
+</code></pre>
+<p>В цикле <code>while</code> с <code>continue</code> нужно быть осторожным: изменение переменной должно стоять <strong>до</strong> <code>continue</code>. Иначе для пропускаемых значений переменная не изменится, и цикл станет бесконечным.</p>
+<pre><code class="language-python">i = 0
+while i &lt; 10:
+    i += 1               # изменяем до continue
+    if i % 2 == 0:
+        continue
+    print(i)             # 1 3 5 7 9
+</code></pre>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Сумма чисел до стоп-слова</h3>
+<p>Пользователь вводит числа по одному. Когда он вводит слово <code>stop</code>, нужно вывести сумму введённых чисел.</p>
+<p><strong>Идея решения:</strong> количество чисел заранее неизвестно, поэтому нужен <code>while</code>. Условием служит проверка <code>text != 'stop'</code>. Сначала считываем первое значение, а в конце тела цикла – следующее. Число мы преобразуем в <code>int</code> только внутри цикла, потому что слово <code>stop</code> в число превратить нельзя.</p>
+<pre><code class="language-python">text = input('Введите число или stop: ')
+total = 0
+
+while text != 'stop':
+    total += int(text)
+    text = input('Введите число или stop: ')
+
+print('Сумма чисел равна', total)
+</code></pre>
+<p>Для ввода 5, 10, 3, stop значение <code>total</code> меняется так: 5, 15, 18. Программа выведет: <code>Сумма чисел равна 18</code>.</p>
+<p>То же самое можно записать с <code>while True</code> и <code>break</code>. Так удобно, когда не хочется дважды писать <code>input()</code>:</p>
+<pre><code class="language-python">total = 0
+
+while True:
+    text = input('Введите число или stop: ')
+    if text == 'stop':
+        break
+    total += int(text)
+
+print('Сумма чисел равна', total)
+</code></pre>
+<p><strong>Дополнительное задание:</strong> пусть программа игнорирует отрицательные числа (подсказка: <code>continue</code>).</p>
+<hr />
+<h3>Задача 2. Игра «Угадай число»</h3>
+<p>Компьютер загадывает число от 1 до 100, а игрок пытается его угадать. После каждой попытки программа подсказывает, больше или меньше загаданное число. Сколько попыток понадобится, заранее неизвестно, поэтому используем <code>while</code>.</p>
+<p><strong>Решение</strong></p>
+<pre><code class="language-python">secret = 42
+guess = int(input('Угадайте число от 1 до 100: '))
+
+while guess != secret:
+    if guess &lt; secret:
+        print('Загаданное число больше')
+    else:
+        print('Загаданное число меньше')
+    guess = int(input('Попробуйте ещё раз: '))
+
+print('Вы угадали!')
+</code></pre>
+<p>Цикл работает, пока введённое число не равно загаданному. Внутри цикла мы даём подсказку с помощью <code>if-else</code> и считываем новую попытку. Когда игрок угадает, условие станет ложным и цикл закончится.</p>
+<p><strong>Дополнительное задание:</strong> если игрок ввёл число не из диапазона 1–100, сообщите об этом и не засчитывайте попытку. Подсказка: добавьте перед <code>attempts += 1</code> условие с <code>or</code> и оператор <code>continue</code>.</p>
+<pre><code class="language-python">    if guess &lt; 1 or guess &gt; 100:
+        print('Число должно быть от 1 до 100')
+        continue
+</code></pre>
+<p>Во время практики часто встречаются одни и те же ошибки.</p>
+<ul>
+<li>Если забыть изменить переменную в теле цикла (например, не считать новое число), цикл станет бесконечным. Остановить программу можно клавишами <strong>Ctrl + C</strong>.</li>
+<li>Если поставить <code>i += 1</code> после <code>continue</code>, для пропускаемых значений переменная не изменится, и цикл зациклится.</li>
+<li>Если преобразовать введённое значение в <code>int</code> до проверки на <code>'stop'</code>, программа завершится с ошибкой <code>ValueError</code>: слово <code>stop</code> числом не является.</li>
+<li>Если написать <code>=</code> вместо <code>==</code> в условии, Python выдаст ошибку. Помните: <code>=</code> присваивает, <code>==</code> сравнивает.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Цикл <code>while</code> повторяет тело, пока условие истинно. Условие проверяется до выполнения тела, поэтому цикл может не выполниться ни разу.</li>
+<li>Цикл <code>for</code> нужен, когда число повторений известно заранее, а <code>while</code> — когда неизвестно. В <code>while</code> начальное значение и его изменение нужно писать самому.</li>
+<li>Если внутри цикла условие не становится ложным, цикл получается бесконечным, и программа зависает. Остановить её можно клавишами <strong>Ctrl + C</strong>.</li>
+<li><code>break</code> прерывает ближайший цикл, а <code>continue</code> переходит к следующей итерации. Вместе с <code>while True</code> они удобны для выхода по условию внутри тела цикла.</li>
+<li>Мы написали программу для суммы чисел до стоп-слова и игру «Угадай число» с подсказками и счётчиком попыток.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

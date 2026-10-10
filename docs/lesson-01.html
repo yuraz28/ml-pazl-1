@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Вводное занятие — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 1. Знакомство, структура курса, установка VS Code и Python</h1>
+<h2>Цель занятия</h2>
+<p>Познакомиться с преподавателями и группой, понять, чему и как мы будем учиться на курсе, и подготовить рабочее окружение: установить VS Code и Python и запустить первую программу.</p>
+<hr />
+<h2>Теория</h2>
+<h3>1. Знакомство</h3>
+<ul>
+<li><strong>Преподаватели:</strong> имя, чем занимается, какой опыт в IT и ML.</li>
+<li><strong>Ученики:</strong> имя, чем интересуется, что ожидает от курса (по возможности голосом).</li>
+<li><strong>Правила курса:</strong> как проходят занятия, как сдаётся ДЗ, где задавать вопросы, как устроены код-ревью и ретро.</li>
+</ul>
+<hr />
+<h3>2. О чём курс</h3>
+<p>Курс — введение в программирование и машинное обучение. Мы начинаем с основ Python и дальше постепенными шагами движемся к собственным AI-приложениям.</p>
+<h4>Как устроен курс</h4>
+<table>
+<thead>
+<tr>
+<th>Модуль</th>
+<th>О чём</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Введение в профессию</td>
+<td>Кто такой разработчик, направления в IT, инструменты</td>
+</tr>
+<tr>
+<td>Python, часть 1</td>
+<td>Переменные, ввод/вывод, условия, циклы, строки, списки, функции</td>
+</tr>
+<tr>
+<td>Введение в LLM</td>
+<td>Что такое ML и LLM, промпт-инжиниринг, применение нейросетей</td>
+</tr>
+<tr>
+<td>Python, часть 2</td>
+<td>Вложенные списки, словари, множества, файлы, CSV и JSON</td>
+</tr>
+<tr>
+<td>Работа с API</td>
+<td>HTTP-запросы, библиотека requests, работа с JSON</td>
+</tr>
+<tr>
+<td>Работа с LLM</td>
+<td>Продвинутые промпты, LangChain, chains, память</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Отдельный небольшой модуль — <strong>«Безопасность LLM»</strong>: галлюцинации, конфиденциальность, промпт-инъекции.</p>
+</blockquote>
+<hr />
+<h3>3. Проекты</h3>
+<p>На каждом занятии есть практическое задание.</p>
+<p>Во второй половине курса мы делаем <strong>два проекта в командах</strong>:</p>
+<ol>
+<li><strong>Проект 1:</strong> программа, которая через API отправляет запросы языковой модели.</li>
+<li><strong>Проект 2:</strong> чат-бот на основе языковой модели через API.</li>
+</ol>
+<hr />
+<h3>4. Инструменты курса</h3>
+<ul>
+<li><strong>Python</strong> — язык, на котором мы пишем. Он простой и читаемый, его используют в веб-разработке, анализе данных и ML.</li>
+<li><strong>VS Code</strong> — редактор, в котором мы пишем и запускаем код.</li>
+</ul>
+<hr />
+<h2>Практика: установка и первый запуск</h2>
+<ol>
+<li>
+<p>Скачать и установить <strong>VS Code</strong> с <a href="https://code.visualstudio.com">code.visualstudio.com</a>.</p>
+<p>В параметрах установки отметить пункты:</p>
+<ul>
+<li>«Open with Code» (для файлов и папок)</li>
+<li>«Add to PATH»</li>
+</ul>
+</li>
+<li>
+<p>Скачать и установить <strong>Python</strong> с <a href="https://www.python.org">python.org</a>.</p>
+<p>На первом шаге отметить галочку <strong>Add python.exe to PATH</strong>.</p>
+</li>
+<li>
+<p>Проверить установку: в командной строке ввести:</p>
+<pre><code>python --version
+</code></pre>
+</li>
+<li>
+<p>В VS Code открыть <strong>Extensions</strong> (<code>Ctrl+Shift+X</code>) и установить расширения:</p>
+<ul>
+<li><strong>Python</strong></li>
+<li><strong>Russian Language Pack</strong></li>
+</ul>
+</li>
+<li>
+<p>Создать файл <code>hello.py</code>, написать:</p>
+<pre><code class="language-python">print(&quot;Hello World&quot;)
+</code></pre>
+<p>и запустить программу.</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>Если не работает:</strong> установщик запустить от имени администратора, после установки перезагрузить компьютер.</p>
+</blockquote>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Участники знают преподавателей и правила курса.</li>
+<li>Они понимают, какие модули их ждут и какие проекты они будут делать.</li>
+<li>У каждого установлены Python и VS Code, и запущена первая программа.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

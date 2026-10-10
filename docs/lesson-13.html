@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Функции — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 13. Функции</h1>
+<h2>Цель занятия</h2>
+<p>Понять, зачем нужны функции, научиться создавать и вызывать их, передавать в них параметры и получать результат с помощью <code>return</code>. Применить это на практике: создать консольную программу «Список задач» с четырьмя функциями и меню.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Зачем нужны функции</h3>
+<p><strong>Функция</strong> – это отдельная часть программы, которая выполняет определённую задачу. Её описывают один раз, а затем вызывают по имени в любом месте программы столько раз, сколько нужно. Мы уже пользовались готовыми функциями: <code>print()</code>, <code>input()</code>, <code>len()</code>, <code>int()</code>. Теперь научимся писать свои.</p>
+<p>Допустим, нужно вывести три звёздных прямоугольника. Копировать цикл три раза неудобно: код разрастается, а если размер изменится, править придётся в трёх местах. Функция решает обе проблемы:</p>
+<pre><code class="language-python">def draw_box():
+    for _ in range(5):
+        print('*' * 7)
+
+draw_box()
+print()
+draw_box()
+</code></pre>
+<ul>
+<li>Код становится <strong>короче</strong>: повторяющаяся часть записана один раз.</li>
+<li>Код легче <strong>читать</strong>: по имени функции понятно, что она делает.</li>
+<li><strong>Изменения</strong> вносятся в одном месте, а не во всех копиях.</li>
+</ul>
+<hr />
+<h3>Создание и вызов функции</h3>
+<p>Функцию создают (объявляют) с помощью слова <code>def</code>. Дальше идут имя функции, круглые скобки и двоеточие. Строки тела функции пишут с отступом в 4 пробела. Чтобы функция выполнилась, её нужно <strong>вызвать</strong>: написать имя и скобки.</p>
+<pre><code class="language-python">def say_hello():
+    print('Привет!')
+    print('Как дела?')
+
+say_hello()      # вызов функции
+say_hello()      # можно вызывать много раз
+</code></pre>
+<p>Объявление функции её не запускает. Пока вы не написали <code>say_hello()</code> со скобками, ничего не произойдёт. Функцию нужно объявить раньше, чем вызвать, иначе будет ошибка <code>NameError</code>.</p>
+<p>Имя функции подчиняется тем же правилам, что и имя переменной: латинские буквы, цифры и знак <code>_</code>, без цифры в начале, регистр важен. Принято писать маленькими буквами с подчёркиваниями и начинать с глагола: <code>draw_box</code>, <code>show_tasks</code>, <code>add_task</code>.</p>
+<hr />
+<h3>Параметры и аргументы</h3>
+<p>Чтобы функция была гибкой, ей передают данные. В скобках при объявлении перечисляют <strong>параметры</strong> – это переменные, которые получают значения при вызове. А значения, которые мы передаём при вызове, называются <strong>аргументами</strong>.</p>
+<pre><code class="language-python">def draw_box(height, width):     # height, width - параметры
+    for _ in range(height):
+        print('*' * width)
+
+draw_box(3, 5)                  # 3 и 5 - аргументы
+draw_box(2, 10)
+</code></pre>
+<p>Первый вызов выведет 3 строки по 5 звёздочек, второй – 2 строки по 10. Аргументы подставляются в параметры по порядку: первый в <code>height</code>, второй в <code>width</code>. Сколько параметров, столько аргументов нужно передать, иначе будет ошибка <code>TypeError</code>.</p>
+<hr />
+<h3>Что возвращает функция</h3>
+<p>Функция может не только что-то делать, но и <strong>вернуть результат</strong>. Для этого служит слово <code>return</code>. Значение после <code>return</code> отправляется в то место программы, откуда функцию вызвали, и его можно сохранить в переменную или использовать в выражении.</p>
+<pre><code class="language-python">def square(x):
+    return x * x
+
+result = square(5)
+print(result)          # 25
+print(square(3) + 1)   # 10
+</code></pre>
+<p>Инструкция <code>return</code> сразу завершает работу функции. Если <code>return</code> нет, функция возвращает специальное значение <code>None</code> («ничего»). Поэтому <code>print</code> внутри функции и <code>return</code> – не одно и то же: <code>print</code> только выводит на экран, а <code>return</code> отдаёт значение программе.</p>
+<pre><code class="language-python">def show_sum(a, b):
+    print(a + b)       # только выводит
+x = show_sum(2, 3)     # выведет 5
+print(x)               # None
+</code></pre>
+<p>Функции удобно использовать для проверок: они возвращают <code>True</code> или <code>False</code>.</p>
+<pre><code class="language-python">def is_even(n):
+    return n % 2 == 0
+
+if is_even(4):
+    print('Чётное')     # выведется
+</code></pre>
+<hr />
+<h3>Локальные и глобальные переменные</h3>
+<p>Переменные, созданные внутри функции (и её параметры), – <strong>локальные</strong>: они существуют только во время работы функции, а снаружи их не видно.</p>
+<pre><code class="language-python">def show_age():
+    age = 15
+    print(age)
+
+show_age()             # 15
+print(age)             # NameError: age не существует снаружи
+</code></pre>
+<p>Переменная, созданная вне функций, называется <strong>глобальной</strong>. Функция может её читать, а списки – ещё и изменять методами <code>append()</code>, <code>pop()</code> и т.д. Так мы и будем работать со списком задач.</p>
+<pre><code class="language-python">numbers = []            # глобальный список
+
+def add_number(x):
+    numbers.append(x)
+
+add_number(5)
+print(numbers)         # [5]
+</code></pre>
+<p>Если внутри функции написать <code>numbers = [1, 2]</code>, то создастся новая локальная переменная, а внешний список не изменится. Чтобы изменить внешний список, используйте его методы.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Программа «Список задач»</h3>
+<p>Создадим программу для списка дел. Она умеет добавлять задачу, показывать все задачи, отмечать задачу выполненной и удалять её по номеру. Каждое действие оформим отдельной функцией, а выбирать действие будем через меню. Список задач будет храниться в переменной <code>tasks</code>.</p>
+<p>Все заготовки у нас уже есть: список, цикл <code>while</code>, условия <code>if/elif</code> и функции. Осталось собрать программу по шагам. Задачи хранятся как строки: в начале стоит метка <code>[ ]</code> (не выполнена) или <code>[x]</code> (выполнена).</p>
+<h4>Шаг 1. Список и функции add_task() и show_tasks()</h4>
+<pre><code class="language-python">tasks = []
+
+def add_task(text):
+    tasks.append(text)
+    print('Задача добавлена')
+
+def show_tasks():
+    if len(tasks) == 0:
+        print('Список пуст')
+    else:
+        for i in range(len(tasks)):
+            print(i + 1, '-', tasks[i])
+</code></pre>
+<p>Функция <code>add_task</code> получает текст задачи (параметр <code>text</code>) и добавляет её в конец списка. Функция <code>show_tasks</code> выводит задачи с номерами, начиная с 1: привычнее видеть номер <code>i + 1</code>, чем индекс <code>i</code>. Проверим:</p>
+<pre><code class="language-python">add_task('Сделать уроки')
+add_task('Купить хлеб')
+show_tasks()
+
+# 1 [ ] Сделать уроки
+# 2 [ ] Купить хлеб
+</code></pre>
+<h4>Шаг 2. Функции complete_task() и remove_task()</h4>
+<pre><code class="language-python">def complete_task(number):
+    if 1 &lt;= number &lt;= len(tasks):
+        tasks[number - 1] = tasks[number - 1] + ' (выполнено)'
+        print('Задача отмечена')
+    else:
+        print('Нет задачи с таким номером')
+
+def remove_task(number):
+    if 1 &lt;= number &lt;= len(tasks):
+        tasks.pop(number - 1)
+        print('Задача удалена')
+    else:
+        print('Нет задачи с таким номером')
+</code></pre>
+<p>Пользователь называет номер задачи, как он видит его на экране (с 1). В списке эта задача лежит под индексом на 1 меньше, поэтому пишем <code>number - 1</code>. Сначала проверяем, что такая задача вообще есть: номер должен быть от 1 до <code>len(tasks)</code>. Иначе сообщаем об ошибке. Метод <code>pop(индекс)</code> удаляет элемент списка по индексу.</p>
+<p>Проверьте функции, добавив вызовы (после проверки лишние строки можно удалить):</p>
+<pre><code class="language-python">print(complete_task(1))    # True
+print(remove_task(5))      # False, такой задачи нет
+show_tasks()               # 1 [x] Сделать уроки, 2 [ ] Купить хлеб
+</code></pre>
+<h4>Шаг 3. Меню на while True</h4>
+<p>Программа должна работать, пока пользователь не выберет выход. Сколько раз это будет, заранее неизвестно, поэтому берём <code>while True</code>, а когда введён «0», выходим из цикла оператором <code>break</code>. Этот код пишем после функций.</p>
+<pre><code class="language-python">while True:
+    print()
+    print('1 - Добавить задачу')
+    print('2 - Показать задачи')
+    print('3 - Отметить выполненной')
+    print('4 - Удалить задачу')
+    print('0 - Выход')
+    choice = input('Выберите действие: ')
+
+    if choice == '1':
+        text = input('Введите задачу: ')
+        add_task(text)
+    elif choice == '2':
+        show_tasks()
+    elif choice == '3':
+        number = int(input('Номер задачи: '))
+        complete_task(number)
+    elif choice == '4':
+        number = int(input('Номер задачи: '))
+        remove_task(number)
+    elif choice == '0':
+        print('До свидания!')
+        break
+    else:
+        print('Такого пункта нет')
+</code></pre>
+<p>Меню похоже на пульт: на каждую кнопку (пункт 1, 2, 3, 4) приходится своя функция. Программа спрашивает пункт, а условия <code>if/elif</code> выбирают, какую функцию вызвать. Сами действия спрятаны внутри функций, поэтому меню короткое и понятное.</p>
+<p>Во время практики часто встречаются одни и те же ошибки.</p>
+<ul>
+<li>Если написать <code>show_tasks</code> без скобок, функция не вызовется и ничего не произойдёт. Вызов всегда пишется со скобками: <code>show_tasks()</code>.</li>
+<li>Если вызвать функцию раньше, чем она объявлена (например, меню стоит выше <code>def</code>), возникнет ошибка <code>NameError</code>.</li>
+<li>Если не передать аргумент (<code>add_task()</code>), возникнет ошибка <code>TypeError</code>: у функции есть параметр <code>text</code>.</li>
+<li>Если внутри функции написать <code>tasks = []</code>, создастся новая локальная переменная, а глобальный список не изменится.</li>
+<li>Если путать номер задачи и индекс, будет удалена не та задача. Номер пользователя всегда на 1 больше индекса.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Функция – именованный блок кода. Она делает программу короче, понятнее и позволяет менять код в одном месте.</li>
+<li>Функцию объявляют с помощью <code>def</code>, а вызывают по имени со скобками. Объявление функции само её не запускает.</li>
+<li>Параметры – переменные в объявлении функции, аргументы — значения, которые передают при вызове.</li>
+<li>Инструкция <code>return</code> возвращает результат и завершает функцию. Без <code>return</code> функция возвращает <code>None</code>.</li>
+<li>Переменные внутри функции локальные. Глобальный список можно изменять методами (<code>append</code>, <code>pop</code>). Мы создали программу «Список задач» с меню на <code>while True</code>.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

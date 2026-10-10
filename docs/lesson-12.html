@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Списки — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 12. Списки</h1>
+<h2>Цель занятия</h2>
+<p>Понять, что такое список и зачем он нужен, научиться создавать списки, брать элементы по индексу, добавлять, удалять и сортировать их, а также перебирать список в цикле. Решить задачи: найти наибольшее и наименьшее число, отсортировать числа и оставить только чётные.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Что такое список</h3>
+<p>До сих пор мы работали с числами по одному: прочитали, обработали и удалили из памяти. Но иногда нужно помнить сразу все значения. Например, чтобы найти самое большое число или отсортировать числа, их надо где-то хранить. Для этого в Python есть <strong>списки</strong>.</p>
+<p>Список похож на полку с пронумерованными ячейками: в каждой ячейке лежит значение. Нумерация начинается с 0, как у символов строки. Список записывают в квадратных скобках, элементы разделяют запятыми.</p>
+<pre><code class="language-python">numbers = [2, 4, 6, 8, 10]
+names = ['Аня', 'Боря', 'Вика']
+empty = []              # пустой список
+
+numbers = [2, 4, 6, 8, 10]
+
+print(numbers[0])      # 2, первый элемент
+print(numbers[2])      # 6
+print(numbers[-1])     # 10, последний элемент
+print(len(numbers))    # 5, сколько элементов
+print(numbers)         # [2, 4, 6, 8, 10]
+</code></pre>
+<p>Если обратиться к индексу, которого нет (например, <code>numbers[5]</code>), Python выдаст ошибку <code>IndexError</code>. Последний индекс равен <code>len(numbers) - 1</code>.</p>
+<p>Срезы у списков работают так же, как у строк: от первого индекса включительно до второго не включительно.</p>
+<pre><code class="language-python">print(numbers[1:3])    # [4, 6]
+print(numbers[:2])     # [2, 4]
+print(numbers[-2:])    # [8, 10]
+</code></pre>
+<p>Чтобы проверить, есть ли значение в списке, используют оператор <code>in</code>: <code>if 4 in numbers</code>.</p>
+<p>В отличие от строки, список <strong>можно изменять</strong>: элемент заменяют по индексу.</p>
+<pre><code class="language-python">numbers[1] = 100
+print(numbers)         # [2, 100, 6, 8, 10]
+</code></pre>
+<hr />
+<h3>Добавление, удаление и сортировка</h3>
+<p>Метод <code>append()</code> добавляет новый элемент в конец списка. Обычно список начинают с пустого и по мере чтения данных добавляют в него элементы.</p>
+<pre><code class="language-python">numbers = []
+numbers.append(5)
+numbers.append(7)
+print(numbers)         # [5, 7]
+</code></pre>
+<p>Метод <code>remove(значение)</code> удаляет первый элемент с таким значением. Если такого значения в списке нет, будет ошибка, поэтому сначала можно проверить его наличие через <code>in</code>.</p>
+<pre><code class="language-python">fruits = ['яблоко', 'банан', 'яблоко']
+fruits.remove('яблоко')
+print(fruits)          # ['банан', 'яблоко']
+</code></pre>
+<p>Метод <code>sort()</code> упорядочивает список по возрастанию. Если добавить <code>reverse=True</code>, порядок будет по убыванию. Строки сортируются по алфавиту.</p>
+<pre><code class="language-python">a = [5, 1, 8, 2, 4]
+a.sort()
+print(a)               # [1, 2, 4, 5, 8]
+a.sort(reverse=True)
+print(a)               # [8, 5, 4, 2, 1]
+</code></pre>
+<p>Методы <code>append()</code>, <code>remove()</code> и <code>sort()</code> меняют сам список. Поэтому просто вызываем их, а результат никуда не записываем. Запись <code>a = a.sort()</code> — ошибка: в переменной <code>a</code> окажется пустое значение <code>None</code>.</p>
+<hr />
+<h3>Перебор списка в цикле</h3>
+<p>Все элементы списка можно обработать циклом <code>for</code>. Переменная цикла по очереди получает каждый элемент.</p>
+<pre><code class="language-python">numbers = [2, 4, 6]
+for x in numbers:
+    print(x * 10)      # 20, 40, 60
+</code></pre>
+<p>Чтобы вывести элементы в одну строку, добавим <code>end=' '</code>:</p>
+<pre><code class="language-python">for x in numbers:
+    print(x, end=' ')  # 2 4 6
+</code></pre>
+<p>Если нужны ещё и индексы, перебирают <code>range(len(numbers))</code>: переменная <code>i</code> получает номера 0, 1, 2 и т.д., а сам элемент — <code>numbers[i]</code>.</p>
+<pre><code class="language-python">for i in range(len(numbers)):
+    print(i, numbers[i])
+</code></pre>
+<hr />
+<h3>Проверь себя</h3>
+<p>Что выведет программа?</p>
+<pre><code class="language-python">a = [10, 20, 30, 40]
+print(a[1])
+print(a[-1])
+print(a[1:3])
+a.append(50)
+print(len(a))
+</code></pre>
+<p><strong>Ответ:</strong> <code>20</code>, <code>40</code>, <code>[20, 30]</code>, <code>5</code>.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Максимум и минимум</h3>
+<p>Пользователь вводит количество чисел, а затем сами числа. Нужно найти наибольшее и наименьшее из них.</p>
+<p><strong>Идея решения:</strong> сначала записываем все числа в список. Потом берём первое число и считаем его «пока что самым большим» и «пока что самым маленьким». Проходим по списку: если встретилось число больше, запоминаем его как новый максимум, если меньше — как новый минимум.</p>
+<pre><code class="language-python">n = int(input('Сколько чисел? '))
+numbers = []
+for i in range(n):
+    numbers.append(int(input()))
+
+maximum = numbers[0]
+minimum = numbers[0]
+for x in numbers:
+    if x &gt; maximum:
+        maximum = x
+    if x &lt; minimum:
+        minimum = x
+
+print('Максимум:', maximum)
+print('Минимум:', minimum)
+</code></pre>
+<p>Посмотрим, как это работает для чисел 4, 9, 2, 7:</p>
+<pre><code>#  x   maximum  minimum
+#  4      4        4
+#  9      9        4
+#  2      9        2
+#  7      9        2
+</code></pre>
+<p>Ответ: максимум 9, минимум 2. Начинать нужно с первого элемента списка, а не с нуля: если все числа отрицательные, то ноль был бы ответом, которого нет в списке. Проверить себя можно с помощью готовых функций <code>max(numbers)</code> и <code>min(numbers)</code>.</p>
+<p><strong>Дополнительное задание:</strong> выведите номер (индекс) максимального элемента. Подсказка: <code>numbers.index(maximum)</code>.</p>
+<hr />
+<h3>Задача 2. Сортировка</h3>
+<p>Пользователь вводит количество чисел и сами числа. Нужно вывести их по возрастанию, а затем по убыванию.</p>
+<pre><code class="language-python">n = int(input('Сколько чисел? '))
+numbers = []
+for i in range(n):
+    numbers.append(int(input()))
+
+numbers.sort()
+print('По возрастанию:', numbers)
+
+numbers.sort(reverse=True)
+print('По убыванию:', numbers)
+</code></pre>
+<p>Для чисел 5, 1, 8, 2, 4 программа выведет <code>[1, 2, 4, 5, 8]</code> и <code>[8, 5, 4, 2, 1]</code>.</p>
+<p><strong>Дополнительное задание:</strong> выведите три самых больших числа. Подсказка: после сортировки по убыванию возьмите срез <code>numbers[:3]</code>.</p>
+<hr />
+<h3>Задача 3. Фильтрация: только чётные числа</h3>
+<p>Пользователь вводит количество чисел и сами числа. Нужно вывести только чётные.</p>
+<p><strong>Идея решения:</strong> создаём новый пустой список <code>evens</code>. Проходим по всем числам, и если число чётное (остаток от деления на 2 равен 0), добавляем его в <code>evens</code>.</p>
+<pre><code class="language-python">n = int(input('Сколько чисел? '))
+numbers = []
+for i in range(n):
+    numbers.append(int(input()))
+
+evens = []
+for x in numbers:
+    if x % 2 == 0:
+        evens.append(x)
+
+print('Чётные числа:', evens)
+</code></pre>
+<p>Для чисел 7, 2, 9, 4, 10, 3 программа выведет: <code>Чётные числа: [2, 4, 10]</code>. Если чётных чисел нет, будет выведен пустой список <code>[]</code>.</p>
+<p><strong>Дополнительное задание:</strong> оставьте только числа, которые больше 10 и делятся на 3. Подсказка: в условии используйте <code>and</code>.</p>
+<p>Во время практики часто встречаются одни и те же ошибки.</p>
+<ul>
+<li>Если обратиться к несуществующему индексу (например, <code>numbers[len(numbers)]</code>), возникнет ошибка <code>IndexError</code>. Последний индекс равен <code>len(numbers) - 1</code>.</li>
+<li>Если написать <code>a = a.sort()</code>, в переменной <code>a</code> окажется <code>None</code>. Метод <code>sort()</code> нужно просто вызывать: <code>a.sort()</code>.</li>
+<li>Если начинать поиск максимума с нуля, а все числа отрицательные, ответ будет неверным. Начинайте с первого элемента списка.</li>
+<li>Если забыть <code>int()</code> при чтении числа, в списке окажутся строки, и сортировка и сравнения дадут неверный результат.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Список хранит несколько значений в квадратных скобках. Элементы нумеруются с 0, последний имеет индекс <code>-1</code>. Длину списка даёт <code>len()</code>.</li>
+<li>Список можно изменять: <code>numbers[i] = значение</code>, а также <code>append()</code> (добавить в конец), <code>remove()</code> (удалить значение) и <code>sort()</code> (отсортировать).</li>
+<li>Методы списков меняют сам список, поэтому результат не нужно присваивать: <code>a = a.sort()</code> — ошибка.</li>
+<li>Список перебирают циклом <code>for x in numbers</code> или <code>for i in range(len(numbers))</code>.</li>
+<li>Мы решили три типовые задачи: найти максимум и минимум, отсортировать числа, отфильтровать чётные.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

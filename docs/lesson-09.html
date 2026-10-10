@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цикл for — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 9. Цикл for</h1>
+<h2>Цель занятия</h2>
+<p>Изучить синтаксис цикла <code>for</code>, работу переменной цикла и функции <code>range()</code> с одним, двумя и тремя аргументами. Научиться перебирать символы строки и решать с помощью циклов задачи: таблица умножения, сумма чисел от 1 до N и «ёлочка» из звёздочек.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Цикл for: повторяем действия</h3>
+<p>Одно из главных преимуществ компьютера – он может повторять одни и те же действия многократно, быстро и не уставая. Для этого в Python есть <strong>циклы</strong>. Цикл <code>for</code> подходит, когда мы заранее знаем, сколько повторений (<strong>итераций</strong>) нужно сделать. Другой вид цикла, <code>while</code>, повторяется до наступления события, его мы изучим позже.</p>
+<pre><code class="language-python">for i in range(3):
+    print('Привет')
+</code></pre>
+<p>Слово <code>for</code> пишется строчными буквами, а в конце строки ставится двоеточие. Строки с отступом под <code>for</code> образуют <strong>тело цикла</strong>: именно они повторяются. Одно выполнение тела цикла называется <strong>итерацией</strong>. Строки без отступа в цикл не входят.</p>
+<pre><code class="language-python">print('Начало')
+for i in range(3):
+    print('Привет')
+    print('Пока')
+print('Конец')
+</code></pre>
+<p>Эта программа выведет слово «Начало», затем три раза пару строк «Привет» и «Пока» и один раз «Конец».</p>
+<hr />
+<h3>Переменная цикла</h3>
+<p>В строке <code>for i in range(5)</code> буква <code>i</code> – это <strong>переменная цикла</strong>. Когда цикл начинает работу, Python записывает в неё <code>0</code>, а после каждой итерации увеличивает на 1. Так переменная показывает номер текущей итерации.</p>
+<pre><code class="language-python">for i in range(5):
+    print(i)      # 0 1 2 3 4 (каждое число с новой строки)
+</code></pre>
+<p>Правая граница в <code>range()</code> <strong>не включается</strong>: <code>range(5)</code> даёт числа от 0 до 4, то есть ровно 5 значений.</p>
+<p>Чтобы нумерация начиналась с единицы, можно вывести <code>i + 1</code>:</p>
+<pre><code class="language-python">for i in range(3):
+    print(i + 1, '-- Привет')
+</code></pre>
+<p>Переменную цикла можно назвать как угодно, но чаще всего используют буквы <code>i</code>, <code>j</code>, <code>k</code>.</p>
+<hr />
+<h3>Функция range(): три формы</h3>
+<p>У функции <code>range()</code> может быть один, два или три аргумента.</p>
+<ul>
+<li><code>range(stop)</code> – числа от 0 до <code>stop - 1</code>. Например, <code>range(4)</code> даёт 0, 1, 2, 3.</li>
+<li><code>range(start, stop)</code> – числа от <code>start</code> до <code>stop - 1</code>. Например, <code>range(1, 5)</code> даёт 1, 2, 3, 4.</li>
+<li><code>range(start, stop, step)</code> – числа от <code>start</code> с шагом <code>step</code>, пока не дойдём до <code>stop</code> (сам <code>stop</code> не включается).</li>
+</ul>
+<pre><code class="language-python">for i in range(1, 6):
+    print(i, end=' ')     # 1 2 3 4 5
+
+for i in range(0, 10, 2):
+    print(i, end=' ')     # 0 2 4 6 8
+
+for i in range(5, 0, -1):
+    print(i, end=' ')     # 5 4 3 2 1
+</code></pre>
+<p>Шаг может быть отрицательным, тогда числа убывают. Параметр <code>end=' '</code> в <code>print()</code> говорит, что после вывода нужно поставить пробел, а не переходить на новую строку. Чтобы дойти до числа <code>n</code> включительно, пишут <code>range(1, n + 1)</code>.</p>
+<hr />
+<h3>Перебор символов строки</h3>
+<p>Цикл <code>for</code> умеет перебирать не только числа, но и любые последовательности. Строка – это последовательность символов, поэтому переменная цикла по очереди принимает значение каждого символа:</p>
+<pre><code class="language-python">for ch in 'Python':
+    print(ch)
+</code></pre>
+<p>Этот код выведет буквы P, y, t, h, o, n, каждую с новой строки. Такой перебор удобно сочетать с условием, например чтобы посчитать, сколько раз буква встречается в слове:</p>
+<pre><code class="language-python">text = input('Введите слово: ')
+count = 0
+for ch in text:
+    if ch == 'а':
+        count += 1
+print('Букв а:', count)
+</code></pre>
+<p>Для слова «банан» программа выведет 2. Позже мы узнаем, что таким же образом можно перебирать и другие последовательности, например списки.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Таблица умножения</h3>
+<p>Пользователь вводит число. Нужно вывести таблицу умножения этого числа на числа от 1 до 10.</p>
+<p><strong>Идея решения:</strong> переменная цикла <code>i</code> должна пробежать значения от 1 до 10. Поэтому используем <code>range(1, 11)</code>: правая граница не включается.</p>
+<pre><code class="language-python">n = int(input('Введите число: '))
+
+for i in range(1, 11):
+    print(n, '*', i, '=', n * i)
+</code></pre>
+<p>Для числа 7 программа выведет строки от <code>7 * 1 = 7</code> до <code>7 * 10 = 70</code>.</p>
+<p><strong>Дополнительное задание:</strong> выведите таблицу умножения для всех чисел от 2 до 9. Подсказка: поместите один цикл <code>for</code> внутрь другого.</p>
+<pre><code class="language-python">for n in range(2, 10):
+    for i in range(1, 11):
+        print(n, '*', i, '=', n * i)
+    print()
+</code></pre>
+<hr />
+<h3>Задача 2. Сумма чисел от 1 до N</h3>
+<p>Пользователь вводит натуральное число N. Нужно найти сумму всех целых чисел от 1 до N.</p>
+<p><strong>Идея решения:</strong> заведём переменную <code>total</code>, в которой будем накапливать сумму. Перед циклом она равна 0. На каждой итерации прибавляем к ней текущее число <code>i</code>.</p>
+<pre><code class="language-python">n = int(input('Введите N: '))
+
+total = 0
+for i in range(1, n + 1):
+    total += i
+
+print('Сумма:', total)
+</code></pre>
+<p>Для N = 5 значение <code>total</code> меняется так: 1, 3, 6, 10, 15. Последнее значение и есть ответ. Переменную мы назвали <code>total</code>, а не <code>sum</code>, потому что <code>sum</code> – имя встроенной функции Python. Проверить результат можно по формуле <code>n * (n + 1) // 2</code>.</p>
+<hr />
+<h3>Задача 3. «Ёлочка» из звёздочек</h3>
+<p>Пользователь вводит высоту <code>n</code>. Нужно вывести «ёлочку» из <code>n</code> строк.</p>
+<p>Сначала решим более простую задачу: треугольник, в котором в <code>i</code>-й строке стоит <code>i</code> звёздочек. Вспомним, что строку можно умножать на число: <code>'*' * 3</code> даёт <code>'***'</code>.</p>
+<pre><code class="language-python">n = int(input('Введите высоту: '))
+
+for i in range(1, n + 1):
+    print('*' * i)
+</code></pre>
+<p>Для <code>n = 4</code> получится:</p>
+<pre><code>*
+**
+***
+****
+</code></pre>
+<p>Чтобы получилась настоящая ёлочка, нужно сдвигать каждую строку вправо пробелами и увеличивать количество звёздочек на 2. В <code>i</code>-й строке будет <code>2 * i - 1</code> звёздочек и <code>n - i</code> пробелов перед ними.</p>
+<pre><code class="language-python">n = int(input('Введите высоту: '))
+
+for i in range(1, n + 1):
+    print(' ' * (n - i) + '*' * (2 * i - 1))
+</code></pre>
+<p>Для <code>n = 4</code> программа выведет:</p>
+<pre><code>   *
+  ***
+ *****
+*******
+</code></pre>
+<p>Во время практики часто встречаются одни и те же ошибки.</p>
+<ul>
+<li>Если забыть двоеточие после <code>for</code> или отступ у тела цикла, Python сообщит об ошибке. Строка без отступа в цикл не входит.</li>
+<li>Если написать <code>range(n)</code>, числа пойдут от 0 до <code>n - 1</code>. Для чисел от 1 до <code>n</code> нужно <code>range(1, n + 1)</code>.</li>
+<li>Если поставить <code>total = 0</code> внутри цикла, сумма будет обнуляться на каждой итерации.</li>
+<li>Если передать в <code>range()</code> строку, например <code>range(input())</code>, возникнет ошибка <code>TypeError</code>. Сначала нужно преобразовать ввод с помощью <code>int()</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Цикл <code>for</code> повторяет тело цикла заданное число раз. После <code>for</code> ставится двоеточие, а тело цикла выделяется отступом.</li>
+<li>Переменная цикла по очереди принимает значения из <code>range()</code>. Если она не нужна, её называют <code>_</code>.</li>
+<li><code>range(stop)</code>, <code>range(start, stop)</code> и <code>range(start, stop, step)</code> задают числа для перебора. Правая граница не включается, а шаг может быть отрицательным.</li>
+<li>Цикл <code>for</code> перебирает не только числа, но и символы строки.</li>
+<li>С помощью цикла можно накапливать результат (сумма), печатать таблицы и рисовать фигуры из символов, используя умножение строки на число.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

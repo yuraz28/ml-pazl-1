@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ввод и вывод данных — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 5. Ввод и вывод данных</h1>
+<h2>Цель занятия</h2>
+<p>Научиться выводить данные с помощью <code>print()</code>, получать данные от пользователя с помощью <code>input()</code> и оформлять текст с помощью f-строк. Написать программу «Паспорт пользователя».</p>
+<hr />
+<h2>Теория</h2>
+<h3>Вывод данных: команда print()</h3>
+<p>Для вывода данных на экран используется команда <code>print()</code>. В круглых скобках пишем то, что хотим вывести. Если это текст, его нужно взять в кавычки, одинарные или двойные. Кавычки в начале и в конце текста должны быть одинаковыми. В VS Code результат появляется в окне TERMINAL.</p>
+<pre><code class="language-python">print('Мы изучаем Python')
+print(&quot;Мы изучаем Python&quot;)
+</code></pre>
+<p>Обе строки делают одно и то же: Python не различает одинарные и двойные кавычки.</p>
+<p>То, что мы пишем в скобках у <code>print()</code>, называется <strong>аргументами</strong>. Аргументы – это значения, которые передаются функции при вызове. Если аргументов несколько, их разделяют запятыми, а при выводе между ними автоматически ставится пробел.</p>
+<pre><code class="language-python">print('Я', 'учусь', 'писать', 'код')
+# Я учусь писать код
+</code></pre>
+<p>У команды <code>print()</code> есть несколько особенностей:</p>
+<ul>
+<li>Название <code>print</code> пишется только строчными буквами, потому что в Python регистр важен.</li>
+<li>Каждый следующий <code>print()</code> выводит текст с новой строки.</li>
+<li><code>print()</code> без аргументов выводит пустую строку.</li>
+<li>Если в тексте нужны двойные кавычки, весь текст берут в одинарные, и наоборот. В одном <code>print()</code> можно комбинировать оба вида кавычек.</li>
+<li>Если внутри текста в одинарных кавычках поставить ещё одну одинарную кавычку, Python решит, что текст закончился, и выдаст ошибку <code>SyntaxError</code>.</li>
+</ul>
+<pre><code class="language-python">print('Он сказал: &quot;Привет!&quot;')
+print(&quot;Это 'одинарные' кавычки&quot;)
+</code></pre>
+<p>У <code>print()</code> есть два дополнительных параметра. Параметр <code>sep</code> задаёт разделитель между аргументами, а параметр <code>end</code> задаёт, чем заканчивается вывод. По умолчанию разделитель – пробел, а в конце ставится переход на новую строку.</p>
+<pre><code class="language-python">print('15', '03', '2026', sep='.')  # 15.03.2026
+print('Привет,', end=' ')
+print('мир!')  # Привет, мир!
+</code></pre>
+<hr />
+<h3>Ввод данных: команда input()</h3>
+<p>Чтобы программа могла получать данные от пользователя, используется команда <code>input()</code>. Когда программа доходит до неё, она останавливается и ждёт, пока пользователь введёт текст и нажмёт Enter. Введённое значение нужно сохранить в переменную, иначе оно потеряется.</p>
+<pre><code class="language-python">name = input()
+print('Привет,', name)
+</code></pre>
+<p>Внутри скобок <code>input()</code> можно написать подсказку. Она появится перед местом ввода и подскажет пользователю, что от него требуется.</p>
+<pre><code class="language-python">name = input('Как вас зовут? ')
+print('Привет,', name)
+</code></pre>
+<p>У <code>input()</code> есть важная особенность: он всегда возвращает <strong>строку (<code>str</code>)</strong>, даже если пользователь ввёл число. Поэтому с введённым числом нельзя сразу выполнять вычисления. Его нужно преобразовать: целое число с помощью <code>int()</code>, дробное с помощью <code>float()</code>.</p>
+<pre><code class="language-python">age = input('Сколько вам лет? ')
+print(type(age))  # &lt;class 'str'&gt;
+
+age = int(input('Сколько вам лет? '))
+print(type(age))  # &lt;class 'int'&gt;
+</code></pre>
+<p>Если пользователь введёт не число, например слово, <code>int()</code> выдаст ошибку <code>ValueError</code>. Как обрабатывать такие ситуации, мы узнаем позже.</p>
+<hr />
+<h3>f-строки</h3>
+<p><strong>f-строка</strong> позволяет вставить значения переменных прямо в текст. Перед открывающей кавычкой ставится буква <code>f</code>, а имена переменных записываются в фигурных скобках.</p>
+<pre><code class="language-python">name = 'Даша'
+age = 25
+print(f'Меня зовут {name}, мне {age} лет.')
+# Меня зовут Даша, мне 25 лет.
+</code></pre>
+<p>Раньше мы выводили значения через запятую, и Python сам добавлял пробелы. С f-строкой мы сами решаем, как будет выглядеть текст, и можем ставить знаки препинания там, где нужно. Кроме имён переменных, в фигурных скобках можно писать выражения.</p>
+<pre><code class="language-python">print(f'Через 5 лет мне будет {age + 5}.')
+# Через 5 лет мне будет 30.
+</code></pre>
+<p>Дробные числа можно округлять прямо в f-строке. После двоеточия указывают формат: <code>.2f</code> означает два знака после запятой.</p>
+<pre><code class="language-python">height = 1.7
+print(f'Рост: {height:.2f} м')  # Рост: 1.70 м
+</code></pre>
+<p>Для оформления вывода полезно знать ещё одну особенность: строку можно умножать на число. Это удобно для рамок и разделителей.</p>
+<pre><code class="language-python">print('=' * 20)  # ====================
+</code></pre>
+<p>Символ <code>=</code> здесь повторяется 20 раз.</p>
+<hr />
+<h2>Практика: «Паспорт пользователя»</h2>
+<p>Пишем программу вместе. Программа спрашивает имя, год рождения, любимое число и город, а затем выводит персональную карточку.</p>
+<ol>
+<li>Создаём в VS Code файл <code>passport.py</code>.</li>
+<li>Запрашиваем данные с помощью <code>input()</code> с понятными подсказками. Год рождения и любимое число сразу преобразуем в <code>int</code>.</li>
+<li>Вычисляем возраст: из текущего года вычитаем год рождения.</li>
+<li>Выводим карточку с помощью f-строк и рамки из символов <code>=</code>.</li>
+<li>Запускаем программу с разными данными и проверяем результат.</li>
+</ol>
+<p><strong>Пример выполнения:</strong></p>
+<pre><code class="language-python">name = input('Как вас зовут? ')
+birth_year = int(input('В каком году вы родились? '))
+number = int(input('Ваше любимое число? '))
+city = input('В каком городе вы живёте? ')
+
+age = 2026 - birth_year
+
+print('Паспорт пользователя')
+print('=' * 30)
+print(f'Имя: {name}')
+print(f'Возраст: {age}')
+print(f'Любимое число: {number}')
+print(f'Город: {city}')
+print('=' * 30)
+</code></pre>
+<p>Возраст в этой программе приблизительный, потому что мы считаем его только по году рождения.</p>
+<p><strong>Дополнительное задание:</strong> добавить в паспорт поле «Хобби» и вывести год, в котором пользователю исполнится 30 лет.</p>
+<p>Во время практики часто встречаются одни и те же ошибки:</p>
+<ul>
+<li>Если не преобразовать год рождения в <code>int</code>, вычитание выдаст ошибку <code>TypeError</code>, потому что <code>input()</code> возвращает строку.</li>
+<li>Если забыть букву <code>f</code> перед кавычкой, вместо значений на экране появятся имена переменных в фигурных скобках.</li>
+<li>Если использовать внутри f-строки те же кавычки, что и снаружи, программа выдаст ошибку.</li>
+<li>Если ввести вместо числа слово, <code>int()</code> выдаст ошибку <code>ValueError</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li><code>print()</code> выводит данные на экран: аргументы разделяются запятыми, а параметры <code>sep</code> и <code>end</code> управляют оформлением.</li>
+<li><code>input()</code> получает данные от пользователя и всегда возвращает строку, поэтому числа нужно преобразовывать через <code>int()</code> или <code>float()</code>.</li>
+<li>f-строка вставляет значения переменных и выражения в текст с помощью фигурных скобок.</li>
+<li>С помощью <code>print()</code>, <code>input()</code> и f-строк можно писать простые интерактивные программы.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

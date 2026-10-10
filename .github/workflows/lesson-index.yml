@@ -1,11 +1,5 @@
 # Пересобирает оглавление index.html в корне репозитория, когда появляется новая презентация.
 #
-# Нужен только в одном случае: если сайт публикуется из ПРИВАТНОГО репозитория.
-# Тогда страница не может сама узнать список файлов (для этого GitHub-API
-# требует публичный репозиторий) и список обновляет этот бот.
-# Если презентации публикуются из публичного репозитория — файл можно удалить:
-# страница обновляет список сама при открытии.
-#
 # Если в main запрещён прямой push (branch protection), шаг «Коммит» не сработает
 # — тогда запускай scripts/build_lesson_index.py локально перед пушем.
 name: Оглавление занятий
@@ -15,7 +9,9 @@ on:
     branches: [main]
     paths:
       - "classes/**/*.html"
+      - "classes/**/*.md"
       - "scripts/build_lesson_index.py"
+      - "config.yaml"
   workflow_dispatch:
 
 permissions:
@@ -35,18 +31,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Установить зависимости
+        run: pip install pyyaml markdown
+
       - name: Пересобрать оглавление
         run: python3 scripts/build_lesson_index.py
 
       - name: Закоммитить, если что-то изменилось
         continue-on-error: true
         run: |
-          if [ -z "$(git status --porcelain index.html)" ]; then
+          if [ -z "$(git status --porcelain index.html docs metod 2>/dev/null)" ]; then
             echo "Оглавление уже актуально — коммит не нужен"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
+          if [ -d docs ]; then git add docs; fi
+          if [ -d metod ]; then git add metod; fi
           git commit -m "chore: обновить оглавление занятий [skip ci]"
           git push
