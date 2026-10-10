@@ -68,10 +68,6 @@ a{color:inherit}
 }
 .chip:hover{background:rgba(255,255,255,.13); color:#fff}
 .chip[aria-pressed="true"]{background:#fff; border-color:#fff; color:var(--blue-900)}
-.spacer{flex:1}
-.status{font-size:13px; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:8px}
-.status .led{width:7px; height:7px; border-radius:50%; background:#57D08A}
-.status.file .led{background:rgba(255,255,255,.35)}
 
 /* --- сетка занятий --- */
 .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px}
@@ -91,15 +87,11 @@ a{color:inherit}
 .meta{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted)}
 .slides{font-family:var(--mono); font-size:12px; letter-spacing:.02em}
 
-/* метки в правом верхнем углу: дата выхода (у закрытых) и «новое» */
+/* метка в правом верхнем углу: дата выхода у закрытых занятий */
 .marks{position:absolute; top:16px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:6px}
 .badge{
   font-size:12px; font-weight:700; letter-spacing:.01em; padding:5px 11px; border-radius:999px;
   background:var(--tint); color:var(--blue-700); border:1px solid #D5E9FF
-}
-.tag{
-  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-  padding:4px 9px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); border:1px solid #FFD9A8
 }
 
 /* кнопки внизу карточки */
@@ -155,8 +147,6 @@ a{color:inherit}
     </label>
     <button class="chip" id="f-all" aria-pressed="true">Все занятия</button>
     <button class="chip" id="f-ready" aria-pressed="false">Доступные</button>
-    <span class="spacer"></span>
-    <span class="status file" id="status"><span class="led"></span><span id="status-text">список из файла</span></span>
   </div>
 
   <main class="grid" id="grid" aria-live="polite"></main>
@@ -167,14 +157,10 @@ a{color:inherit}
   <script id="lessons" type="application/json">
 {
   "schema": 1,
-  "branch": "main",
-  "gh": "yuraz28/ml-pazl-1",
   "title": "Машинное обучение",
   "lessons": [
     {
       "n": 1,
-      "dir": "01-lessons",
-      "file": null,
       "title": "Вводное занятие",
       "slides": 0,
       "path": null,
@@ -183,8 +169,6 @@ a{color:inherit}
     },
     {
       "n": 2,
-      "dir": "02-lessons",
-      "file": "02-vvedenie-v-professiyu.html",
       "title": "Введение в профессию и инструменты",
       "slides": 18,
       "path": "classes/02-lessons/02-vvedenie-v-professiyu.html",
@@ -193,8 +177,6 @@ a{color:inherit}
     },
     {
       "n": 3,
-      "dir": "03-lessons",
-      "file": "03-proficii-v-it.html",
       "title": "Профессии в IT: AI, бэкенд и фронтенд",
       "slides": 24,
       "path": "classes/03-lessons/03-proficii-v-it.html",
@@ -203,8 +185,6 @@ a{color:inherit}
     },
     {
       "n": 4,
-      "dir": "04-lessons",
-      "file": "04-pervye-shagi-v-python.html",
       "title": "Первые шаги в Python",
       "slides": 31,
       "path": "classes/04-lessons/04-pervye-shagi-v-python.html",
@@ -213,8 +193,6 @@ a{color:inherit}
     },
     {
       "n": 5,
-      "dir": "05-lessons",
-      "file": "05-vvod-i-vyvod-dannyh.html",
       "title": "Ввод и вывод данных",
       "slides": 26,
       "path": "classes/05-lessons/05-vvod-i-vyvod-dannyh.html",
@@ -223,8 +201,6 @@ a{color:inherit}
     },
     {
       "n": 6,
-      "dir": "06-lessons",
-      "file": "06-celochislennaya-arifmetika.html",
       "title": "Целочисленная арифметика",
       "slides": 41,
       "path": "classes/06-lessons/06-celochislennaya-arifmetika.html",
@@ -233,8 +209,6 @@ a{color:inherit}
     },
     {
       "n": 7,
-      "dir": "07-lessons",
-      "file": "07-uslovnyy-operator.html",
       "title": "Условный оператор",
       "slides": 31,
       "path": "classes/07-lessons/07-uslovnyy-operator.html",
@@ -243,8 +217,6 @@ a{color:inherit}
     },
     {
       "n": 8,
-      "dir": "08-lessons",
-      "file": "08-tipy-dannyh.html",
       "title": "Типы данных",
       "slides": 35,
       "path": "classes/08-lessons/08-tipy-dannyh.html",
@@ -253,8 +225,6 @@ a{color:inherit}
     },
     {
       "n": 9,
-      "dir": "09-lessons",
-      "file": "09-cikl-for.html",
       "title": "Цикл for",
       "slides": 24,
       "path": "classes/09-lessons/09-cikl-for.html",
@@ -263,8 +233,6 @@ a{color:inherit}
     },
     {
       "n": 10,
-      "dir": "10-lessons",
-      "file": "10-cikl-while.html",
       "title": "Цикл while",
       "slides": 24,
       "path": "classes/10-lessons/10-cikl-while.html",
@@ -273,8 +241,6 @@ a{color:inherit}
     },
     {
       "n": 11,
-      "dir": "11-lessons",
-      "file": "11-stroki.html",
       "title": "Строки",
       "slides": 32,
       "path": "classes/11-lessons/11-stroki.html",
@@ -283,8 +249,6 @@ a{color:inherit}
     },
     {
       "n": 12,
-      "dir": "12-lessons",
-      "file": "12-spiski.html",
       "title": "Списки",
       "slides": 27,
       "path": "classes/12-lessons/12-spiski.html",
@@ -293,8 +257,6 @@ a{color:inherit}
     },
     {
       "n": 13,
-      "dir": "13-lessons",
-      "file": "13-funkcii.html",
       "title": "Функции",
       "slides": 29,
       "path": "classes/13-lessons/13-funkcii.html",
@@ -303,8 +265,6 @@ a{color:inherit}
     },
     {
       "n": 14,
-      "dir": "14-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -312,8 +272,6 @@ a{color:inherit}
     },
     {
       "n": 15,
-      "dir": "15-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -321,8 +279,6 @@ a{color:inherit}
     },
     {
       "n": 16,
-      "dir": "16-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -330,8 +286,6 @@ a{color:inherit}
     },
     {
       "n": 17,
-      "dir": "17-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -339,8 +293,6 @@ a{color:inherit}
     },
     {
       "n": 18,
-      "dir": "18-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -348,8 +300,6 @@ a{color:inherit}
     },
     {
       "n": 19,
-      "dir": "19-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -357,8 +307,6 @@ a{color:inherit}
     },
     {
       "n": 20,
-      "dir": "20-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -366,8 +314,6 @@ a{color:inherit}
     },
     {
       "n": 21,
-      "dir": "21-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -375,8 +321,6 @@ a{color:inherit}
     },
     {
       "n": 22,
-      "dir": "22-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -384,8 +328,6 @@ a{color:inherit}
     },
     {
       "n": 23,
-      "dir": "23-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -393,8 +335,6 @@ a{color:inherit}
     },
     {
       "n": 24,
-      "dir": "24-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -402,8 +342,6 @@ a{color:inherit}
     },
     {
       "n": 25,
-      "dir": "25-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -411,8 +349,6 @@ a{color:inherit}
     },
     {
       "n": 26,
-      "dir": "26-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -420,8 +356,6 @@ a{color:inherit}
     },
     {
       "n": 27,
-      "dir": "27-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -429,8 +363,6 @@ a{color:inherit}
     },
     {
       "n": 28,
-      "dir": "28-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -438,8 +370,6 @@ a{color:inherit}
     },
     {
       "n": 29,
-      "dir": "29-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -447,8 +377,6 @@ a{color:inherit}
     },
     {
       "n": 30,
-      "dir": "30-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -456,8 +384,6 @@ a{color:inherit}
     },
     {
       "n": 31,
-      "dir": "31-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -465,8 +391,6 @@ a{color:inherit}
     },
     {
       "n": 32,
-      "dir": "32-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -474,8 +398,6 @@ a{color:inherit}
     },
     {
       "n": 33,
-      "dir": "33-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -483,8 +405,6 @@ a{color:inherit}
     },
     {
       "n": 34,
-      "dir": "34-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -492,8 +412,6 @@ a{color:inherit}
     },
     {
       "n": 35,
-      "dir": "35-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -501,8 +419,6 @@ a{color:inherit}
     },
     {
       "n": 36,
-      "dir": "36-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -510,8 +426,6 @@ a{color:inherit}
     },
     {
       "n": 37,
-      "dir": "37-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -519,8 +433,6 @@ a{color:inherit}
     },
     {
       "n": 38,
-      "dir": "38-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -528,8 +440,6 @@ a{color:inherit}
     },
     {
       "n": 39,
-      "dir": "39-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -537,8 +447,6 @@ a{color:inherit}
     },
     {
       "n": 40,
-      "dir": "40-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -546,8 +454,6 @@ a{color:inherit}
     },
     {
       "n": 41,
-      "dir": "41-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -555,8 +461,6 @@ a{color:inherit}
     },
     {
       "n": 42,
-      "dir": "42-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -564,8 +468,6 @@ a{color:inherit}
     },
     {
       "n": 43,
-      "dir": "43-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -573,8 +475,6 @@ a{color:inherit}
     },
     {
       "n": 44,
-      "dir": "44-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -582,8 +482,6 @@ a{color:inherit}
     },
     {
       "n": 45,
-      "dir": "45-lessons",
-      "file": null,
       "title": "",
       "slides": 0,
       "path": null,
@@ -600,14 +498,11 @@ a{color:inherit}
 
   var PAGE = JSON.parse((document.getElementById("lessons") || {}).textContent || "{}");
   var LESSONS = Array.isArray(PAGE.lessons) ? PAGE.lessons : [];
-  var BRANCH = PAGE.branch || "main";
-  var state = { q: "", onlyReady: false, fresh: {} };
+  var state = { q: "", onlyReady: false };
 
   var grid = document.getElementById("grid");
   var bar = document.getElementById("bar");
   var cnt = document.getElementById("cnt");
-  var status = document.getElementById("status");
-  var statusText = document.getElementById("status-text");
 
   function pad(n) { return String(n).padStart(2, "0"); }
 
@@ -639,7 +534,7 @@ a{color:inherit}
   var UNLOCK = document.documentElement.hasAttribute("data-unlock-all");
   function isLocked(l) { return !UNLOCK && isOpen(l) === false; }
   /* занятие «доступно», если есть хоть что-то: дека или описание */
-  function available(l) { return (!!l.file || !!l.doc) && !isLocked(l); }
+  function available(l) { return (!!l.path || !!l.doc) && !isLocked(l); }
   function fmtOpens(l) {
     var o = openDate(l);
     return o ? (o.d + " " + MONTHS[o.mo - 1]) : "";
@@ -677,13 +572,13 @@ a{color:inherit}
     grid.innerHTML = "";
 
     LESSONS.forEach(function (l) {
-      var hasFile = !!l.file;
+      var hasFile = !!l.path;
       var hasDoc = !!l.doc;
       var locked = isLocked(l);
       var avail = (hasFile || hasDoc) && !locked;
       var hay = ("занятие " + l.n + " занятие " + pad(l.n) + " " + pad(l.n) + " " + (l.title || "")).toLowerCase();
       var match = (!q || hay.indexOf(q) !== -1) && (!state.onlyReady || avail);
-      var deck = l.path || ("classes/" + l.dir + "/" + l.file);
+      var deck = l.path || "";
 
       var card = document.createElement("article");
       card.className = "card" + (avail ? "" : " off");
@@ -691,21 +586,13 @@ a{color:inherit}
       // правый верхний угол: дата выхода у закрытых; «Soon...», если дата ещё не назначена
       var undated = isOpen(l) === null;
       var date = (locked || UNLOCK) ? fmtOpens(l) : (undated ? "Soon..." : "");
-      if (date || state.fresh[l.n]) {
+      if (date) {
         var marks = document.createElement("div");
         marks.className = "marks";
-        if (date) {
-          var badge = document.createElement("span");
-          badge.className = "badge";
-          text(badge, date);
-          marks.appendChild(badge);
-        }
-        if (state.fresh[l.n]) {
-          var tag = document.createElement("span");
-          tag.className = "tag";
-          text(tag, "новое");
-          marks.appendChild(tag);
-        }
+        var badge = document.createElement("span");
+        badge.className = "badge";
+        text(badge, date);
+        marks.appendChild(badge);
         card.appendChild(marks);
       }
 
@@ -760,90 +647,6 @@ a{color:inherit}
     text(cnt, ready + " / " + total + " " + plural(total, "занятие", "занятия", "занятий"));
   }
 
-  function setStatus(text_, live) {
-    statusText.textContent = text_;
-    status.className = "status" + (live ? "" : " file");
-  }
-
-  /* --- необязательное живое обновление списка с GitHub ---
-     Работает только когда страница опубликована на github.io (или указан
-     ?gh=owner/repo) и репозиторий публичный. Любая ошибка — молча остаёмся
-     на данных, собранных скриптом. */
-  function repoRef() {
-    var qs = new URLSearchParams(location.search);
-    if (qs.get("gh")) return qs.get("gh");
-    var host = location.hostname;
-    var local = !host || host === "localhost" || host === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(host);
-    if (local) return "";                       // локальный просмотр — в сеть не ходим
-    var m = host.match(/^([^.]+)\.github\.io$/i);
-    var seg = location.pathname.split("/").filter(Boolean);
-    if (m && seg.length) return m[1] + "/" + seg[0];
-    return PAGE.gh || "";
-  }
-
-  function deckTitle(html, fallback) {
-    var t = "";
-    try {
-      var doc = new DOMParser().parseFromString(html, "text/html");
-      t = (doc.title || "").replace(/\s*[—–-]\s*Код\s*и\s*пазл\s*$/i, "").replace(/^\s*Занятие\s*\d+\s*[.:—–-]?\s*/, "").trim();
-      var slides = doc.querySelectorAll("section.slide").length;
-      return { title: t || fallback, slides: slides };
-    } catch (e) {
-      return { title: t || fallback, slides: 0 };
-    }
-  }
-
-  function refresh() {
-    var ref = repoRef();
-    if (!ref || !/^https?:$/.test(location.protocol)) return;
-    var api = "https://api.github.com/repos/" + ref + "/git/trees/" + BRANCH + "?recursive=1";
-    fetch(api, { headers: { Accept: "application/vnd.github+json" } })
-      .then(function (r) { if (!r.ok) throw new Error("api " + r.status); return r.json(); })
-      .then(function (data) {
-        var found = {};
-        (data.tree || []).forEach(function (node) {
-          var m = /^classes\/(\d+)-lessons\/([^/]+\.html)$/.exec(node.path || "");
-          if (m) found[parseInt(m[1], 10)] = { dir: m[1] + "-lessons", file: m[2], raw: node.path };
-        });
-        var fresh = [], known = {};
-        LESSONS.forEach(function (l) { known[l.n] = l; });
-
-        Object.keys(found).forEach(function (k) {
-          var n = parseInt(k, 10), f = found[k], cur = known[n];
-          if (cur && cur.file === f.file) return;   // занятие уже в списке
-          fresh.push({ n: n, dir: f.dir, file: f.file, raw: f.raw, title: "", slides: 0 });
-        });
-
-        // появившееся занятие тянем целиком, чтобы показать название и число слайдов
-        return Promise.all(fresh.slice(0, 20).map(function (l) {
-          var url = "https://raw.githubusercontent.com/" + ref + "/" + BRANCH + "/" + l.raw;
-          return fetch(url).then(function (r) { return r.ok ? r.text() : ""; })
-            .then(function (html) {
-              if (html) { var d = deckTitle(html, ""); l.title = d.title; l.slides = d.slides; }
-              return l;
-            })
-            .catch(function () { return l; });
-        })).then(function (list) {
-          list.forEach(function (l) {
-            var rel = "classes/" + l.dir + "/" + l.file;
-            var cur = known[l.n];
-            state.fresh[l.n] = true;
-            if (cur) {
-              cur.file = l.file; cur.path = rel; cur.dir = l.dir;
-              if (l.title) cur.title = l.title;
-              if (l.slides) cur.slides = l.slides;
-            } else {
-              LESSONS.push({ n: l.n, dir: l.dir, file: l.file, path: rel, title: l.title, slides: l.slides });
-            }
-          });
-          LESSONS.sort(function (a, b) { return a.n - b.n; });
-          render();
-          setStatus(list.length ? "список обновлён с GitHub (+" + list.length + ")" : "список актуален", true);
-        });
-      })
-      .catch(function () { setStatus("список из файла", false); });
-  }
-
   /* --- управление --- */
   document.getElementById("q").addEventListener("input", function (e) {
     state.q = e.target.value; render();
@@ -870,7 +673,6 @@ a{color:inherit}
 
   render();
   setInterval(render, 60000);   // раз в минуту пересчитываем доступность занятий
-  refresh();
 })();
 </script>
 </body>

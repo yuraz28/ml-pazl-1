@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Собирает данные для оглавления index.html в корне репозитория.
 
-Сканирует classes/<NN>-lessons/, вытаскивает из презентаций название
-(<title>) и число слайдов и переписывает JSON-блок внутри
-index.html между маркерами <!--lessons:data--> … <!--/lessons:data-->.
+Единственный источник данных — config.yaml: номер занятия, название, дата
+открытия, ссылка на презентацию (presentation) и на описание в markdown (docs).
+Папки репозитория не сканируются и структура classes/ ни при чём: файлы могут
+лежать сколь угодно глубоко, путь указывается от корня репозитория.
 
-Дополнительно из config.yaml берутся расписание (opens) и ссылки:
-presentation — на деку, docs — на markdown-описание, из которого собирается
-отдельная страница docs/lesson-NN.html.
+Из презентации дополнительно снимаются название (<title>) и число слайдов,
+из markdown собирается страница docs/lesson-NN.html. Результат пишется в
+JSON-блок внутри index.html между маркерами <!--lessons:data--> … <!--/lessons:data-->.
 
 Скрипт детерминированный: без дат и прочего, что меняется от запуска к запуску,
 поэтому повторный прогон на неизменном репозитории ничего не меняет и в CI
@@ -24,12 +25,10 @@ import argparse
 import html
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-CLASSES = REPO_ROOT / "classes"
 INDEX = REPO_ROOT / "index.html"
 CONFIG = REPO_ROOT / "config.yaml"
 DOCS = REPO_ROOT / "docs"          # собранные страницы «Описание» из markdown
@@ -43,26 +42,27 @@ except ImportError:  # pragma: no cover
 OPEN_MARK = "<!--lessons:data-->"
 CLOSE_MARK = "<!--/lessons:data-->"
 
-DIR_RE = re.compile(r"^(\d+)-lessons$")
+DIR_RE = re.compile(r"^(\d+)-lessons$")  # структуру репозитория не читаем
 TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.S | re.I)
 SLIDE_RE = re.compile(r"<section[^>]*class=\"[^\"]*\bslide\b")
 LESSON_PREFIX_RE = re.compile(r"^\s*Занятие\s*\d+\s*[.:—–-]?\s*")
 SUFFIX_RE = re.compile(r"\s*[—–-]\s*Код\s*и\s*пазл\s*$", re.I)
 
 
-def git_origin() -> str:
-    """owner/repo из origin — чтобы страница знала, где искать свежие презентации."""
-    try:
-        url = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            cwd=REPO_ROOT, capture_output=True, text=True, timeout=10,
-        ).stdout.strip()
-    except Exception:
-        return ""
-    if not url:
-        return ""
-    m = re.search(r"github\.com[:/]+([^/]+)/([^/]+?)(?:\.git)?/?$", url)
-    return f"{m.group(1)}/{m.group(2)}" if m else ""
+def repo_rel_path(value) -> tuple[Path, str] | None:
+    """Путь из config.yaml → (файл на диске, путь для ссылки в странице).
+
+    Путь считается от корня репозитория и может лежать на любой глубине
+    (`classes/01-lessons/01.html`, `материалы/2026/модуль-1/тема/дека.html`).
+    Всё, что выводит за пределы репозитория, отбрасывается.
+    """
+    raw = re.sub(r"^\./+", "", str(value).strip().replace("\\", "/")).lstrip("/")
+    if not raw:
+        return None
+    if ".." in Path(raw).parts:
+        print(f"  ! путь вне репозитория: {value!r}", file=sys.stderr)
+        return None
+    return REPO_ROOT / raw, Path(raw).as_posix()
 
 
 def deck_meta(path: Path) -> tuple[str, int]:
@@ -76,17 +76,6 @@ def deck_meta(path: Path) -> tuple[str, int]:
         title = LESSON_PREFIX_RE.sub("", title)
     slides = len(SLIDE_RE.findall(text))
     return title, slides
-
-
-def pick_deck(lesson_dir: Path, n: int) -> Path | None:
-    decks = sorted(p for p in lesson_dir.glob("*.html") if p.is_file())
-    if not decks:
-        return None
-    preferred = [p for p in decks if p.name.startswith(f"{n}-")]
-    chosen = preferred[0] if preferred else decks[0]
-    if len(decks) > 1:
-        print(f"  ! в {lesson_dir.name} несколько .html, беру {chosen.name}", file=sys.stderr)
-    return chosen
 
 
 OPEN_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -161,20 +150,50 @@ def load_config() -> dict:
     return data if isinstance(data, dict) else {}
 
 
-def config_by_lesson(cfg: dict) -> dict:
-    """Список lessons из конфига → {номер: запись}."""
-    by_n = {}
-    items = cfg.get("lessons")
-    if not isinstance(items, list):
-        return by_n
-    for item in items:
-        if not isinstance(item, dict) or item.get("n") is None:
-            continue
-        try:
-            by_n[int(item["n"])] = item
-        except (TypeError, ValueError):
-            print(f"  ! пропускаю урок с некорректным n: {item.get('n')!r}", file=sys.stderr)
-    return by_n
+class BuildError(Exception):
+    """Собирать нечего: конфига нет или в нём нет занятий."""
+
+
+def lesson_entry(item: dict) -> dict:
+    """Данные одного занятия — строго по полям config.yaml.
+
+    Структура репозитория не учитывается: `presentation` и `docs` — обычные
+    пути от корня, файл может лежать на любой глубине.
+    """
+    n = int(item["n"])
+    entry: dict = {
+        "n": n,
+        "title": str(item.get("title") or "").strip(),
+        "slides": 0,
+        "path": None,
+    }
+
+    pres = str(item.get("presentation") or "").strip()
+    if pres:
+        found = repo_rel_path(pres)
+        if found is not None:
+            deck, url = found
+            if deck.is_file():
+                title, slides = deck_meta(deck)
+                entry.update(path=url, slides=slides, title=entry["title"] or title)
+            else:
+                print(f"  ! занятие {n}: презентация из config.yaml не найдена: {url}",
+                      file=sys.stderr)
+
+    opens = item.get("opens")
+    if opens is not None:
+        val = str(opens).strip()
+        if val:
+            if val != "soon" and not OPEN_RE.match(val):
+                print(f"  ! занятие {n}: opens не дата и не soon: {val!r}", file=sys.stderr)
+            entry["opens"] = val
+
+    docs = str(item.get("docs") or "").strip()
+    if docs:
+        doc = write_doc(docs, entry)
+        if doc:
+            entry["doc"] = doc
+    return entry
 
 
 # Страница «Описание»: светлая карточка с типографикой на тёмном фоне сайта.
@@ -265,95 +284,42 @@ def write_doc(src_rel: str, entry: dict) -> str | None:
     return f"docs/{out.name}"
 
 
-def apply_overrides(entry: dict, c: dict) -> None:
-    """Наложить поля урока из config.yaml поверх данных, снятых с деки.
-
-    Если урок описан в config.yaml, ссылки берутся только из него. Нет поля
-    `presentation` — презентации у занятия нет, даже если дека лежит в папке
-    занятия (иначе удалённое из конфига поле возвращалось бы при пересборке).
-    """
-    if not isinstance(c, dict) or not c:
-        return  # урока нет в конфиге — оставляем то, что нашли в папке занятия
-
-    folder_deck = entry.get("file")          # дека, найденная в папке
-    entry.update(file=None, path=None, slides=0, title="")
-
-    pres = str(c.get("presentation") or "").strip()
-    if pres:
-        path = REPO_ROOT / pres
-        if path.is_file():
-            title, slides = deck_meta(path)
-            entry.update(
-                file=path.name,
-                dir=path.parent.name,
-                path=pres,
-                slides=slides,
-                title=title,
-            )
-        else:
-            print(f"  ! занятие {entry['n']}: презентация из config.yaml не найдена: {pres}",
-                  file=sys.stderr)
-    elif folder_deck:
-        print(f"  ! занятие {entry['n']}: в config.yaml нет presentation — дека "
-              f"{folder_deck} не показывается", file=sys.stderr)
-
-    if c.get("title"):
-        entry["title"] = str(c["title"]).strip()
-
-    opens = c.get("opens")
-    if opens is not None:
-        val = str(opens).strip()
-        if val:
-            if val != "soon" and not OPEN_RE.match(val):
-                print(f"  ! занятие {entry['n']}: opens не дата и не soon: {val!r}", file=sys.stderr)
-            entry["opens"] = val
-
-    doc = write_doc(str(c.get("docs")).strip(), entry) if c.get("docs") else None
-    if doc:
-        entry["doc"] = doc
-
-
 def collect() -> dict:
+    """Данные для оглавления. Источник один — config.yaml, папки не смотрим."""
     cfg = load_config()
-    by_n = config_by_lesson(cfg)
+    items = cfg.get("lessons")
+    if not isinstance(items, list) or not items:
+        raise BuildError(
+            f"{CONFIG.name}: нет непустого списка lessons — собирать оглавление не из чего; "
+            f"занятия описываются только в этом файле."
+        )
 
-    lessons = []
-    for lesson_dir in sorted(CLASSES.iterdir(), key=lambda p: p.name):
-        if not lesson_dir.is_dir():
+    lessons: list[dict] = []
+    at: dict[int, int] = {}
+    for item in items:
+        if not isinstance(item, dict) or item.get("n") is None:
+            print(f"  ! в config.yaml запись без номера занятия — пропускаю: {item!r}",
+                  file=sys.stderr)
             continue
-        m = DIR_RE.match(lesson_dir.name)
-        if not m:
+        try:
+            n = int(item["n"])
+        except (TypeError, ValueError):
+            print(f"  ! занятие с некорректным n — пропускаю: {item.get('n')!r}", file=sys.stderr)
             continue
-        n = int(m.group(1))
-        deck = pick_deck(lesson_dir, n)
-        entry = {"n": n, "dir": lesson_dir.name, "file": None, "title": "", "slides": 0}
-        if deck is not None:
-            title, slides = deck_meta(deck)
-            entry.update(
-                file=deck.name,
-                title=title,
-                slides=slides,
-                path=f"classes/{lesson_dir.name}/{deck.name}",
-            )
-        lessons.append(entry)
-
-    # занятия, объявленные только в config.yaml (папки нет / ещё не завели)
-    known = {e["n"] for e in lessons}
-    for n in sorted(by_n):
-        if n not in known:
-            lessons.append({"n": n, "dir": f"{n:02d}-lessons", "file": None, "title": "", "slides": 0})
+        if n in at:
+            print(f"  ! занятие {n} в config.yaml встречается дважды — беру последнюю запись",
+                  file=sys.stderr)
+            lessons[at[n]] = lesson_entry(item)
+        else:
+            at[n] = len(lessons)
+            lessons.append(lesson_entry(item))
 
     lessons.sort(key=lambda e: e["n"])
-    for entry in lessons:
-        apply_overrides(entry, by_n.get(entry["n"], {}))
-
     course = cfg.get("course")
     if not isinstance(course, dict):
         course = {}
     return {
         "schema": 1,
-        "branch": str(course.get("branch") or "main"),
-        "gh": git_origin(),
         "title": str(course.get("title") or "Все занятия курса"),
         "lessons": lessons,
     }
@@ -386,7 +352,7 @@ def build_metod(index_text: str) -> str:
 
 def patch_index(data: dict, check_only: bool) -> int:
     stats = (f"{len(data['lessons'])} занятий, "
-             f"{sum(1 for e in data['lessons'] if e['file'])} с презентациями, "
+             f"{sum(1 for e in data['lessons'] if e.get('path'))} с презентациями, "
              f"{sum(1 for e in data['lessons'] if e.get('doc'))} с описанием")
     text = INDEX.read_text(encoding="utf-8")
     i, j = text.find(OPEN_MARK), text.find(CLOSE_MARK)
@@ -431,7 +397,12 @@ def main() -> int:
     if not INDEX.exists():
         print(f"Нет файла {INDEX}", file=sys.stderr)
         return 2
-    return patch_index(collect(), args.check)
+    try:
+        data = collect()
+    except BuildError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    return patch_index(data, args.check)
 
 
 if __name__ == "__main__":
