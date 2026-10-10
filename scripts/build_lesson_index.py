@@ -10,8 +10,8 @@ index.html между маркерами <!--lessons:data--> … <!--/lessons:da
 не даёт пустых коммитов.
 
 Запуск:
-    python3 scripts/build_lesson_index.py            # обновить
-    python3 scripts/build_lesson_index.py --check    # только проверить (exit 1, если есть расхождения)
+    uv run python scripts/build_lesson_index.py            # обновить
+    uv run python scripts/build_lesson_index.py --check    # только проверить (exit 1, если есть расхождения)
 """
 
 from __future__ import annotations
