@@ -266,13 +266,20 @@ def write_doc(src_rel: str, entry: dict) -> str | None:
 
 
 def apply_overrides(entry: dict, c: dict) -> None:
-    """Наложить поля урока из config.yaml поверх данных, снятых с деки."""
-    if not isinstance(c, dict) or not c:
-        return
+    """Наложить поля урока из config.yaml поверх данных, снятых с деки.
 
-    pres = c.get("presentation")
+    Если урок описан в config.yaml, ссылки берутся только из него. Нет поля
+    `presentation` — презентации у занятия нет, даже если дека лежит в папке
+    занятия (иначе удалённое из конфига поле возвращалось бы при пересборке).
+    """
+    if not isinstance(c, dict) or not c:
+        return  # урока нет в конфиге — оставляем то, что нашли в папке занятия
+
+    folder_deck = entry.get("file")          # дека, найденная в папке
+    entry.update(file=None, path=None, slides=0, title="")
+
+    pres = str(c.get("presentation") or "").strip()
     if pres:
-        pres = str(pres).strip()
         path = REPO_ROOT / pres
         if path.is_file():
             title, slides = deck_meta(path)
@@ -286,6 +293,9 @@ def apply_overrides(entry: dict, c: dict) -> None:
         else:
             print(f"  ! занятие {entry['n']}: презентация из config.yaml не найдена: {pres}",
                   file=sys.stderr)
+    elif folder_deck:
+        print(f"  ! занятие {entry['n']}: в config.yaml нет presentation — дека "
+              f"{folder_deck} не показывается", file=sys.stderr)
 
     if c.get("title"):
         entry["title"] = str(c["title"]).strip()
