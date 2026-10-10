@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Первые шаги в Python — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 4. Первые шаги в Python</h1>
+<h2>Цель занятия</h2>
+<p>Понять, что такое программа и язык программирования, познакомиться с языком Python и узнать, где он используется. Научиться создавать переменные, называть их по правилам и определять тип данных. Написать первую программу «Карточка персонажа».</p>
+<hr />
+<h2>Теория</h2>
+<h3>Что такое программа и язык программирования</h3>
+<p><strong>Компьютерная программа</strong> — это список команд (инструкций) для компьютера. Команды могут быть разными: считать данные с клавиатуры, выполнить вычисления, вывести результат на экран. Программами являются браузер, мессенджер и даже сама операционная система.</p>
+<p>Чтобы написать программу, используют <strong>язык программирования</strong>. Это набор правил, по которым компьютер понимает команды и выполняет их. Текст программы на любом языке называется <strong>программным кодом</strong>.</p>
+<p>Языки программирования делят на <strong>компилируемые</strong> и <strong>интерпретируемые</strong>. Программу на компилируемом языке (C, C++, Pascal) сначала целиком проверяют на ошибки и переводят в машинный код специальной программой — <strong>компилятором</strong>, и только потом запускают. Программу на интерпретируемом языке (Python, PHP, Ruby) целиком в машинный код не переводят. Вместо этого специальная программа — <strong>интерпретатор</strong> — идёт по коду и выполняет команды одну за другой.</p>
+<hr />
+<h3>Язык Python</h3>
+<p>Python разработал голландский программист <strong>Гвидо ван Россум</strong>, первая версия вышла в 1991 году. Название языка пришло от британского комедийного шоу «Монти Пайтон», которое Гвидо любил, а не от змеи.</p>
+<p>У Python есть две основные версии: <strong>Python 2</strong> и <strong>Python 3</strong>. Вторая версия устарела, и её поддержку прекратили в 2020 году. Полностью отказаться от неё не получилось, потому что Python 3 не совместим с ней полностью, а на Python 2 написано много программ, которые непросто переписать. В нашем курсе мы работаем только с <strong>Python 3</strong>.</p>
+<hr />
+<h3>Сильные и слабые стороны Python</h3>
+<p>У Python много преимуществ:</p>
+<ul>
+<li>Python <strong>интерпретируемый</strong>: программа запускается прямо из исходного кода, отдельная компиляция не нужна.</li>
+<li>Python <strong>высокоуровневый</strong>: код близок к человеческому языку, а многие технические детали работы компьютера скрыты.</li>
+<li>Python <strong>платформонезависимый</strong>: программы можно писать и запускать в Windows, macOS и Linux.</li>
+<li>Python имеет <strong>открытый исходный код</strong> и распространяется бесплатно.</li>
+<li>Python <strong>простой в изучении</strong>, поэтому его часто выбирают первым языком.</li>
+<li>Python <strong>динамический</strong>: тип переменной определяется автоматически по значению, что упрощает написание небольших программ.</li>
+<li>Для Python существует огромное количество готовых <strong>библиотек</strong> на любые задачи.</li>
+</ul>
+<p>Есть и недостатки. Python работает <strong>медленнее</strong>, чем C и C++. Динамическая типизация, которая помогает в небольших программах, в сложных проектах может стать проблемой, потому что ошибки с типами проявляются только при запуске.</p>
+<hr />
+<h3>Где используется Python</h3>
+<p>Python подходит для очень разных задач:</p>
+<ul>
+<li><strong>Системное программирование и администрирование</strong>: скрипты, которые работают с файлами и операционной системой.</li>
+<li><strong>Графические приложения</strong>: программы с окнами и кнопками.</li>
+<li><strong>Веб-приложения</strong>: с помощью фреймворков Django и Flask на Python создают сайты и сервисы.</li>
+<li><strong>Работа с сетью и базами данных</strong>: Python умеет обращаться к интернету и ко всем основным базам данных.</li>
+<li><strong>Интеграция</strong>: Python удобно использовать, чтобы связывать между собой другие системы и компоненты.</li>
+<li><strong>Анализ данных, машинное обучение и AI</strong>: сегодня это одно из главных направлений, и для него Python основной язык.</li>
+</ul>
+<p>Python используют технологические компании, банки, научные организации. На нём работают части поисковых систем и видеосервисов, тестируют оборудование, прогнозируют финансовые рынки и делают научные расчёты. Для нашего курса важнее всего последнее направление: машинное обучение и языковые модели мы будем изучать именно на Python.</p>
+<hr />
+<h3>Первый файл и особенности синтаксиса</h3>
+<p>Программы на Python хранятся в файлах с расширением <code>.py</code>. Мы создаём файл в VS Code, например <code>hello.py</code>, пишем в нём код и запускаем его кнопкой запуска или командой <code>python hello.py</code> в терминале.</p>
+<p>Простейшая программа выводит текст на экран с помощью функции <code>print()</code>:</p>
+<pre><code class="language-python"># Первая программа
+print(&quot;Привет, мир!&quot;)
+</code></pre>
+<p>У Python есть несколько важных особенностей синтаксиса:</p>
+<ul>
+<li>Каждая команда обычно пишется на отдельной строке, а точка с запятой в конце не нужна.</li>
+<li>Текст в программе (строки) записывается в кавычках, одинарных или двойных.</li>
+<li>Комментарий начинается с символа <code>#</code>. Интерпретатор его не выполняет, комментарии нужны для пояснений.</li>
+<li>Регистр букв важен: <code>name</code> и <code>Name</code> — это разные имена.</li>
+<li>Блоки кода выделяются <strong>отступами</strong>, а не фигурными скобками. Обычно используют 4 пробела. Эта особенность понадобится нам в условиях и циклах.</li>
+</ul>
+<hr />
+<h3>Переменные</h3>
+<p><strong>Переменная</strong> – это имя, под которым в памяти компьютера хранится значение. Её можно сравнить с подписанной коробкой: на коробке написано имя, а внутри лежит значение.</p>
+<p>Переменную создают с помощью <strong>присваивания</strong>. Знак <code>=</code> в Python означает «положить значение в переменную», а не равенство, как в математике. Тип значения указывать не нужно, Python определяет его сам.</p>
+<pre><code class="language-python">name = &quot;Даша&quot;
+age = 25
+print(name, age)
+</code></pre>
+<p>Значение переменной можно менять. Если написать <code>age = 26</code>, то в переменной <code>age</code> будет храниться уже новое значение, а старое исчезнет. Функция <code>print()</code> умеет выводить несколько значений сразу, если перечислить их через запятую.</p>
+<p>У имён переменных есть правила:</p>
+<ul>
+<li>Имя может содержать только буквы, цифры и символ подчёркивания.</li>
+<li>Имя не может начинаться с цифры. Например, <code>2name</code> — ошибка.</li>
+<li>В имени нельзя использовать пробелы. Вместо пробела ставят подчёркивание: <code>user_age</code>.</li>
+<li>Нельзя использовать слова, которые Python уже занял для себя, например <code>if</code>, <code>for</code>, <code>while</code>, <code>True</code>.</li>
+<li>Регистр важен: <code>age</code> и <code>Age</code> – две разные переменные.</li>
+</ul>
+<p>Кроме правил есть договорённости, которых придерживаются программисты (<strong>стандарт PEP 8</strong>). Имена пишут строчными буквами, слова разделяют подчёркиванием, а сами имена делают понятными: <code>user_age</code> лучше, чем <code>x</code>.</p>
+<hr />
+<h3>Типы данных (обзор)</h3>
+<p>Каждое значение в Python имеет <strong>тип</strong>. Пока познакомимся с четырьмя основными:</p>
+<ul>
+<li><code>int</code> – целые числа, например <code>25</code>, <code>0</code>, <code>-3</code>.</li>
+<li><code>float</code> – дробные числа, например <code>1.75</code>. В качестве разделителя используется точка, а не запятая.</li>
+<li><code>str</code> – строки, то есть текст в кавычках, например <code>"Мира"</code>.</li>
+<li><code>bool</code> – логический тип. Он принимает только два значения: <code>True</code> (истина) и <code>False</code> (ложь). Писать их нужно с заглавной буквы.</li>
+</ul>
+<p>Узнать тип значения можно с помощью функции <code>type()</code>:</p>
+<pre><code class="language-python">age = 25
+print(type(age))  # &lt;class 'int'&gt;
+</code></pre>
+<p>Тип определяется значением. Например, <code>25</code> – это число, а <code>"25"</code> в кавычках – уже строка. Подробнее о типах и о преобразовании между ними мы поговорим на одном из следующих занятий.</p>
+<hr />
+<h2>Практика: программа «Карточка персонажа»</h2>
+<p>Пишем программу вместе, а затем каждый создаёт своего персонажа.</p>
+<ol>
+<li>Создаём в VS Code файл <code>character.py</code>.</li>
+<li>Объявляем четыре переменные: <code>name</code> (имя, строка), <code>age</code> (возраст, целое число), <code>height</code> (рост в метрах, дробное число) и <code>is_online</code> (статус, логическое значение).</li>
+<li>Выводим карточку персонажа на экран с помощью <code>print()</code>.</li>
+<li>Меняем значения переменных, например возраст и статус, и выводим карточку ещё раз.</li>
+<li>Определяем тип каждой переменной с помощью <code>type()</code> и проверяем, что он соответствует ожиданиям.</li>
+</ol>
+<p><strong>Пример выполнения:</strong></p>
+<pre><code class="language-python">name = &quot;Даша&quot;
+age = 25
+height = 1.68
+is_online = True
+
+print(&quot;Имя:&quot;, name)
+print(&quot;Возраст:&quot;, age)
+print(&quot;Рост:&quot;, height)
+print(&quot;Жив:&quot;, is_online)
+
+age = 26
+is_online = False
+print(&quot;Возраст:&quot;, age)
+print(&quot;Жив:&quot;, is_online)
+
+print(type(name))
+print(type(age))
+print(type(height))
+print(type(is_online))
+</code></pre>
+<p>Во время практики часто встречаются одни и те же ошибки:</p>
+<ul>
+<li>Если забыть кавычки у строки, Python решит, что это имя переменной, и выдаст ошибку <code>NameError</code>.</li>
+<li>Если записать рост через запятую (<code>1,68</code>), получится не число, а два разных значения.</li>
+<li>Если в имени переменной поставить пробел или начать его с цифры, программа не запустится.</li>
+<li>Если перепутать регистр (<code>Name</code> вместо <code>name</code>), Python не найдёт переменную.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Программа – это список команд для компьютера, а язык программирования – правила, по которым он их понимает.</li>
+<li>Python – простой интерпретируемый язык, которым пользуются в вебе, анализе данных и машинном обучении.</li>
+<li>Программы хранятся в файлах <code>.py</code>, а блоки кода выделяются отступами.</li>
+<li>Переменная хранит значение, создаётся присваиванием, и её значение можно менять.</li>
+<li>Основные типы данных: <code>int</code>, <code>float</code>, <code>str</code> и <code>bool</code>. Тип значения показывает функция <code>type()</code>.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

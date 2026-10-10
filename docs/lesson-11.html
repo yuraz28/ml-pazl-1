@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Строки — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 11. Строки</h1>
+<h2>Цель занятия</h2>
+<p>Научиться обращаться к отдельным символам строки по индексу, делать срезы, пользоваться самыми полезными строковыми методами (<code>upper</code>, <code>lower</code>, <code>strip</code>, <code>replace</code>, <code>split</code>, <code>join</code>) и форматировать строки с помощью f-строк. Применить эти знания в задачах: разворот строки, проверка слова на палиндром и подсчёт слов в тексте.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Индексация строк</h3>
+<p>Строка – это последовательность символов. К любому символу можно обратиться по <strong>индексу</strong> (номеру) в квадратных скобках. Нумерация начинается с 0. Кроме того, Python позволяет считать с конца: последний символ имеет индекс <code>-1</code>.</p>
+<pre><code class="language-python">#  P  y  t  h  o  n
+#  0  1  2  3  4  5
+# -6 -5 -4 -3 -2 -1
+
+s = 'Python'
+print(s[0])     # P
+print(s[5])     # n
+print(s[-1])    # n, последний символ
+print(s[6])     # IndexError
+</code></pre>
+<p>Если длина строки равна <code>len(s)</code>, то индекс последнего символа равен <code>len(s) - 1</code>. Обращение к несуществующему индексу вызывает ошибку <code>IndexError: string index out of range</code>.</p>
+<p>Строки в Python <strong>неизменяемы</strong>: нельзя заменить символ, присвоив значение <code>s[0]</code>. Вместо этого создают новую строку.</p>
+<pre><code class="language-python">s = 'Python'
+s[0] = 'J'            # TypeError
+s = 'J' + s[1:]       # Jython, новая строка
+</code></pre>
+<p>Символы строки можно перебирать циклом <code>for</code>: <code>for ch in s</code> даёт по очереди каждый символ, а <code>for i in range(len(s))</code> – индексы, если они нужны.</p>
+<hr />
+<h3>Срезы строк</h3>
+<p><strong>Срез</strong> позволяет взять не один символ, а целую часть строки. Запись <code>s[x:y]</code> означает «от индекса <code>x</code> включительно до индекса <code>y</code> не включительно». Это похоже на <code>range()</code>.</p>
+<pre><code class="language-python">s = 'abcdefghij'
+print(s[2:5])     # cde
+print(s[:5])      # abcde, первые 5 символов
+print(s[5:])      # fghij, начиная с индекса 5
+print(s[-2:])     # ij, последние 2 символа
+print(s[:])       # abcdefghij, вся строка
+print(s[1:7:2])   # bdf, с шагом 2
+print(s[::-1])    # jihgfedcba, строка наоборот
+</code></pre>
+<p>Третье число в срезе – <strong>шаг</strong>. Если шаг отрицательный, символы идут в обратном порядке. Запись <code>s[::-1]</code> – самый короткий способ развернуть строку. Срез никогда не вызывает ошибку выхода за границы: <code>s[2:100]</code> просто вернёт всё до конца строки.</p>
+<hr />
+<h3>Конкатенация и форматирование</h3>
+<p>Строки можно складывать (<strong>конкатенация</strong>) и умножать на целое число. Но сложить строку с числом нельзя: число сначала нужно превратить в строку с помощью <code>str()</code>.</p>
+<pre><code class="language-python">print('Py' + 'thon')          # Python
+print('ab' * 3)               # ababab
+age = 15
+print('Мне ' + str(age))      # Мне 15
+</code></pre>
+<p>Собирать строки из нескольких частей удобнее с помощью знакомым нам f-строк.</p>
+<pre><code class="language-python">name = 'Аня'
+age = 15
+print(f'Меня зовут {name}, мне {age} лет.')
+print(f'Через 5 лет мне будет {age + 5}.')
+</code></pre>
+<hr />
+<h3>Полезные строковые методы</h3>
+<p><strong>Метод</strong> – это функция, которая применяется к объекту. Вызывается он через точку: <code>строка.метод(параметры)</code>. Вот самые полезные методы для строк.</p>
+<ul>
+<li><code>upper()</code> и <code>lower()</code> – переводят все буквы в верхний или нижний регистр: <code>'Python'.upper()</code> даёт <code>'PYTHON'</code>. Часто используются, чтобы сравнивать строки без учёта регистра.</li>
+<li><code>strip()</code> – убирает пробелы в начале и в конце строки: <code>'  привет  '.strip()</code> даёт <code>'привет'</code>.</li>
+<li><code>replace(старое, новое)</code> – заменяет все вхождения одной подстроки на другую: <code>'a-b-c'.replace('-', ' ')</code> даёт <code>'a b c'</code>. Чтобы удалить символы, заменяют их на пустую строку <code>''</code>.</li>
+<li><code>split()</code> – разбивает строку на слова и возвращает список: <code>'to be or not'.split()</code> даёт <code>['to', 'be', 'or', 'not']</code>. Можно указать разделитель: <code>'1,2,3'.split(',')</code>.</li>
+<li><code>join()</code> – собирает строку из списка, вставляя между элементами разделитель: <code>'-'.join(['1', '2', '3'])</code> даёт <code>'1-2-3'</code>. Разделитель пишут перед точкой.</li>
+</ul>
+<p>Методы строк <strong>не изменяют</strong> исходную строку, а возвращают новую. Чтобы сохранить результат, его нужно присвоить переменной.</p>
+<pre><code class="language-python">s = '  Hello  '
+s.upper()              # результат потерян, s не изменилась
+s = s.strip()          # правильно: сохраняем результат
+print(s)               # Hello
+
+word = input().strip().lower()   # методы можно вызывать цепочкой
+</code></pre>
+<p>Среди других полезных методов стоит знать <code>count()</code> (сколько раз подстрока встречается в строке), <code>find()</code> (индекс первого вхождения или -1), <code>startswith()</code> и <code>endswith()</code> (проверка начала и конца), <code>isdigit()</code> (состоит ли строка только из цифр) и <code>title()</code> (каждое слово с заглавной буквы).</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Разворот строки</h3>
+<p>Пользователь вводит строку. Нужно вывести её в обратном порядке.</p>
+<p><strong>Идея решения:</strong> используем срез с отрицательным шагом.</p>
+<pre><code class="language-python">s = input('Введите строку: ')
+print(s[::-1])
+</code></pre>
+<p>Для строки <code>Python</code> программа выведет <code>nohtyP</code>. Ту же задачу можно решить циклом: каждый новый символ добавляем в начало результата.</p>
+<pre><code class="language-python">s = input('Введите строку: ')
+result = ''
+for ch in s:
+    result = ch + result
+print(result)
+</code></pre>
+<hr />
+<h3>Задача 2. Палиндром</h3>
+<p><strong>Палиндром</strong> – слово или фраза, которые одинаково читаются слева направо и справа налево (например, «топот» или «шалаш»). Нужно проверить, является ли введённое слово палиндромом.</p>
+<p><strong>Идея решения:</strong> слово является палиндромом, если оно равно самому себе, прочитанному наоборот. Развернуть строку мы уже умеем.</p>
+<pre><code class="language-python">word = input('Введите слово: ')
+
+if word == word[::-1]:
+    print(f'Слово {word} - палиндром')
+else:
+    print(f'Слово {word} - не палиндром')
+</code></pre>
+<p>Такая программа не считает палиндромом слово «Топот», потому что заглавная <code>Т</code> и строчная <code>т</code> – разные символы. Исправим это с помощью <code>lower()</code>. Заодно научим программу проверять целые фразы: уберём пробелы с помощью <code>replace()</code>.</p>
+<pre><code class="language-python">text = input('Введите фразу: ')
+clean = text.lower().replace(' ', '')
+
+if clean == clean[::-1]:
+    print('Палиндром')
+else:
+    print('Не палиндром')
+</code></pre>
+<p>Фраза «А роза упала на лапу Азора» после обработки превращается в «арозаупаланалапуазора» и оказывается палиндромом.</p>
+<hr />
+<h3>Задача 3. Количество слов в тексте</h3>
+<p>Пользователь вводит текст. Нужно вывести, сколько в нём слов.</p>
+<p><strong>Идея решения:</strong> метод <code>split()</code> без аргументов разбивает текст по пробелам и игнорирует лишние пробелы. Количество слов равно длине получившегося списка.</p>
+<pre><code class="language-python">text = input('Введите текст: ')
+words = text.split()
+print(f'Слов в тексте: {len(words)}')
+</code></pre>
+<p>Для текста «Мама мыла   раму» (с несколькими пробелами подряд) программа выведет 3, а для пустой строки – 0. Обратите внимание: <code>len(text)</code> считает символы, а <code>len(words)</code> – слова.</p>
+<p><strong>Дополнительное задание:</strong> выведите слова текста в обратном порядке. Подсказка: разверните список срезом и соберите строку методом <code>join()</code>.</p>
+<pre><code class="language-python">words = text.split()
+print(' '.join(words[::-1]))    # раму мыла Мама
+</code></pre>
+<p>Во время практики часто встречаются одни и те же ошибки.</p>
+<ul>
+<li>Если обратиться к индексу, которого нет в строке (например, <code>s[len(s)]</code>), возникнет ошибка <code>IndexError</code>. Последний символ имеет индекс <code>len(s) - 1</code> или <code>-1</code>.</li>
+<li>Если попытаться изменить символ строки через <code>s[0] = 'J'</code>, возникнет ошибка <code>TypeError</code>. Строки неизменяемы.</li>
+<li>Если вызвать метод и не присвоить результат (<code>s.strip()</code>), строка останется прежней.</li>
+<li>Если забыть букву <code>f</code> перед кавычкой, Python выведет фигурные скобки как обычный текст.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Индекс символа в строке начинается с 0, последний символ имеет индекс <code>-1</code>. Строки неизменяемы.</li>
+<li>Срез <code>s[x:y:step]</code> возвращает новую строку. Запись <code>s[::-1]</code> разворачивает строку.</li>
+<li>Строки можно сцеплять (<code>+</code>) и повторять (<code>*</code>). Для сборки строки из переменных удобнее f-строки.</li>
+<li>Методы <code>upper</code>, <code>lower</code>, <code>strip</code>, <code>replace</code>, <code>split</code> и <code>join</code> не изменяют строку, а возвращают новую или список.</li>
+<li>Из этих инструментов мы собрали программы: разворот строки, проверка палиндрома и подсчёт слов.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

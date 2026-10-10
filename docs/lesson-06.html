@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Целочисленная арифметика — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 6. Целочисленная арифметика</h1>
+<h2>Цель занятия</h2>
+<p>Изучить работу с целыми числами и преобразование строк в числа, арифметические операции Python, порядок вычислений и роль скобок. Понять, для чего нужны целочисленное деление и остаток от деления, и решить с их помощью практические задачи.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Целые числа и строки</h3>
+<p>До сих пор мы в основном работали со строками: команда <code>input()</code> считывает именно текст. Но для вычислений нужны числа. Чтобы создать в Python переменную целого типа (<code>int</code>), нужно записать значение без кавычек.</p>
+<pre><code class="language-python">num1 = 7            # число
+num2 = 10           # число
+num3 = num1 + num2  # число
+print(num3)         # 17
+s = '7'             # строка, а не число
+</code></pre>
+<p>Слово <code>int</code> происходит от английского <strong>integer</strong> – «целый». Во многих языках программирования целые числа ограничены диапазоном значений (например, в C# это от −2⁶³ до 2⁶³ − 1). В Python реализована <strong>длинная арифметика</strong>, поэтому целое число практически не имеет ограничений: <code>2 ** 100</code> вычисляется без проблем.</p>
+<hr />
+<h3>Арифметические операции</h3>
+<p>Python умеет выполнять все привычные арифметические действия. Для них используются специальные знаки, которые называются <strong>операторами</strong>.</p>
+<ul>
+<li><code>+</code> – сложение: <code>7 + 3</code> даёт <code>10</code>.</li>
+<li><code>-</code> – вычитание: <code>7 - 3</code> даёт <code>4</code>.</li>
+<li><code>*</code> – умножение: <code>7 * 3</code> даёт <code>21</code>.</li>
+<li><code>/</code> – деление: <code>7 / 2</code> даёт <code>3.5</code>. Результат обычного деления всегда дробное число (<code>float</code>), даже если деление выполнилось без остатка: <code>8 / 2</code> даёт <code>4.0</code>.</li>
+<li><code>//</code> – целочисленное деление: <code>7 // 2</code> даёт <code>3</code>. Оно отбрасывает дробную часть и оставляет только целое число.</li>
+<li><code>%</code> – остаток от деления: <code>7 % 2</code> даёт <code>1</code>, потому что <code>7 = 2 * 3 + 1</code>.</li>
+<li><code>**</code> – возведение в степень: <code>2 ** 3</code> даёт <code>8</code>.</li>
+</ul>
+<pre><code class="language-python">print(7 + 3)   # 10
+print(7 / 2)   # 3.5
+print(7 // 2)  # 3
+print(7 % 2)   # 1
+print(2 ** 3)  # 8
+</code></pre>
+<p>Знак <code>-</code> используется в двух разных ролях. <strong>Унарный минус</strong> стоит перед одним числом и делает его отрицательным: <code>num1 = -6</code>. <strong>Бинарный минус</strong> стоит между двумя числами и выполняет вычитание: <code>num2 = 17 - 7</code>. Остальные знаки операций (<code>+</code>, <code>*</code>, <code>/</code>, <code>//</code>, <code>%</code>, <code>**</code>) всегда стоят между двумя значениями.</p>
+<p>Делить на ноль нельзя. Если написать <code>5 / 0</code>, <code>5 // 0</code> или <code>5 % 0</code>, программа остановится с ошибкой <code>ZeroDivisionError</code>.</p>
+<p>Для отрицательных чисел целочисленное деление округляет результат вниз. Например, <code>-7 // 2</code> даёт <code>-4</code>, а не <code>-3</code>. На этом занятии мы работаем с положительными числами.</p>
+<hr />
+<h3>Порядок вычислений и скобки</h3>
+<p>В Python действует тот же порядок действий, что и в математике. Сначала выполняется возведение в степень, затем умножение, деление, целочисленное деление и остаток, и в последнюю очередь сложение и вычитание. Операции с одинаковым приоритетом выполняются слева направо.</p>
+<pre><code class="language-python">print(2 + 3 * 4)       # 14
+print(10 - 4 - 3)      # 3
+print(100 / 10 * 2)    # 20.0
+print(2 + 3 * 4 ** 2)  # 50
+</code></pre>
+<p>Чтобы изменить порядок действий, используют круглые скобки. Выражение в скобках вычисляется первым.</p>
+<pre><code class="language-python">print((2 + 3) * 4)     # 20
+</code></pre>
+<p>Скобки полезны и тогда, когда порядок можно не менять, но хочется сделать выражение понятнее. Частая ошибка новичков – забыть скобки при вычислении среднего: <code>a + b / 2</code> считает не среднее арифметическое, а <code>a</code> плюс половину <code>b</code>. Правильно писать <code>(a + b) / 2</code>.</p>
+<p>Результат вычисления обычно записывают в переменную: <code>&lt;имя переменной&gt; = &lt;математическая формула&gt;</code>. Например, <code>num1 = 2 + 3 * 4</code> сохранит в переменной <code>num1</code> число <code>14</code>, а <code>num2 = (2 + 3) * 4</code> – число <code>20</code>.</p>
+<p>Если нужно изменить значение переменной на основе её текущего значения, используют сокращённую запись. Вместо <code>x = x + 5</code> можно написать <code>x += 5</code>. Так же работают <code>-=</code>, <code>*=</code>, <code>//=</code>, <code>%=</code> и другие.</p>
+<hr />
+<h3>Преобразование типов</h3>
+<p>Команда <code>input()</code> всегда возвращает строку, поэтому перед вычислениями её нужно преобразовать в число. Для этого используется функция <code>int()</code>. Она означает: «возьми то, что указано в скобках, и преврати это в целое число».</p>
+<pre><code class="language-python">s = '1992'
+year = int(s)
+print(year)  # 1992
+</code></pre>
+<p>Здесь переменная <code>s</code> имеет строковый тип, а <code>year</code> – целочисленный. Если преобразование не выполнить, Python будет считать введённые значения текстом и просто склеит их:</p>
+<pre><code class="language-python">num1 = input()
+num2 = input()
+print(num1 + num2)  # для 3 и 4 выведет 34, а не 7
+</code></pre>
+<p>Правильный вариант:</p>
+<pre><code class="language-python">num1 = int(input())
+num2 = int(input())
+print(num1 + num2)  # для 3 и 4 выведет 7
+</code></pre>
+<p>Чтобы считать одно целое число, пишут <code>num = int(input())</code>.</p>
+<p>Обратное преобразование, из целого числа в строку, выполняет функция <code>str()</code>.</p>
+<pre><code class="language-python">num = 17
+s = str(num)  # в переменной s теперь строка '17'
+</code></pre>
+<p>Переменная <code>num</code> по-прежнему имеет целочисленный тип, а <code>s</code> – строковый.</p>
+<hr />
+<h3>Целочисленное деление и остаток: зачем они нужны</h3>
+<p>Операции <code>//</code> и <code>%</code> могут показаться необычными, но на практике они нужны очень часто. При делении <code>a</code> на <code>b</code> результат <code>//</code> показывает, сколько раз <code>b</code> целиком помещается в <code>a</code>, а результат <code>%</code> показывает, что осталось.</p>
+<ul>
+<li><strong>Чётность числа.</strong> Остаток от деления на 2 у чётных чисел равен 0, а у нечётных равен 1. Поэтому <code>n % 2</code> позволяет определить чётность. Остаток от деления на любое число показывает, делится ли <code>n</code> на него нацело: если остаток равен 0, то делится.</li>
+<li><strong>Разряды числа.</strong> Остаток от деления на 10 – это последняя цифра числа, а целочисленное деление на 10 отбрасывает последнюю цифру.</li>
+</ul>
+<pre><code class="language-python">n = 4172
+print(n % 10)         # 2, последняя цифра
+print(n // 10)        # 417, число без последней цифры
+print(n // 10 % 10)   # 7, предпоследняя цифра
+print(n // 100 % 10)  # 1, третья цифра с конца
+print(n // 1000)      # 4, первая цифра
+</code></pre>
+<ul>
+<li><strong>Циклические величины.</strong> Остаток помогает считать величины, которые «ходят по кругу»: часы, дни недели, минуты. Например, если сейчас 20 часов, то через 30 часов на часах будет <code>(20 + 30) % 24</code>, то есть 2 часа ночи.</li>
+<li><strong>Разбиение на части.</strong> Целочисленное деление показывает, сколько полных групп получится, а остаток показывает, что останется. Так решаются задачи про купюры и монеты, про перевод секунд в часы и минуты и другие.</li>
+</ul>
+<hr />
+<h2>Практика: решаем задачи</h2>
+<h3>Задача 1. Разбить сумму на купюры и монеты</h3>
+<p>Пользователь вводит сумму в рублях. Нужно вывести, сколько купюр и монет каждого номинала потребуется, чтобы выдать эту сумму. Используем номиналы 1000, 500, 100, 50, 10 и 1.</p>
+<p><strong>Идея решения:</strong> сначала узнаём, сколько купюр по 1000 помещается в сумму. Это целочисленное деление. Затем оставляем только то, что осталось, то есть остаток от деления, и повторяем те же действия для следующего номинала.</p>
+<pre><code class="language-python">amount = int(input('Введите сумму в рублях: '))
+
+n1000 = amount // 1000
+amount = amount % 1000
+n500 = amount // 500
+amount = amount % 500
+n100 = amount // 100
+amount = amount % 100
+n50 = amount // 50
+amount = amount % 50
+n10 = amount // 10
+n1 = amount % 10
+
+print(f'1000 руб.: {n1000}')
+print(f'500 руб.: {n500}')
+print(f'100 руб.: {n100}')
+print(f'50 руб.: {n50}')
+print(f'10 руб.: {n10}')
+print(f'1 руб.: {n1}')
+</code></pre>
+<p>Для суммы 1787 программа выведет: одна купюра 1000, одна купюра 500, две купюры по 100, одна купюра 50, три монеты по 10 и семь монет по 1.</p>
+<hr />
+<h3>Задача 2. Перевести секунды в формат чч:мм:сс</h3>
+<p>Пользователь вводит количество секунд. Нужно вывести это время в часах, минутах и секундах.</p>
+<p><strong>Идея решения:</strong> в часе 3600 секунд, поэтому часы находим целочисленным делением на 3600. Остаток от этого деления – секунды, которые не вошли в полные часы. Из них таким же образом получаем минуты (делим на 60) и оставшиеся секунды (остаток от деления на 60).</p>
+<pre><code class="language-python">total = int(input('Введите количество секунд: '))
+
+hours = total // 3600
+minutes = total % 3600 // 60
+seconds = total % 60
+
+print(f'{hours:02}:{minutes:02}:{seconds:02}')
+</code></pre>
+<p>Запись <code>:02</code> в f-строке означает, что число выводится минимум двумя цифрами, а недостающие заполняются нулём. Для 4000 секунд программа выведет <code>01:06:40</code>.</p>
+<hr />
+<h3>Задача 3. Определить последнюю цифру числа</h3>
+<p>Пользователь вводит натуральное число. Нужно вывести его последнюю цифру.</p>
+<p><strong>Идея решения:</strong> остаток от деления на 10 и есть последняя цифра числа.</p>
+<pre><code class="language-python">n = int(input('Введите число: '))
+last = n % 10
+print(f'Последняя цифра числа {n}: {last}')
+</code></pre>
+<p><strong>Дополнительное задание:</strong> пользователь вводит трёхзначное число. Нужно вывести его цифры по отдельности и их сумму. Например, для числа 574 это цифры 5, 7, 4 и сумма 16. Сотни можно получить как <code>n // 100</code>, десятки как <code>n // 10 % 10</code>, единицы как <code>n % 10</code>.</p>
+<p>Во время практики часто встречаются одни и те же ошибки:</p>
+<ul>
+<li>Если не преобразовать введённое значение в <code>int</code>, вместо сложения чисел получится склейка строк (<code>'3' + '4'</code> даёт <code>'34'</code>), а остальные операции вызовут ошибку, потому что <code>input()</code> возвращает строку.</li>
+<li>Если перепутать <code>/</code> и <code>//</code>, вместо целого числа получится дробное. Для нашего типа задач нужен именно <code>//</code>.</li>
+<li>Если забыть скобки в выражении, порядок действий окажется другим, чем задумано.</li>
+<li>Если делитель оказался равен нулю, программа остановится с ошибкой <code>ZeroDivisionError</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Целые числа (<code>int</code>) записываются без кавычек, строки – с кавычками; размер целого числа в Python не ограничен.</li>
+<li>В Python есть операции <code>+ - * / // % **</code>, а результат обычного деления <code>/</code> всегда дробное число.</li>
+<li>Порядок вычислений такой же, как в математике, а скобки позволяют его изменить.</li>
+<li>Функция <code>int()</code> преобразует строку в целое число, а <code>str()</code> — целое число в строку; для чтения числа используют <code>int(input())</code>.</li>
+<li>Целочисленное деление <code>//</code> показывает, сколько раз число помещается целиком, а остаток <code>%</code> показывает, что осталось.</li>
+<li>Остаток и целочисленное деление помогают определять чётность, находить цифры числа, разбивать величины на части и считать циклические значения.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

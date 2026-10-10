@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Введение в профессию и инструменты — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 2. Введение в профессию и инструменты</h1>
+<h2>Цель занятия</h2>
+<p>Понять, чем занимается разработчик, какие направления и профессии есть в IT, какими инструментами пользуются в работе и как задача проходит путь от идеи до выпуска продукта.</p>
+<h2>Теория</h2>
+<h3>Кто такой разработчик</h3>
+<p>Разработчик создаёт программы, сайты, приложения и сервисы: превращает требования и идеи в работающий код.</p>
+<p>Разработчик получает задачу, пишет код для её решения, проверяет, что код работает, и исправляет найденные ошибки. После выпуска продукта он поддерживает его и добавляет новые функции. По ходу работы решения обсуждаются с командой.</p>
+<p>Написание кода — только часть работы. Значительное время занимают чтение чужого кода, обсуждение задач и поиск ошибок.</p>
+<h3>Основные направления разработки</h3>
+<table>
+<thead>
+<tr>
+<th>Направление</th>
+<th>За что отвечает</th>
+<th>Основные технологии</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Фронтенд</td>
+<td>Интерфейс: то, что видит и с чем взаимодействует пользователь</td>
+<td>HTML, CSS, JavaScript</td>
+</tr>
+<tr>
+<td>Бэкенд</td>
+<td>Серверная часть: логика работы, обработка данных, базы данных</td>
+<td>Python, Java, Go, SQL</td>
+</tr>
+<tr>
+<td>DevOps</td>
+<td>Запуск и работа продукта: серверы, автоматизация сборки и выпуска, мониторинг</td>
+<td>Linux, Docker, CI/CD</td>
+</tr>
+</tbody>
+</table>
+<p>Другие направления: мобильная разработка, разработка игр, ML и AI.</p>
+<h3>Профессии в IT</h3>
+<table>
+<thead>
+<tr>
+<th>Профессия</th>
+<th>Чем занимается</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Разработчик (фронтенд, бэкенд, DevOps)</td>
+<td>Пишет код продукта: интерфейс, серверную часть, настраивает запуск и работу сервиса</td>
+</tr>
+<tr>
+<td>Аналитик</td>
+<td>Собирает и описывает требования к продукту, анализирует данные</td>
+</tr>
+<tr>
+<td>Тестировщик (QA)</td>
+<td>Проверяет продукт, находит и описывает ошибки</td>
+</tr>
+<tr>
+<td>Дизайнер (UX/UI)</td>
+<td>Проектирует интерфейс и удобство работы с продуктом</td>
+</tr>
+<tr>
+<td>Менеджер проекта/продукта</td>
+<td>Ставит цели, планирует сроки, координирует команду</td>
+</tr>
+<tr>
+<td>ML-инженер, Data Scientist</td>
+<td>Создаёт модели, которые обучаются на данных</td>
+</tr>
+</tbody>
+</table>
+<h3>Чем пользуется разработчик</h3>
+<ul>
+<li>Редактор кода или IDE (VS Code).</li>
+<li>Язык программирования и его окружение (Python).</li>
+<li>Терминал (командная строка).</li>
+<li>Git и GitHub: хранение кода и история изменений.</li>
+<li>Трекер задач (Jira, Trello): список задач команды и их статус.</li>
+<li>Документация и ИИ-ассистенты: поиск ответов и разбор кода.</li>
+</ul>
+<h3>Путь задачи от идеи до выпуска</h3>
+<ol>
+<li>Идея и цель продукта.</li>
+<li>Требования: что именно нужно сделать.</li>
+<li>Дизайн интерфейса.</li>
+<li>Разработка: фронтенд и бэкенд.</li>
+<li>Тестирование.</li>
+<li>Выпуск продукта.</li>
+<li>Поддержка и обновления.</li>
+</ol>
+<h3>Roadmap курса</h3>
+<ul>
+<li>Сначала основы Python (части 1 и 2), затем работа с API.</li>
+<li>Далее языковые модели: промпты, LangChain, память.</li>
+<li>Два проекта: ассистент через API и чат-бот с памятью.</li>
+</ul>
+<h3>Практика: карта IT-команды</h3>
+<p>На практике разбираем сервисы: Яндекс Еда, СберБанк Онлайн, GigaChat. Для каждого определяем, какие роли нужны в IT-команде, что делает каждая роль и какими инструментами пользуется.</p>
+<p><strong>Пример заполнения:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Роль</th>
+<th>Что делает в сервисе</th>
+<th>Инструменты</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Менеджер продукта</td>
+<td>Решает, какие функции добавить, например отслеживание курьера на карте</td>
+<td>Трекер задач, документы</td>
+</tr>
+<tr>
+<td>Аналитик</td>
+<td>Описывает требования к функциям, анализирует данные о заказах</td>
+<td>Документы, таблицы, SQL</td>
+</tr>
+<tr>
+<td>Дизайн</td>
+<td>Проектирует экраны каталога, корзины и оплаты</td>
+<td>Программы для проектирования интерфейсов</td>
+</tr>
+<tr>
+<td>Фронтенд-разработчик</td>
+<td>Делает интерфейс приложения и сайта</td>
+<td>VS Code, JavaScript</td>
+</tr>
+<tr>
+<td>Бэкенд-разработчик</td>
+<td>Обрабатывает заказы, хранит данные о ресторанах и оплате</td>
+<td>Языки программирования, базы данных</td>
+</tr>
+<tr>
+<td>Тестировщик</td>
+<td>Проверяет оформление заказа на разных устройствах</td>
+<td>Тестовые сценарии, трекер багов</td>
+</tr>
+<tr>
+<td>DevOps</td>
+<td>Следит за работой серверов, в том числе при большой нагрузке</td>
+<td>Docker, мониторинг</td>
+</tr>
+<tr>
+<td>ML-инженер</td>
+<td>Создаёт рекомендации блюд, прогнозирует время доставки</td>
+<td>Python, модели машинного обучения</td>
+</tr>
+</tbody>
+</table>
+<h2>Итоги</h2>
+<ul>
+<li>Разработчик решает задачи с помощью кода и работает в команде.</li>
+<li>Основные направления: фронтенд, бэкенд, DevOps.</li>
+<li>В IT есть и другие профессии: аналитик, тестировщик, дизайнер, менеджер, ML-инженер.</li>
+<li>Задача проходит несколько этапов, на каждом участвуют разные роли и инструменты.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

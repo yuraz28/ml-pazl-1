@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Типы данных — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 8. Типы данных</h1>
+<h2>Цель занятия</h2>
+<p>Повторить основные типы данных Python (<code>int</code>, <code>float</code>, <code>str</code>, <code>bool</code>), научиться определять тип значения с помощью <code>type()</code>, понять, чем неявные преобразования отличаются от явных, и научиться находить и исправлять типичные ошибки, связанные с типами.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Основные типы данных</h3>
+<p>Каждое значение в Python имеет <strong>тип</strong>. Тип определяет, что с этим значением можно делать. Пока нам нужны четыре типа.</p>
+<ul>
+<li><code>int</code> – целые числа: <code>17</code>, <code>-5</code>, <code>0</code>. Размер целого числа в Python не ограничен.</li>
+<li><code>float</code> – числа с плавающей точкой (дробные): <code>3.14</code>, <code>-0.5</code>, <code>2.0</code>. Дробная часть отделяется точкой, а не запятой.</li>
+<li><code>str</code> – строки, то есть текст в кавычках: <code>'Python'</code>, <code>"17"</code>, <code>''</code>. Строку можно сцеплять (<code>+</code>), повторять (<code>*</code> на число) и измерять (<code>len()</code>).</li>
+<li><code>bool</code> – логический тип с двумя значениями: <code>True</code> и <code>False</code>. Это результат сравнений, например <code>5 &gt; 3</code>.</li>
+</ul>
+<p>Число <code>17</code> и строка <code>'17'</code> – это разные значения. С числом можно считать, а со строкой – нет. Поэтому <code>17 + 3</code> даёт <code>20</code>, а <code>'17' + '3'</code> даёт <code>'173'</code>.</p>
+<hr />
+<h3>Функция type()</h3>
+<p>Чтобы узнать тип значения, используют встроенную функцию <code>type()</code>. Она особенно полезна, когда программа работает не так, как ожидалось.</p>
+<pre><code class="language-python">print(type(17))       # &lt;class 'int'&gt;
+print(type(3.14))     # &lt;class 'float'&gt;
+print(type('17'))     # &lt;class 'str'&gt;
+print(type(5 &gt; 3))    # &lt;class 'bool'&gt;
+print(type(4 / 2))    # &lt;class 'float'&gt;
+print(type(input()))  # &lt;class 'str'&gt;
+</code></pre>
+<hr />
+<h3>Неявные преобразования</h3>
+<p>Иногда Python сам меняет тип значения, чтобы выполнить операцию. Это называется <strong>неявным преобразованием</strong>. Главное правило: целое число автоматически становится дробным, если оно встречается вместе с <code>float</code>.</p>
+<pre><code class="language-python">print(2 + 1.5)          # 3.5, int стал float
+print(type(2 + 1.5))    # &lt;class 'float'&gt;
+print(10 / 2)           # 5.0, деление даёт float
+</code></pre>
+<p>А вот строку и число Python сам не объединяет: неизвестно, что вы имели в виду, сложить числа или сцепить строки. Дробное число в целое тоже не превращается само. В таких случаях нужно <strong>явное преобразование</strong>.</p>
+<hr />
+<h3>Явные преобразования</h3>
+<p>Явное преобразование мы выполняем сами с помощью функций <code>int()</code>, <code>float()</code> и <code>str()</code>.</p>
+<pre><code class="language-python">print(int('123'))       # 123, строка -&gt; целое
+print(float('1.5'))     # 1.5, строка -&gt; дробное
+print(float(3))         # 3.0, целое -&gt; дробное
+print(str(17))          # '17', число -&gt; строка
+print(int(17.89))       # 17, дробная часть отброшена
+print(int(-1.7))        # -1, в сторону нуля
+</code></pre>
+<p>Функция <code>int()</code> не округляет число, а <strong>отбрасывает дробную часть</strong>. Например, <code>int(3.99)</code> равно <code>3</code>, а не <code>4</code>.</p>
+<p>Если строку нельзя превратить в число, возникает ошибка <code>ValueError</code>. Чтобы получить целое число из строки с дробью, сначала преобразуют её в <code>float</code>:</p>
+<pre><code class="language-python">n = int('2.5')            # ValueError
+n = int(float('2.5'))    # 2, так работает
+</code></pre>
+<hr />
+<h3>Типичные ошибки с типами</h3>
+<p>Ошибки типов встречаются очень часто. Вот самые распространённые, с тем, как их исправить.</p>
+<h4>Сложение строки и числа (TypeError)</h4>
+<pre><code class="language-python">print('Мне ' + 15 + ' лет')       # TypeError
+print('Мне ' + str(15) + ' лет')  # исправлено
+print('Мне', 15, 'лет')           # или через запятую
+</code></pre>
+<h4>Забыли преобразовать ввод</h4>
+<pre><code class="language-python">age = input()          # age - это строка
+print(age + 1)         # TypeError
+age = int(input())     # исправлено
+print(age + 1)
+</code></pre>
+<h4>Неправильная запись числа (ValueError)</h4>
+<pre><code class="language-python">x = float('2,5')       # ValueError, нужна точка
+x = float('2.5')       # исправлено
+n = int('abc')         # ValueError
+</code></pre>
+<h4>Умножение строки на строку</h4>
+<pre><code class="language-python">print('3' * '4')       # TypeError
+print('3' * 4)         # 3333
+print(3 * 4)           # 12
+</code></pre>
+<hr />
+<h2>Практика</h2>
+<h3>Задача 1. Определи тип</h3>
+<p>Не запуская программу, определите тип каждого выражения (<code>int</code>, <code>float</code>, <code>str</code> или <code>bool</code>). Затем проверьте себя с помощью <code>type()</code>.</p>
+<pre><code class="language-python">7 / 2
+7 // 2
+'7' * 2
+2 + 3.0
+len('abc')
+4 &gt; 3
+int('12') + 1
+str(12) + '1'
+</code></pre>
+<p><strong>Ответы:</strong> <code>float</code>, <code>int</code>, <code>str</code> (<code>'77'</code>), <code>float</code> (<code>5.0</code>), <code>int</code> (<code>3</code>), <code>bool</code> (<code>True</code>), <code>int</code> (<code>13</code>), <code>str</code> (<code>'121'</code>).</p>
+<hr />
+<h3>Задача 2. Почини код</h3>
+<p>Каждая из программ ниже работает неправильно или завершается с ошибкой. Найдите проблему и исправьте код.</p>
+<h4>Программа А</h4>
+<pre><code class="language-python">age = input('Сколько вам лет? ')
+print('Через год вам будет', age + 1)
+</code></pre>
+<p><strong>Ошибка:</strong> <code>TypeError</code>, потому что <code>age</code> – строка. <strong>Исправление:</strong> <code>age = int(input('Сколько вам лет? '))</code>.</p>
+<h4>Программа Б</h4>
+<pre><code class="language-python">name = 'Аня'
+score = 95
+print('Результат ' + name + ': ' + score)
+</code></pre>
+<p><strong>Ошибка:</strong> <code>TypeError</code>, нельзя сцепить строку и число. <strong>Исправление:</strong> <code>str(score)</code> вместо <code>score</code> либо вывод через запятую.</p>
+<h4>Программа В</h4>
+<pre><code class="language-python">a = input()
+b = input()
+print('Сумма:', a + b)
+</code></pre>
+<p><strong>Ошибки нет</strong>, но для ввода <code>3</code> и <code>4</code> выводится <code>34</code>. <strong>Исправление:</strong> <code>a = int(input())</code> и <code>b = int(input())</code>.</p>
+<hr />
+<h3>Задача 3. Средний балл</h3>
+<p>Пользователь вводит три оценки. Нужно вывести средний балл (дробное число) и его целую часть.</p>
+<pre><code class="language-python">a = int(input())
+b = int(input())
+c = int(input())
+
+avg = (a + b + c) / 3
+print('Средний балл:', avg)
+print('Целая часть:', int(avg))
+print(type(avg))
+</code></pre>
+<p>Для оценок 5, 4, 4 программа выведет <code>4.333333333333333</code>, затем <code>4</code> и <code>&lt;class 'float'&gt;</code>. Обратите внимание на скобки: без них <code>3</code> применилось бы только к <code>c</code>. Тип <code>avg</code> всегда <code>float</code>, потому что использовано деление <code>/</code>.</p>
+<hr />
+<h3>Задача 4. Почини калькулятор</h3>
+<p>Программа должна посчитать стоимость покупки по цене и количеству товара, но выдаёт ошибку. Исправьте её.</p>
+<pre><code class="language-python">price = input('Цена товара: ')
+count = input('Количество: ')
+print('Итого: ' + price * count)
+</code></pre>
+<p><strong>Подсказка:</strong> цена может быть дробной, а количество – целое. Проверьте себя: для цены <code>12.5</code> и количества <code>3</code> должно получиться <code>37.5</code>.</p>
+<p><strong>Возможное решение:</strong></p>
+<pre><code class="language-python">price = float(input('Цена товара: '))
+count = int(input('Количество: '))
+print('Итого:', price * count)
+</code></pre>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>В Python основные простые типы — <code>int</code>, <code>float</code>, <code>str</code> и <code>bool</code>. Тип любого значения можно узнать с помощью <code>type()</code>.</li>
+<li><code>input()</code> всегда возвращает строку, а результат обычного деления <code>/</code> всегда имеет тип <code>float</code>.</li>
+<li>Неявно Python превращает <code>int</code> в <code>float</code>, но не объединяет строки и числа. В остальных случаях нужно явное преобразование.</li>
+<li>Функции <code>int()</code>, <code>float()</code> и <code>str()</code> преобразуют значение к нужному типу. <code>int()</code> отбрасывает дробную часть, а не округляет.</li>
+<li>Типичные ошибки: <code>TypeError</code> (строка и число вместе) и <code>ValueError</code> (строку нельзя превратить в число). Их исправляют преобразованием типа или правильной записью числа.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

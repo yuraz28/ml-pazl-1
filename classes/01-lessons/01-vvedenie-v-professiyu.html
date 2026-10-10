@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 2. Введение в профессию и инструменты — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+</style>
+<style id="kp-extra">
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- текст слева + рисунок справа ---------- */
+.left{display:flex; flex-direction:column; gap:26px; min-width:0}
+.logorow{display:flex; align-items:center; gap:22px; margin-top:18px}
+.logorow img{height:54px; width:auto; display:block}
+.logorow.sm{gap:16px; margin-top:16px}
+.logorow.sm img{height:34px}
+.roles{display:grid; gap:22px}
+.role{border:1px solid var(--line); border-radius:24px; padding:26px 28px; background:#fff}
+.role h3{margin-bottom:10px; font-size:29px}
+.role p{font-size:22px; line-height:1.4; color:var(--muted)}
+.role .tools{margin-top:14px; font-size:20px; line-height:1.36; font-weight:700; color:var(--blue-700)}
+.tiles{display:grid; gap:20px}
+.tile{border:1px solid var(--line); border-radius:24px; padding:26px 28px; background:#fff}
+.tile .lg{height:82px; display:flex; align-items:center; gap:20px; margin-bottom:16px}
+.tile .lg img{max-height:64px; max-width:110px; display:block}
+.tile h3{margin-bottom:10px; font-size:28px}
+.tile p{font-size:21px; line-height:1.4; color:var(--muted)}
+.map{border:1px solid var(--line); border-radius:24px; overflow:hidden}
+.map .row{display:grid; grid-template-columns:330px 600px minmax(0,1fr); gap:26px; padding:13px 28px; border-top:1px solid var(--line); align-items:center}
+.map .row:first-child{border-top:none; background:var(--tint)}
+.map .h{font-size:18px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.map .rl{font-size:23px; font-weight:700; color:var(--blue-900); line-height:1.2}
+.map .ds{font-size:20px; line-height:1.32; color:var(--muted)}
+.map .tl{font-size:20px; line-height:1.32; color:var(--blue-700); font-weight:600}
+.cue{display:flex; flex-direction:column; gap:14px}
+.cue .q{border:1px solid var(--line); border-radius:20px; padding:16px 26px}
+.cue .q .k{font-size:19px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--blue); margin-bottom:8px}
+.cue .q p{font-size:22px; line-height:1.36; color:var(--ink2)}
+.attend{border:1px solid var(--line); border-radius:24px; overflow:hidden}
+.attend .r{display:grid; grid-template-columns:250px repeat(6,minmax(0,1fr)); align-items:center; border-top:1px solid var(--line)}
+.attend .r:first-child{border-top:none; background:var(--tint)}
+.attend .r>div{padding:14px 8px; font-size:22px; line-height:1.2; color:var(--ink2)}
+.attend .r>.step{font-size:22px; font-weight:700; color:var(--blue-900); padding-left:28px}
+.attend .r.hd>div{padding:13px 8px; font-size:18px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--blue)}
+.attend .r.hd>.step{padding-left:28px}
+.attend .mark{font-size:24px; font-weight:800; color:var(--blue); text-align:center}
+.attend .dash{color:#CDE5FF; text-align:center}
+.map.two .row{grid-template-columns:460px minmax(0,1fr)}
+.body>.note{margin-top:34px}
+.notes .note{margin-top:0}
+.ill{margin:0}
+.notes .note.n1::before,.notes .note.n2::before,.notes .note.n3::before,.notes .note.n4::before{content:''; display:inline-block; width:26px; height:26px; border-radius:9px; margin-right:14px; vertical-align:-4px; text-align:center; font-size:17px; font-weight:800; color:#fff; line-height:26px}
+.notes .note.n1::before{content:'1'; background:#1168CC}
+.notes .note.n2::before{content:'2'; background:#1E7EE8}
+.notes .note.n3::before{content:'3'; background:#A8D3FF; color:#0B3E7A}
+.notes .note.n4::before{content:'4'; background:#CDE5FF; color:#0B3E7A}
+
+/* ---------- практика: таблица ролей, «что делает» открывается по нажатию ---------- */
+.ill.mid{width:1500px; max-width:100%; margin:0 auto}
+.map.roles .row{padding:8px 28px}
+.map.roles .rl{font-size:22px}
+.map.roles .ds{font-size:19px}
+.map.roles .row.quiz{cursor:pointer; transition:background .16s ease}
+.map.roles .row.quiz .ans{display:none}
+.map.roles .row.quiz .hide{color:var(--blue); font-weight:600}
+.map.roles .row.quiz:hover{background:#F1F8FF}
+.map.roles .row.quiz.shown{background:#E9F4FF}
+.map.roles .row.quiz.shown .ans{display:block; animation:qpop .24s ease both}
+.map.roles .row.quiz.shown .hide{display:none}
+@keyframes qpop{from{opacity:0; transform:translateY(-5px)} to{opacity:1; transform:none}}
+
+.map.roles{display:block}
+.dia .map.two .row{grid-template-columns:340px minmax(0,1fr)}
+
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 1</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Введение в профессию и&nbsp;инструменты</h1>
+  </div>
+</section>
+<!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Кто такой разработчик</h3><p>Что он создаёт и из каких дел состоит его работа.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Направления разработки</h3><p>Фронтенд, бэкенд и DevOps: за что отвечает каждое.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Профессии в IT</h3><p>Разработчик, аналитик, тестировщик, дизайнер, менеджер, ML-инженер.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Чем пользуется разработчик</h3><p>Редактор кода, язык, терминал, Git, трекер задач, документация и ИИ.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Путь задачи</h3><p>Семь этапов: от идеи и требований до выпуска и поддержки.</p></div>
+      <div class="blk r" style="--d:370"><div class="num">Блок 6</div><h3>План курса</h3><p>Основы Python, работа с API, языковые модели и два проекта.</p></div>
+    </div>
+  </div>
+</section>
+<!-- 4 -->
+<section class="slide" data-title="Кто такой разработчик">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Разработчик</p>
+    <h2>Кто такой разработчик</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="left">
+        <div class="acc r" style="--d:70">Разработчик превращает требования и идеи в работающий код</div>
+      <div class="cue">
+        <div class="q r" style="--d:70"><div class="k">Что создаёт</div><p>Программы, сайты, приложения и сервисы.</p></div>
+        <div class="q r" style="--d:130"><div class="k">Как решает задачу</div><p>Получает задачу, пишет код, проверяет его работу и исправляет ошибки.</p></div>
+        <div class="q r" style="--d:190"><div class="k">Что после выпуска</div><p>Поддерживает продукт, добавляет новые функции и обсуждает решения с командой.</p></div>
+      </div>
+      </div>
+      <div><svg class="r" style="--d:70" viewBox="0 0 700 620" aria-hidden="true"><rect x="90" y="30" width="520" height="100" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(114 58) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 42V7M13 9h22l-4 7 4 7H13"/></g><text x="182" y="74" font-size="27" fill="#0B3E7A" text-anchor="start" font-weight="700">Задача</text><text x="182" y="106" font-size="20" fill="#6E7E92" text-anchor="start">что нужно сделать и зачем</text><rect x="90" y="170" width="520" height="100" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(114 198) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="38" height="30" rx="6"/><path d="M5 18h38"/><path d="M14 27h9M14 33h14"/></g><text x="182" y="214" font-size="27" fill="#0B3E7A" text-anchor="start" font-weight="700">Код</text><text x="182" y="246" font-size="20" fill="#6E7E92" text-anchor="start">решение задачи на языке программирования</text><rect x="90" y="310" width="520" height="100" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(114 338) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="21" cy="21" r="12"/><path d="M30 30l9 9"/></g><text x="182" y="354" font-size="27" fill="#0B3E7A" text-anchor="start" font-weight="700">Проверка</text><text x="182" y="386" font-size="20" fill="#6E7E92" text-anchor="start">убедиться, что работает, найти ошибки</text><rect x="90" y="450" width="520" height="100" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(114 478) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5c7 5 10 13 10 21l-6 6H20l-6-6c0-8 3-16 10-21z"/><circle cx="24" cy="19" r="3.4"/><path d="M14 32l-4 10 8-3M34 32l4 10-8-3"/></g><text x="182" y="494" font-size="27" fill="#0B3E7A" text-anchor="start" font-weight="700">Продукт</text><text x="182" y="526" font-size="20" fill="#6E7E92" text-anchor="start">поддержка и новые функции</text><path d="M350 130L350 154" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M350 168L341.32 154L358.68 154Z" fill="#A8D3FF"/><path d="M350 270L350 294" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M350 308L341.32 294L358.68 294Z" fill="#A8D3FF"/><path d="M350 410L350 434" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M350 448L341.32 434L358.68 434Z" fill="#A8D3FF"/><path d="M610 500h40a10 10 0 0010-10V70a10 10 0 00-10-10h-40" fill="none" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M610 78l14-18-14-18z" fill="#A8D3FF"/></svg></div>
+    </div>
+  </div>
+</section>
+<!-- 5 -->
+<section class="slide" data-title="Код — только часть работы">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Работа</p>
+    <h2>Код — только часть работы</h2>
+  </header>
+  <div class="body">
+    <div class="dia">
+      <div><svg class="r" style="--d:70" viewBox="0 0 700 620" aria-hidden="true"><rect x="24" y="30" width="652" height="560" rx="28" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><text x="60" y="106" font-size="27" fill="#0B3E7A" font-weight="700">Написание кода</text><rect x="60" y="124" width="460" height="46" rx="23" fill="#1E7EE8"/><text x="548" y="156" font-size="27" fill="#0B3E7A" font-weight="700">35%</text><text x="60" y="232" font-size="27" fill="#0B3E7A" font-weight="700">Чтение кода: своего и чужого</text><rect x="60" y="250" width="394" height="46" rx="23" fill="#A8D3FF"/><text x="548" y="282" font-size="27" fill="#0B3E7A" font-weight="700">30%</text><text x="60" y="358" font-size="27" fill="#0B3E7A" font-weight="700">Обсуждение задачи с командой</text><rect x="60" y="376" width="263" height="46" rx="23" fill="#CDE5FF"/><text x="548" y="408" font-size="27" fill="#0B3E7A" font-weight="700">20%</text><text x="60" y="484" font-size="27" fill="#0B3E7A" font-weight="700">Поиск и исправление ошибок</text><rect x="60" y="502" width="197" height="46" rx="23" fill="#CDE5FF"/><text x="548" y="534" font-size="27" fill="#0B3E7A" font-weight="700">15%</text><text x="350" y="578" font-size="20" fill="#6E7E92" text-anchor="middle">примерно так распределяется рабочее время</text></svg></div>
+      <div class="notes">
+        <div class="note n1 r" style="--d:70">Написание кода — только часть работы. Много времени уходит на то, чтобы <b>разобраться в уже написанном</b> коде — своём и чужом.</div>
+        <div class="note n2 r" style="--d:120">Решения <b>обсуждаются с командой</b>: как решать задачу, что уже пробовали, что подойдёт продукту.</div>
+        <div class="note n3 r" style="--d:170"><b>Ошибки</b> ищут и исправляют все: и свои, и найденные тестировщиком.</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 6 -->
+<section class="slide" data-title="Основные направления разработки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Направления</p>
+    <h2>Основные направления разработки</h2>
+  </header>
+  <div class="body">
+    <div><svg class="ill r" style="--d:70" viewBox="0 0 1520 380" aria-hidden="true"><rect x="30" y="10" width="640" height="260" rx="22" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><text x="350" y="54" font-size="32" fill="#0B3E7A" text-anchor="middle" font-weight="700">Фронтенд</text><text x="350" y="82" font-size="21" fill="#6E7E92" text-anchor="middle">то, что видит и с чем работает пользователь</text><rect x="70" y="100" width="560" height="152" rx="22" fill="#FFFFFF" stroke="#CDE5FF" stroke-width="2"/><path d="M70 128H630" stroke="#CDE5FF" stroke-width="2"/><circle cx="92" cy="114" r="5" fill="#CDE5FF"/><circle cx="112" cy="114" r="5" fill="#CDE5FF"/><circle cx="132" cy="114" r="5" fill="#CDE5FF"/><rect x="100" y="146" width="250" height="14" rx="7" fill="#E9F4FF"/><rect x="100" y="170" width="170" height="14" rx="7" fill="#E9F4FF"/><rect x="100" y="196" width="150" height="30" rx="15" fill="#1E7EE8"/><image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KCTx0aXRsZT5IVE1MNSBMb2dvPC90aXRsZT4KCTxwYXRoIGQ9Ik0xMDguNCAwaDIzdjIyLjhoMjEuMlYwaDIzdjY5aC0yM1Y0NmgtMjF2MjNoLTIzLjJNMjA2IDIzaC0yMC4zVjBoNjMuN3YyM0gyMjl2NDZoLTIzTTI1OS41IDBoMjQuMWwxNC44IDI0LjNMMzEzLjIgMGgyNC4xdjY5aC0yM1YzNC44bC0xNi4xIDI0LjhsLTE2LjEtMjQuOHYzNC4yaC0yMi42TTM0OC43IDBoMjN2NDYuMmgzMi42VjY5aC01NS42Ii8+Cgk8cGF0aCBmaWxsPSIjZTQ0ZDI2IiBkPSJNMTA3LjYgNDcxbC0zMy0zNzAuNGgzNjIuOGwtMzMgMzcwLjJMMjU1LjcgNTEyIi8+Cgk8cGF0aCBmaWxsPSIjZjE2NTI5IiBkPSJNMjU2IDQ4MC41VjEzMUg0MDQuM0wzNzYgNDQ3Ii8+Cgk8cGF0aCBmaWxsPSIjZWJlYmViIiBkPSJNMTQyIDE3Ni4zaDExNHY0NS40aC02NC4ybDQuMiA0Ni41aDYwdjQ1LjNIMTU0LjRNMTU2LjQgMzM2LjNIMjAybDMuMiAzNi4zIDUwLjggMTMuNnY0Ny40bC05My4yLTI2Ii8+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMzY5LjYgMTc2LjNIMjU1Ljh2NDUuNGgxMDkuNk0zNjEuMyAyNjguMkgyNTUuOHY0NS40aDU2bC01LjMgNTktNTAuNyAxMy42djQ3LjJsOTMtMjUuOCIvPgo8L3N2Zz4=" x="388" y="148" width="58" height="58" preserveAspectRatio="xMidYMid meet"/><image href="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiCiAgIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB3aWR0aD0iMTAyLjM3MTZtbSIKICAgaGVpZ2h0PSIxNDQuNDk3NzdtbSIKICAgdmlld0JveD0iMCAwIDM2Mi43MzQwMSA1MTEuOTk5OTgiCiAgIGlkPSJzdmczNDc2IgogICB2ZXJzaW9uPSIxLjEiCiAgIGlua3NjYXBlOnZlcnNpb249IjAuOTEgcjEzNzI1IgogICBzb2RpcG9kaTpkb2NuYW1lPSJDU1MzLnN2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczM0NzgiIC8+CiAgPHNvZGlwb2RpOm5hbWVkdmlldwogICAgIGlkPSJiYXNlIgogICAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgICBib3JkZXJjb2xvcj0iIzY2NjY2NiIKICAgICBib3JkZXJvcGFjaXR5PSIxLjAiCiAgICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnpvb209IjAuMzUiCiAgICAgaW5rc2NhcGU6Y3g9IjE4MS4zNjciCiAgICAgaW5rc2NhcGU6Y3k9IjI1NiIKICAgICBpbmtzY2FwZTpkb2N1bWVudC11bml0cz0icHgiCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0ibGF5ZXIxIgogICAgIHNob3dncmlkPSJmYWxzZSIKICAgICBmaXQtbWFyZ2luLXRvcD0iMCIKICAgICBmaXQtbWFyZ2luLWxlZnQ9IjAiCiAgICAgZml0LW1hcmdpbi1yaWdodD0iMCIKICAgICBmaXQtbWFyZ2luLWJvdHRvbT0iMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctd2lkdGg9IjEzNjYiCiAgICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iNzA0IgogICAgIGlua3NjYXBlOndpbmRvdy14PSIwIgogICAgIGlua3NjYXBlOndpbmRvdy15PSIyNyIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIiAvPgogIDxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTM0ODEiPgogICAgPHJkZjpSREY+CiAgICAgIDxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj4KICAgICAgICA8ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD4KICAgICAgICA8ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+CiAgICAgICAgPGRjOnRpdGxlPjwvZGM6dGl0bGU+CiAgICAgIDwvY2M6V29yaz4KICAgIDwvcmRmOlJERj4KICA8L21ldGFkYXRhPgogIDxnCiAgICAgaW5rc2NhcGU6bGFiZWw9IkNhbHF1ZSAxIgogICAgIGlua3NjYXBlOmdyb3VwbW9kZT0ibGF5ZXIiCiAgICAgaWQ9ImxheWVyMSIKICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTkzLjYzMywtMjc2LjM2MjIpIj4KICAgIDxnCiAgICAgICBpZD0iZzMwMTMiCiAgICAgICB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTksMjc2LjM2MjIpIj4KICAgICAgPHBvbHlnb24KICAgICAgICAgaWQ9InBvbHlnb24yOTg5IgogICAgICAgICBwb2ludHM9IjQzNy4zNjcsMTAwLjYyIDQwNC4zMjEsNDcwLjgxOSAyNTUuNzc4LDUxMiAxMDcuNjQ0LDQ3MC44NzcgNzQuNjMzLDEwMC42MiAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMyNjRkZTQiIC8+CiAgICAgIDxwb2x5Z29uCiAgICAgICAgIGlkPSJwb2x5Z29uMjk5MSIKICAgICAgICAgcG9pbnRzPSIzNzYuMDMsNDQ3LjI0NiA0MDQuMjcsMTMwLjg5NCAyNTYsMTMwLjg5NCAyNTYsNDgwLjUyMyAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiMyOTY1ZjEiIC8+CiAgICAgIDxwb2x5Z29uCiAgICAgICAgIGlkPSJwb2x5Z29uMjk5MyIKICAgICAgICAgcG9pbnRzPSIxNTAuMzEsMjY4LjIxNyAxNTQuMzgsMzEzLjYyNyAyNTYsMzEzLjYyNyAyNTYsMjY4LjIxNyAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiNlYmViZWIiIC8+CiAgICAgIDxwb2x5Z29uCiAgICAgICAgIGlkPSJwb2x5Z29uMjk5NSIKICAgICAgICAgcG9pbnRzPSIyNTYsMTc2LjMwNSAyNTUuODQzLDE3Ni4zMDUgMTQyLjEzMiwxNzYuMzA1IDE0Ni4yNiwyMjEuNzE2IDI1NiwyMjEuNzE2ICIKICAgICAgICAgc3R5bGU9ImZpbGw6I2ViZWJlYiIgLz4KICAgICAgPHBvbHlnb24KICAgICAgICAgaWQ9InBvbHlnb24yOTk3IgogICAgICAgICBwb2ludHM9IjI1Niw0MzMuMzk5IDI1NiwzODYuMTUzIDI1NS44MDEsMzg2LjIwNiAyMDUuMjI3LDM3Mi41NSAyMDEuOTk0LDMzNi4zMzMgMTc3LjQxOSwzMzYuMzMzIDE1Ni40MDksMzM2LjMzMyAxNjIuNzcxLDQwNy42MzQgMjU1Ljc5MSw0MzMuNDU3ICIKICAgICAgICAgc3R5bGU9ImZpbGw6I2ViZWJlYiIgLz4KICAgICAgPHBhdGgKICAgICAgICAgaWQ9InBhdGgyOTk5IgogICAgICAgICBkPSJtIDE2MCwwIDU1LDAgMCwyMyAtMzIsMCAwLDIzIDMyLDAgMCwyMyAtNTUsMCB6IgogICAgICAgICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIiAvPgogICAgICA8cGF0aAogICAgICAgICBpZD0icGF0aDMwMDEiCiAgICAgICAgIGQ9Im0gMjI2LDAgNTUsMCAwLDIwIC0zMiwwIDAsNCAzMiwwIDAsNDYgLTU1LDAgMCwtMjEgMzIsMCAwLC00IC0zMiwwIHoiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiIC8+CiAgICAgIDxwYXRoCiAgICAgICAgIGlkPSJwYXRoMzAwMyIKICAgICAgICAgZD0ibSAyOTIsMCA1NSwwIDAsMjAgLTMyLDAgMCw0IDMyLDAgMCw0NiAtNTUsMCAwLC0yMSAzMiwwIDAsLTQgLTMyLDAgeiIKICAgICAgICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIgLz4KICAgICAgPHBvbHlnb24KICAgICAgICAgaWQ9InBvbHlnb24zMDA1IgogICAgICAgICBwb2ludHM9IjMxMS43NjEsMzEzLjYyNyAzMDYuNDksMzcyLjUyMSAyNTUuODQzLDM4Ni4xOTEgMjU1Ljg0Myw0MzMuNDM1IDM0OC45MzcsNDA3LjYzNCAzNDkuNjIsMzk5Ljk2MiAzNjAuMjkxLDI4MC40MTEgMzYxLjM5OSwyNjguMjE3IDM2OS41OTcsMTc2LjMwNSAyNTUuODQzLDE3Ni4zMDUgMjU1Ljg0MywyMjEuNzE2IDMxOS44MzEsMjIxLjcxNiAzMTUuNjk5LDI2OC4yMTcgMjU1Ljg0MywyNjguMjE3IDI1NS44NDMsMzEzLjYyNyAiCiAgICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmYiIC8+CiAgICA8L2c+CiAgPC9nPgo8L3N2Zz4K" x="456" y="148" width="58" height="58" preserveAspectRatio="xMidYMid meet"/><image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MzAgNjMwIj4KPHJlY3Qgd2lkdGg9IjYzMCIgaGVpZ2h0PSI2MzAiIGZpbGw9IiNmN2RmMWUiLz4KPHBhdGggZD0ibTQyMy4yIDQ5Mi4xOWMxMi42OSAyMC43MiAyOS4yIDM1Ljk1IDU4LjQgMzUuOTUgMjQuNTMgMCA0MC4yLTEyLjI2IDQwLjItMjkuMiAwLTIwLjMtMTYuMS0yNy40OS00My4xLTM5LjNsLTE0LjgtNi4zNWMtNDIuNzItMTguMi03MS4xLTQxLTcxLjEtODkuMiAwLTQ0LjQgMzMuODMtNzguMiA4Ni43LTc4LjIgMzcuNjQgMCA2NC43IDEzLjEgODQuMiA0Ny40bC00Ni4xIDI5LjZjLTEwLjE1LTE4LjItMjEuMS0yNS4zNy0zOC4xLTI1LjM3LTE3LjM0IDAtMjguMzMgMTEtMjguMzMgMjUuMzcgMCAxNy43NiAxMSAyNC45NSAzNi40IDM1Ljk1bDE0LjggNi4zNGM1MC4zIDIxLjU3IDc4LjcgNDMuNTYgNzguNyA5MyAwIDUzLjMtNDEuODcgODIuNS05OC4xIDgyLjUtNTQuOTggMC05MC41LTI2LjItMTA3Ljg4LTYwLjU0em0tMjA5LjEzIDUuMTNjOS4zIDE2LjUgMTcuNzYgMzAuNDUgMzguMSAzMC40NSAxOS40NSAwIDMxLjcyLTcuNjEgMzEuNzItMzcuMnYtMjAxLjNoNTkuMnYyMDIuMWMwIDYxLjMtMzUuOTQgODkuMi04OC40IDg5LjItNDcuNCAwLTc0Ljg1LTI0LjUzLTg4LjgxLTU0LjA3NXoiLz4KPC9zdmc+" x="524" y="148" width="58" height="58" preserveAspectRatio="xMidYMid meet"/><rect x="850" y="10" width="640" height="260" rx="22" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><text x="1170" y="54" font-size="32" fill="#0B3E7A" text-anchor="middle" font-weight="700">Бэкенд</text><text x="1170" y="82" font-size="21" fill="#6E7E92" text-anchor="middle">серверная логика и данные</text><rect x="890" y="100" width="560" height="62" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="1170" y="127" font-size="25" fill="#0B3E7A" text-anchor="middle" font-weight="700">сервер и API</text><text x="1170" y="156" font-size="19" fill="#6E7E92" text-anchor="middle">принимает запросы и выполняет логику</text><rect x="890" y="176" width="560" height="62" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><text x="1170" y="203" font-size="25" fill="#0B3E7A" text-anchor="middle" font-weight="700">база данных</text><text x="1170" y="232" font-size="19" fill="#6E7E92" text-anchor="middle">хранит данные сервиса</text><text x="1170" y="264" font-size="22" fill="#1168CC" text-anchor="middle" font-weight="700">Python · Java · Go · SQL</text><path d="M690 110L816 110" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M830 110L816 118.68L816 101.32Z" fill="#A8D3FF"/><text x="760" y="96" font-size="21" fill="#6E7E92" text-anchor="middle">запрос</text><path d="M830 180L704 180" stroke="#A8D3FF" stroke-width="5" stroke-linecap="round"/><path d="M690 180L704 171.32L704 188.68Z" fill="#A8D3FF"/><text x="760" y="206" font-size="21" fill="#6E7E92" text-anchor="middle">ответ</text><rect x="30" y="296" width="1460" height="80" rx="24" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="70" y="346" font-size="32" fill="#FFFFFF" text-anchor="start" font-weight="700">DevOps</text><text x="330" y="346" font-size="25" fill="#CDE5FF" text-anchor="start">Linux · Docker · CI/CD · мониторинг</text><text x="1470" y="346" font-size="22" fill="#E9F4FF" text-anchor="end">сборка, запуск и слежение за сервисом</text></svg></div>
+  </div>
+</section>
+<!-- 7 -->
+<section class="slide" data-title="Профессии в IT: код и данные">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Профессии</p>
+    <h2>Профессии в IT: код и данные</h2>
+  </header>
+  <div class="body">
+    <div class="roles c3">
+      <div class="role r" style="--d:70">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="15" r="8"/><path d="M9 41c0-8.3 6.7-15 15-15s15 6.7 15 15"/></g></svg></div>
+        <h3>Разработчик</h3>
+        <p>Пишет код продукта: интерфейс, серверную часть, запуск и работу сервиса.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPG1hc2sgaWQ9Im1hc2swIiBtYXNrLXR5cGU9ImFscGhhIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNzAuOTExOSA5OS4zMTcxQzcyLjQ4NjkgOTkuOTMwNyA3NC4yODI4IDk5Ljg5MTQgNzUuODcyNSA5OS4xMjY0TDk2LjQ2MDggODkuMjE5N0M5OC42MjQyIDg4LjE3ODcgMTAwIDg1Ljk4OTIgMTAwIDgzLjU4NzJWMTYuNDEzM0MxMDAgMTQuMDExMyA5OC42MjQzIDExLjgyMTggOTYuNDYwOSAxMC43ODA4TDc1Ljg3MjUgMC44NzM3NTZDNzMuNzg2MiAtMC4xMzAxMjkgNzEuMzQ0NiAwLjExNTc2IDY5LjUxMzUgMS40NDY5NUM2OS4yNTIgMS42MzcxMSA2OS4wMDI4IDEuODQ5NDMgNjguNzY5IDIuMDgzNDFMMjkuMzU1MSAzOC4wNDE1TDEyLjE4NzIgMjUuMDA5NkMxMC41ODkgMjMuNzk2NSA4LjM1MzYzIDIzLjg5NTkgNi44NjkzMyAyNS4yNDYxTDEuMzYzMDMgMzAuMjU0OUMtMC40NTI1NTIgMzEuOTA2NCAtMC40NTQ2MzMgMzQuNzYyNyAxLjM1ODUzIDM2LjQxN0wxNi4yNDcxIDUwLjAwMDFMMS4zNTg1MyA2My41ODMyQy0wLjQ1NDYzMyA2NS4yMzc0IC0wLjQ1MjU1MiA2OC4wOTM4IDEuMzYzMDMgNjkuNzQ1M0w2Ljg2OTMzIDc0Ljc1NDFDOC4zNTM2MyA3Ni4xMDQzIDEwLjU4OSA3Ni4yMDM3IDEyLjE4NzIgNzQuOTkwNUwyOS4zNTUxIDYxLjk1ODdMNjguNzY5IDk3LjkxNjdDNjkuMzkyNSA5OC41NDA2IDcwLjEyNDYgOTkuMDEwNCA3MC45MTE5IDk5LjMxNzFaTTc1LjAxNTIgMjcuMjk4OUw0NS4xMDkxIDUwLjAwMDFMNzUuMDE1MiA3Mi43MDEyVjI3LjI5ODlaIiBmaWxsPSJ3aGl0ZSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjbWFzazApIj4KPHBhdGggZD0iTTk2LjQ2MTQgMTAuNzk2Mkw3NS44NTY5IDAuODc1NTQyQzczLjQ3MTkgLTAuMjcyNzczIDcwLjYyMTcgMC4yMTE2MTEgNjguNzUgMi4wODMzM0wxLjI5ODU4IDYzLjU4MzJDLTAuNTE1NjkzIDY1LjIzNzMgLTAuNTEzNjA3IDY4LjA5MzcgMS4zMDMwOCA2OS43NDUyTDYuODEyNzIgNzQuNzU0QzguMjk3OTMgNzYuMTA0MiAxMC41MzQ3IDc2LjIwMzYgMTIuMTMzOCA3NC45OTA1TDkzLjM2MDkgMTMuMzY5OUM5Ni4wODYgMTEuMzAyNiAxMDAgMTMuMjQ2MiAxMDAgMTYuNjY2N1YxNi40Mjc1QzEwMCAxNC4wMjY1IDk4LjYyNDYgMTEuODM3OCA5Ni40NjE0IDEwLjc5NjJaIiBmaWxsPSIjMDA2NUE5Ii8+CjxnIGZpbHRlcj0idXJsKCNmaWx0ZXIwX2QpIj4KPHBhdGggZD0iTTk2LjQ2MTQgODkuMjAzOEw3NS44NTY5IDk5LjEyNDVDNzMuNDcxOSAxMDAuMjczIDcwLjYyMTcgOTkuNzg4NCA2OC43NSA5Ny45MTY3TDEuMjk4NTggMzYuNDE2OUMtMC41MTU2OTMgMzQuNzYyNyAtMC41MTM2MDcgMzEuOTA2MyAxLjMwMzA4IDMwLjI1NDhMNi44MTI3MiAyNS4yNDZDOC4yOTc5MyAyMy44OTU4IDEwLjUzNDcgMjMuNzk2NCAxMi4xMzM4IDI1LjAwOTVMOTMuMzYwOSA4Ni42MzAxQzk2LjA4NiA4OC42OTc0IDEwMCA4Ni43NTM4IDEwMCA4My4zMzM0VjgzLjU3MjZDMTAwIDg1Ljk3MzUgOTguNjI0NiA4OC4xNjIyIDk2LjQ2MTQgODkuMjAzOFoiIGZpbGw9IiMwMDdBQ0MiLz4KPC9nPgo8ZyBmaWx0ZXI9InVybCgjZmlsdGVyMV9kKSI+CjxwYXRoIGQ9Ik03NS44NTc4IDk5LjEyNjNDNzMuNDcyMSAxMDAuMjc0IDcwLjYyMTkgOTkuNzg4NSA2OC43NSA5Ny45MTY2QzcxLjA1NjQgMTAwLjIyMyA3NSA5OC41ODk1IDc1IDk1LjMyNzhWNC42NzIxM0M3NSAxLjQxMDM5IDcxLjA1NjQgLTAuMjIzMTA2IDY4Ljc1IDIuMDgzMjlDNzAuNjIxOSAwLjIxMTQwMiA3My40NzIxIC0wLjI3MzY2NiA3NS44NTc4IDAuODczNjMzTDk2LjQ1ODcgMTAuNzgwN0M5OC42MjM0IDExLjgyMTcgMTAwIDE0LjAxMTIgMTAwIDE2LjQxMzJWODMuNTg3MUMxMDAgODUuOTg5MSA5OC42MjM0IDg4LjE3ODYgOTYuNDU4NiA4OS4yMTk2TDc1Ljg1NzggOTkuMTI2M1oiIGZpbGw9IiMxRjlDRjAiLz4KPC9nPgo8ZyBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6b3ZlcmxheSIgb3BhY2l0eT0iMC4yNSI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNzAuODUxMSA5OS4zMTcxQzcyLjQyNjEgOTkuOTMwNiA3NC4yMjIxIDk5Ljg5MTMgNzUuODExNyA5OS4xMjY0TDk2LjQgODkuMjE5N0M5OC41NjM0IDg4LjE3ODcgOTkuOTM5MiA4NS45ODkyIDk5LjkzOTIgODMuNTg3MVYxNi40MTMzQzk5LjkzOTIgMTQuMDExMiA5OC41NjM1IDExLjgyMTcgOTYuNDAwMSAxMC43ODA3TDc1LjgxMTcgMC44NzM2OTVDNzMuNzI1NSAtMC4xMzAxOSA3MS4yODM4IDAuMTE1Njk5IDY5LjQ1MjcgMS40NDY4OEM2OS4xOTEyIDEuNjM3MDUgNjguOTQyIDEuODQ5MzcgNjguNzA4MiAyLjA4MzM1TDI5LjI5NDMgMzguMDQxNEwxMi4xMjY0IDI1LjAwOTZDMTAuNTI4MyAyMy43OTY0IDguMjkyODUgMjMuODk1OSA2LjgwODU1IDI1LjI0NkwxLjMwMjI1IDMwLjI1NDhDLTAuNTEzMzM0IDMxLjkwNjQgLTAuNTE1NDE1IDM0Ljc2MjcgMS4yOTc3NSAzNi40MTY5TDE2LjE4NjMgNTBMMS4yOTc3NSA2My41ODMyQy0wLjUxNTQxNSA2NS4yMzc0IC0wLjUxMzMzNCA2OC4wOTM3IDEuMzAyMjUgNjkuNzQ1Mkw2LjgwODU1IDc0Ljc1NEM4LjI5Mjg1IDc2LjEwNDIgMTAuNTI4MyA3Ni4yMDM2IDEyLjEyNjQgNzQuOTkwNUwyOS4yOTQzIDYxLjk1ODZMNjguNzA4MiA5Ny45MTY3QzY5LjMzMTcgOTguNTQwNSA3MC4wNjM4IDk5LjAxMDQgNzAuODUxMSA5OS4zMTcxWk03NC45NTQ0IDI3LjI5ODlMNDUuMDQ4MyA1MEw3NC45NTQ0IDcyLjcwMTJWMjcuMjk4OVoiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcikiLz4KPC9nPgo8L2c+CjxkZWZzPgo8ZmlsdGVyIGlkPSJmaWx0ZXIwX2QiIHg9Ii04LjM5NDExIiB5PSIxNS44MjkxIiB3aWR0aD0iMTE2LjcyNyIgaGVpZ2h0PSI5Mi4yNDU2IiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+CjxmZUZsb29kIGZsb29kLW9wYWNpdHk9IjAiIHJlc3VsdD0iQmFja2dyb3VuZEltYWdlRml4Ii8+CjxmZUNvbG9yTWF0cml4IGluPSJTb3VyY2VBbHBoYSIgdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDEyNyAwIi8+CjxmZU9mZnNldC8+CjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQuMTY2NjciLz4KPGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAuMjUgMCIvPgo8ZmVCbGVuZCBtb2RlPSJvdmVybGF5IiBpbjI9IkJhY2tncm91bmRJbWFnZUZpeCIgcmVzdWx0PSJlZmZlY3QxX2Ryb3BTaGFkb3ciLz4KPGZlQmxlbmQgbW9kZT0ibm9ybWFsIiBpbj0iU291cmNlR3JhcGhpYyIgaW4yPSJlZmZlY3QxX2Ryb3BTaGFkb3ciIHJlc3VsdD0ic2hhcGUiLz4KPC9maWx0ZXI+CjxmaWx0ZXIgaWQ9ImZpbHRlcjFfZCIgeD0iNjAuNDE2NyIgeT0iLTguMDc1NTgiIHdpZHRoPSI0Ny45MTY3IiBoZWlnaHQ9IjExNi4xNTEiIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KPGZlRmxvb2QgZmxvb2Qtb3BhY2l0eT0iMCIgcmVzdWx0PSJCYWNrZ3JvdW5kSW1hZ2VGaXgiLz4KPGZlQ29sb3JNYXRyaXggaW49IlNvdXJjZUFscGhhIiB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMTI3IDAiLz4KPGZlT2Zmc2V0Lz4KPGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iNC4xNjY2NyIvPgo8ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMC4yNSAwIi8+CjxmZUJsZW5kIG1vZGU9Im92ZXJsYXkiIGluMj0iQmFja2dyb3VuZEltYWdlRml4IiByZXN1bHQ9ImVmZmVjdDFfZHJvcFNoYWRvdyIvPgo8ZmVCbGVuZCBtb2RlPSJub3JtYWwiIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9ImVmZmVjdDFfZHJvcFNoYWRvdyIgcmVzdWx0PSJzaGFwZSIvPgo8L2ZpbHRlcj4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyIiB4MT0iNDkuOTM5MiIgeTE9IjAuMjU3ODEyIiB4Mj0iNDkuOTM5MiIgeTI9Ijk5Ljc0MjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0id2hpdGUiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg==" alt=""><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOmNjPSJodHRwOi8vd2ViLnJlc291cmNlLm9yZy9jYy8iIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIxMTBweCIgaGVpZ2h0PSIxMTBweCIgdmlld0JveD0iMC4yMSAtMC4wNzcgMTEwIDExMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwLjIxIC0wLjA3NyAxMTAgMTEwIiB4bWw6c3BhY2U9InByZXNlcnZlIj48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzFfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjYzLjgxNTkiIHkxPSI1Ni42ODI5IiB4Mj0iMTE4LjQ5MzQiIHkyPSIxLjgyMjUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgLTEgLTUzLjI5NzQgNjYuNDMyMSkiPiA8c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiMzODdFQjgiLz4gPHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMzY2OTk0Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBmaWxsPSJ1cmwoI1NWR0lEXzFfKSIgZD0iTTU1LjAyMy0wLjA3N2MtMjUuOTcxLDAtMjYuMjUsMTAuMDgxLTI2LjI1LDEyLjE1NmMwLDMuMTQ4LDAsMTIuNTk0LDAsMTIuNTk0aDI2Ljc1djMuNzgxIGMwLDAtMjcuODUyLDAtMzcuMzc1LDBjLTcuOTQ5LDAtMTcuOTM4LDQuODMzLTE3LjkzOCwyNi4yNWMwLDE5LjY3Myw3Ljc5MiwyNy4yODEsMTUuNjU2LDI3LjI4MWMyLjMzNSwwLDkuMzQ0LDAsOS4zNDQsMCBzMC05Ljc2NSwwLTEzLjEyNWMwLTUuNDkxLDIuNzIxLTE1LjY1NiwxNS40MDYtMTUuNjU2YzE1LjkxLDAsMTkuOTcxLDAsMjYuNTMxLDBjMy45MDIsMCwxNC45MDYtMS42OTYsMTQuOTA2LTE0LjQwNiBjMC0xMy40NTIsMC0xNy44OSwwLTI0LjIxOUM4Mi4wNTQsMTEuNDI2LDgxLjUxNS0wLjA3Nyw1NS4wMjMtMC4wNzd6IE00MC4yNzMsOC4zOTJjMi42NjIsMCw0LjgxMywyLjE1LDQuODEzLDQuODEzIGMwLDIuNjYxLTIuMTUxLDQuODEzLTQuODEzLDQuODEzcy00LjgxMy0yLjE1MS00LjgxMy00LjgxM0MzNS40NiwxMC41NDIsMzcuNjExLDguMzkyLDQwLjI3Myw4LjM5MnoiLz48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzJfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9Ijk3LjA0NDQiIHkxPSIyMS42MzIxIiB4Mj0iMTU1LjY2NjUiIHkyPSItMzQuNTMwOCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAtNTMuMjk3NCA2Ni40MzIxKSI+IDxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRTA1MiIvPiA8c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNGRkMzMzEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjU1ZHSURfMl8pIiBkPSJNNTUuMzk3LDEwOS45MjNjMjUuOTU5LDAsMjYuMjgyLTEwLjI3MSwyNi4yODItMTIuMTU2YzAtMy4xNDgsMC0xMi41OTQsMC0xMi41OTRINTQuODk3di0zLjc4MSBjMCwwLDI4LjAzMiwwLDM3LjM3NSwwYzguMDA5LDAsMTcuOTM4LTQuOTU0LDE3LjkzOC0yNi4yNWMwLTIzLjMyMi0xMC41MzgtMjcuMjgxLTE1LjY1Ni0yNy4yODFjLTIuMzM2LDAtOS4zNDQsMC05LjM0NCwwIHMwLDEwLjIxNiwwLDEzLjEyNWMwLDUuNDkxLTIuNjMxLDE1LjY1Ni0xNS40MDYsMTUuNjU2Yy0xNS45MSwwLTE5LjQ3NiwwLTI2LjUzMiwwYy0zLjg5MiwwLTE0LjkwNiwxLjg5Ni0xNC45MDYsMTQuNDA2IGMwLDE0LjQ3NSwwLDE4LjI2NSwwLDI0LjIxOUMyOC4zNjYsMTAwLjQ5NywzMS41NjIsMTA5LjkyMyw1NS4zOTcsMTA5LjkyM3ogTTcwLjE0OCwxMDEuNDU0Yy0yLjY2MiwwLTQuODEzLTIuMTUxLTQuODEzLTQuODEzIHMyLjE1LTQuODEzLDQuODEzLTQuODEzYzIuNjYxLDAsNC44MTMsMi4xNTEsNC44MTMsNC44MTNTNzIuODA5LDEwMS40NTQsNzAuMTQ4LDEwMS40NTR6Ii8+PC9zdmc+" alt=""><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTggMEMzLjU4IDAgMCAzLjU4IDAgOEMwIDExLjU0IDIuMjkgMTQuNTMgNS40NyAxNS41OUM1Ljg3IDE1LjY2IDYuMDIgMTUuNDIgNi4wMiAxNS4yMUM2LjAyIDE1LjAyIDYuMDEgMTQuMzkgNi4wMSAxMy43MkM0IDE0LjA5IDMuNDggMTMuMjMgMy4zMiAxMi43OEMzLjIzIDEyLjU1IDIuODQgMTEuODQgMi41IDExLjY1QzIuMjIgMTEuNSAxLjgyIDExLjEzIDIuNDkgMTEuMTJDMy4xMiAxMS4xMSAzLjU3IDExLjcgMy43MiAxMS45NEM0LjQ0IDEzLjE1IDUuNTkgMTIuODEgNi4wNSAxMi42QzYuMTIgMTIuMDggNi4zMyAxMS43MyA2LjU2IDExLjUzQzQuNzggMTEuMzMgMi45MiAxMC42NCAyLjkyIDcuNThDMi45MiA2LjcxIDMuMjMgNS45OSAzLjc0IDUuNDNDMy42NiA1LjIzIDMuMzggNC40MSAzLjgyIDMuMzFDMy44MiAzLjMxIDQuNDkgMy4xIDYuMDIgNC4xM0M2LjY2IDMuOTUgNy4zNCAzLjg2IDguMDIgMy44NkM4LjcgMy44NiA5LjM4IDMuOTUgMTAuMDIgNC4xM0MxMS41NSAzLjA5IDEyLjIyIDMuMzEgMTIuMjIgMy4zMUMxMi42NiA0LjQxIDEyLjM4IDUuMjMgMTIuMyA1LjQzQzEyLjgxIDUuOTkgMTMuMTIgNi43IDEzLjEyIDcuNThDMTMuMTIgMTAuNjUgMTEuMjUgMTEuMzMgOS40NyAxMS41M0M5Ljc2IDExLjc4IDEwLjAxIDEyLjI2IDEwLjAxIDEzLjAxQzEwLjAxIDE0LjA4IDEwIDE0Ljk0IDEwIDE1LjIxQzEwIDE1LjQyIDEwLjE1IDE1LjY3IDEwLjU1IDE1LjU5QzEzLjcxIDE0LjUzIDE2IDExLjUzIDE2IDhDMTYgMy41OCAxMi40MiAwIDggMFoiIHRyYW5zZm9ybT0ic2NhbGUoNjQpIiBmaWxsPSIjMUIxRjIzIi8+Cjwvc3ZnPgo=" alt=""></div>        <div class="tools">VS Code · Python · Git</div>
+      </div>
+      <div class="role r" style="--d:130">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 41h34"/><rect x="11" y="26" width="7" height="15" rx="2"/><rect x="21" y="18" width="7" height="23" rx="2"/><rect x="31" y="10" width="7" height="31" rx="2"/></g></svg></div>
+        <h3>Аналитик</h3>
+        <p>Собирает требования к продукту и анализирует данные о том, как он работает.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIj8+DQo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iDQogICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPg0KDQo8c3ZnIHdpZHRoPSI0MzIuMDcxcHQiIGhlaWdodD0iNDQ1LjM4M3B0IiB2aWV3Qm94PSIwIDAgNDMyLjA3MSA0NDUuMzgzIiB4bWw6c3BhY2U9InByZXNlcnZlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KPGcgaWQ9Im9yZ2luYWwiIHN0eWxlPSJmaWxsLXJ1bGU6bm9uemVybztjbGlwLXJ1bGU6bm9uemVybztzdHJva2U6IzAwMDAwMDtzdHJva2UtbWl0ZXJsaW1pdDo0OyI+DQoJPC9nPg0KPGcgaWQ9IkxheWVyX3gwMDIwXzMiIHN0eWxlPSJmaWxsLXJ1bGU6bm9uemVybztjbGlwLXJ1bGU6bm9uemVybztmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjEyLjQ2NTE7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjQ7Ij4NCjxwYXRoIHN0eWxlPSJmaWxsOiMwMDAwMDA7c3Ryb2tlOiMwMDAwMDA7c3Ryb2tlLXdpZHRoOjM3LjM5NTM7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7IiBkPSJNMzIzLjIwNSwzMjQuMjI3YzIuODMzLTIzLjYwMSwxLjk4NC0yNy4wNjIsMTkuNTYzLTIzLjIzOWw0LjQ2MywwLjM5MmMxMy41MTcsMC42MTUsMzEuMTk5LTIuMTc0LDQxLjU4Ny03YzIyLjM2Mi0xMC4zNzYsMzUuNjIyLTI3LjcsMTMuNTcyLTIzLjE0OGMtNTAuMjk3LDEwLjM3Ni01My43NTUtNi42NTUtNTMuNzU1LTYuNjU1YzUzLjExMS03OC44MDMsNzUuMzEzLTE3OC44MzYsNTYuMTQ5LTIwMy4zMjIgICAgQzM1Mi41MTQtNS41MzQsMjYyLjAzNiwyNi4wNDksMjYwLjUyMiwyNi44NjlsLTAuNDgyLDAuMDg5Yy05LjkzOC0yLjA2Mi0yMS4wNi0zLjI5NC0zMy41NTQtMy40OTZjLTIyLjc2MS0wLjM3NC00MC4wMzIsNS45NjctNTMuMTMzLDE1LjkwNGMwLDAtMTYxLjQwOC02Ni40OTgtMTUzLjg5OSw4My42MjhjMS41OTcsMzEuOTM2LDQ1Ljc3NywyNDEuNjU1LDk4LjQ3LDE3OC4zMSAgICBjMTkuMjU5LTIzLjE2MywzNy44NzEtNDIuNzQ4LDM3Ljg3MS00Mi43NDhjOS4yNDIsNi4xNCwyMC4zMDcsOS4yNzIsMzEuOTEyLDguMTQ3bDAuODk3LTAuNzY1Yy0wLjI4MSwyLjg3Ni0wLjE1Nyw1LjY4OSwwLjM1OSw5LjAxOWMtMTMuNTcyLDE1LjE2Ny05LjU4NCwxNy44My0zNi43MjMsMjMuNDE2Yy0yNy40NTcsNS42NTktMTEuMzI2LDE1LjczNC0wLjc5NywxOC4zNjdjMTIuNzY4LDMuMTkzLDQyLjMwNSw3LjcxNiw2Mi4yNjgtMjAuMjI0ICAgIGwtMC43OTUsMy4xODhjNS4zMjUsNC4yNiw0Ljk2NSwzMC42MTksNS43Miw0OS40NTJjMC43NTYsMTguODM0LDIuMDE3LDM2LjQwOSw1Ljg1Niw0Ni43NzFjMy44MzksMTAuMzYsOC4zNjksMzcuMDUsNDQuMDM2LDI5LjQwNmMyOS44MDktNi4zODgsNTIuNi0xNS41ODIsNTQuNjc3LTEwMS4xMDciLz4NCjxwYXRoIHN0eWxlPSJmaWxsOiMzMzY3OTE7c3Ryb2tlOm5vbmU7IiBkPSJNNDAyLjM5NSwyNzEuMjNjLTUwLjMwMiwxMC4zNzYtNTMuNzYtNi42NTUtNTMuNzYtNi42NTVjNTMuMTExLTc4LjgwOCw3NS4zMTMtMTc4Ljg0Myw1Ni4xNTMtMjAzLjMyNmMtNTIuMjctNjYuNzg1LTE0Mi43NTItMzUuMi0xNDQuMjYyLTM0LjM4bC0wLjQ4NiwwLjA4N2MtOS45MzgtMi4wNjMtMjEuMDYtMy4yOTItMzMuNTYtMy40OTZjLTIyLjc2MS0wLjM3My00MC4wMjYsNS45NjctNTMuMTI3LDE1LjkwMiAgICBjMCwwLTE2MS40MTEtNjYuNDk1LTE1My45MDQsODMuNjNjMS41OTcsMzEuOTM4LDQ1Ljc3NiwyNDEuNjU3LDk4LjQ3MSwxNzguMzEyYzE5LjI2LTIzLjE2MywzNy44NjktNDIuNzQ4LDM3Ljg2OS00Mi43NDhjOS4yNDMsNi4xNCwyMC4zMDgsOS4yNzIsMzEuOTA4LDguMTQ3bDAuOTAxLTAuNzY1Yy0wLjI4LDIuODc2LTAuMTUyLDUuNjg5LDAuMzYxLDkuMDE5Yy0xMy41NzUsMTUuMTY3LTkuNTg2LDE3LjgzLTM2LjcyMywyMy40MTYgICAgYy0yNy40NTksNS42NTktMTEuMzI4LDE1LjczNC0wLjc5NiwxOC4zNjdjMTIuNzY4LDMuMTkzLDQyLjMwNyw3LjcxNiw2Mi4yNjYtMjAuMjI0bC0wLjc5NiwzLjE4OGM1LjMxOSw0LjI2LDkuMDU0LDI3LjcxMSw4LjQyOCw0OC45NjljLTAuNjI2LDIxLjI1OS0xLjA0NCwzNS44NTQsMy4xNDcsNDcuMjU0YzQuMTkxLDExLjQsOC4zNjgsMzcuMDUsNDQuMDQyLDI5LjQwNmMyOS44MDktNi4zODgsNDUuMjU2LTIyLjk0Miw0Ny40MDUtNTAuNTU1ICAgIGMxLjUyNS0xOS42MzEsNC45NzYtMTYuNzI5LDUuMTk0LTM0LjI4bDIuNzY4LTguMzA5YzMuMTkyLTI2LjYxMSwwLjUwNy0zNS4xOTYsMTguODcyLTMxLjIwM2w0LjQ2MywwLjM5MmMxMy41MTcsMC42MTUsMzEuMjA4LTIuMTc0LDQxLjU5MS03YzIyLjM1OC0xMC4zNzYsMzUuNjE4LTI3LjcsMTMuNTczLTIzLjE0OHoiLz4NCjxwYXRoIGQ9Ik0yMTUuODY2LDI4Ni40ODRjLTEuMzg1LDQ5LjUxNiwwLjM0OCw5OS4zNzcsNS4xOTMsMTExLjQ5NWM0Ljg0OCwxMi4xMTgsMTUuMjIzLDM1LjY4OCw1MC45LDI4LjA0NWMyOS44MDYtNi4zOSw0MC42NTEtMTguNzU2LDQ1LjM1Ny00Ni4wNTFjMy40NjYtMjAuMDgyLDEwLjE0OC03NS44NTQsMTEuMDA1LTg3LjI4MSIvPg0KPHBhdGggZD0iTTE3My4xMDQsMzguMjU2YzAsMC0xNjEuNTIxLTY2LjAxNi0xNTQuMDEyLDg0LjEwOWMxLjU5NywzMS45MzgsNDUuNzc5LDI0MS42NjQsOTguNDczLDE3OC4zMTZjMTkuMjU2LTIzLjE2NiwzNi42NzEtNDEuMzM1LDM2LjY3MS00MS4zMzUiLz4NCjxwYXRoIGQ9Ik0yNjAuMzQ5LDI2LjIwN2MtNS41OTEsMS43NTMsODkuODQ4LTM0Ljg4OSwxNDQuMDg3LDM0LjQxN2MxOS4xNTksMjQuNDg0LTMuMDQzLDEyNC41MTktNTYuMTUzLDIwMy4zMjkiLz4NCjxwYXRoIHN0eWxlPSJzdHJva2UtbGluZWpvaW46YmV2ZWw7IiBkPSJNMzQ4LjI4MiwyNjMuOTUzYzAsMCwzLjQ2MSwxNy4wMzYsNTMuNzY0LDYuNjUzYzIyLjA0LTQuNTUyLDguNzc2LDEyLjc3NC0xMy41NzcsMjMuMTU1Yy0xOC4zNDUsOC41MTQtNTkuNDc0LDEwLjY5Ni02MC4xNDYtMS4wNjljLTEuNzI5LTMwLjM1NSwyMS42NDctMjEuMTMzLDE5Ljk2LTI4LjczOWMtMS41MjUtNi44NS0xMS45NzktMTMuNTczLTE4Ljg5NC0zMC4zMzggICAgYy02LjAzNy0xNC42MzMtODIuNzk2LTEyNi44NDksMjEuMjg3LTExMC4xODNjMy44MTMtMC43ODktMjcuMTQ2LTk5LjAwMi0xMjQuNTUzLTEwMC41OTljLTk3LjM4NS0xLjU5Ny05NC4xOSwxMTkuNzYyLTk0LjE5LDExOS43NjIiLz4NCjxwYXRoIGQ9Ik0xODguNjA0LDI3NC4zMzRjLTEzLjU3NywxNS4xNjYtOS41ODQsMTcuODI5LTM2LjcyMywyMy40MTdjLTI3LjQ1OSw1LjY2LTExLjMyNiwxNS43MzMtMC43OTcsMTguMzY1YzEyLjc2OCwzLjE5NSw0Mi4zMDcsNy43MTgsNjIuMjY2LTIwLjIyOWM2LjA3OC04LjUwOS0wLjAzNi0yMi4wODYtOC4zODUtMjUuNTQ3Yy00LjAzNC0xLjY3MS05LjQyOC0zLjc2NS0xNi4zNjEsMy45OTR6Ii8+DQo8cGF0aCBkPSJNMTg3LjcxNSwyNzQuMDY5Yy0xLjM2OC04LjkxNywyLjkzLTE5LjUyOCw3LjUzNi0zMS45NDJjNi45MjItMTguNjI2LDIyLjg5My0zNy4yNTUsMTAuMTE3LTk2LjMzOWMtOS41MjMtNDQuMDI5LTczLjM5Ni05LjE2My03My40MzYtMy4xOTNjLTAuMDM5LDUuOTY4LDIuODg5LDMwLjI2LTEuMDY3LDU4LjU0OGMtNS4xNjIsMzYuOTEzLDIzLjQ4OCw2OC4xMzIsNTYuNDc5LDY0LjkzOCIvPg0KPHBhdGggc3R5bGU9ImZpbGw6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4xNTU7c3Ryb2tlLWxpbmVjYXA6YnV0dDtzdHJva2UtbGluZWpvaW46bWl0ZXI7IiBkPSJNMTcyLjUxNywxNDEuN2MtMC4yODgsMi4wMzksMy43MzMsNy40OCw4Ljk3Niw4LjIwN2M1LjIzNCwwLjczLDkuNzE0LTMuNTIyLDkuOTk4LTUuNTU5YzAuMjg0LTIuMDM5LTMuNzMyLTQuMjg1LTguOTc3LTUuMDE1Yy01LjIzNy0wLjczMS05LjcxOSwwLjMzMy05Ljk5NiwyLjM2N3oiLz4NCjxwYXRoIHN0eWxlPSJmaWxsOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjIuMDc3NTtzdHJva2UtbGluZWNhcDpidXR0O3N0cm9rZS1saW5lam9pbjptaXRlcjsiIGQ9Ik0zMzEuOTQxLDEzNy41NDNjMC4yODQsMi4wMzktMy43MzIsNy40OC04Ljk3Niw4LjIwN2MtNS4yMzgsMC43My05LjcxOC0zLjUyMi0xMC4wMDUtNS41NTljLTAuMjc3LTIuMDM5LDMuNzQtNC4yODUsOC45NzktNS4wMTVjNS4yMzktMC43Myw5LjcxOCwwLjMzMywxMC4wMDIsMi4zNjh6Ii8+DQo8cGF0aCBkPSJNMzUwLjY3NiwxMjMuNDMyYzAuODYzLDE1Ljk5NC0zLjQ0NSwyNi44ODgtMy45ODgsNDMuOTE0Yy0wLjgwNCwyNC43NDgsMTEuNzk5LDUzLjA3NC03LjE5MSw4MS40MzUiLz4NCjxwYXRoIHN0eWxlPSJzdHJva2Utd2lkdGg6MzsiIGQ9Ik0wLDYwLjIzMiIvPg0KPC9nPg0KPC9zdmc+" alt=""></div>        <div class="tools">SQL · таблицы · дашборды</div>
+      </div>
+      <div class="role r" style="--d:190">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="24" rx="7"/><path d="M18 13V8M30 13V8M13 22H6M42 22h-7M13 30H6M42 30h-7"/></g></svg></div>
+        <h3>Тестировщик</h3>
+        <p>Проверяет продукт и описывает ошибки — чтобы они не дошли до пользователей.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzYiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA3NiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9ImxvZ28tZ3JhZGllbnQtYmx1ZS1qaXJhIj4KPGcgaWQ9IkppcmEiPgo8cGF0aCBkPSJNMzguODk2MyA2LjEzMzcxSDQxLjcyODNWMjAuMTMwOUM0MS43MjgzIDIzLjgyMTcgNDAuMDQzNCAyNi4zOTgzIDM2LjEzNTkgMjYuMzk4M0MzNC42NjYxIDI2LjM5ODMgMzMuNTE4OSAyNi4xNTQ2IDMyLjczMDIgMjUuODc2VjIzLjE5NUMzMy41OTA2IDIzLjU0MzIgMzQuNjMwMiAyMy43MTczIDM1LjY2OTggMjMuNzE3M0MzOC4wNzE3IDIzLjcxNzMgMzguODk2MyAyMi4zMjQ1IDM4Ljg5NjMgMjAuMzA1VjYuMTMzNzFaIiBmaWxsPSIjMjUzODU4Ii8+CjxwYXRoIGQ9Ik00Ni45MjY2IDUuMDU0MzJDNDguMDM3OSA1LjA1NDMyIDQ4LjgyNjYgNS43MTU4OCA0OC44MjY2IDYuODk5NzJDNDguODI2NiA4LjA0ODc1IDQ4LjAzNzkgOC43NDUxMyA0Ni45MjY2IDguNzQ1MTNDNDUuODE1MiA4Ljc0NTEzIDQ1LjAyNjYgOC4wODM1NyA0NS4wMjY2IDYuODk5NzJDNDUuMDI2NiA1Ljc1MDcgNDUuODE1MiA1LjA1NDMyIDQ2LjkyNjYgNS4wNTQzMlpNNDUuNTI4NSAxMC45Mzg3SDQ4LjI1M1YyNi4yNTkxSDQ1LjUyODVWMTAuOTM4N1oiIGZpbGw9IiMyNTM4NTgiLz4KPHBhdGggZD0iTTU0Ljk5MjQgMjYuMjU5MUg1Mi4zMzk1VjEwLjkzODdINTQuOTkyNFYxMy42MTk4QzU1LjkyNDQgMTEuODA5MiA1Ny41MDE4IDEwLjUyMDkgNjAuNTg0OCAxMC42OTVWMTMuMjcxNkM1Ny4xMDc1IDEyLjkyMzQgNTQuOTkyNCAxMy45MzMxIDU0Ljk5MjQgMTcuMjA2MVYyNi4yNTkxWiIgZmlsbD0iIzI1Mzg1OCIvPgo8cGF0aCBkPSJNNzMuMzExMiAyMy41MDg0QzcyLjMwNzUgMjUuNTI3OSA3MC40MDc1IDI2LjU3MjQgNjcuOTY5NyAyNi41NzI0QzYzLjc3NTQgMjYuNTcyNCA2MS42NjAzIDIzLjEyNTQgNjEuNjYwMyAxOC41OTg5QzYxLjY2MDMgMTQuMjgxMyA2My44ODI5IDEwLjYyNTQgNjguMjkyNCAxMC42MjU0QzcwLjU4NjcgMTAuNjI1NCA3Mi4zNzkyIDExLjYzNTEgNzMuMzExMiAxMy42MTk4VjEwLjkzODdINzYuMDM1OFYyNi4yNTkxSDczLjMxMTJWMjMuNTA4NFpNNjguNjg2NyAyNC4xMzUxQzcxLjEyNDUgMjQuMTM1MSA3My4yNzU0IDIyLjYzNzkgNzMuMjc1NCAxOS4yMjU2VjE4LjAwN0M3My4yNzU0IDE0LjU5NDcgNzEuMzAzNyAxMy4wOTc1IDY4Ljk3MzUgMTMuMDk3NUM2NS45MjYzIDEzLjA5NzUgNjQuMzQ5IDE1LjA0NzQgNjQuMzQ5IDE4LjU5ODlDNjQuMzg0OCAyMi4yODk3IDY1Ljg5MDUgMjQuMTM1MSA2OC42ODY3IDI0LjEzNTFaIiBmaWxsPSIjMjUzODU4Ii8+CjwvZz4KPGcgaWQ9Ikljb24iPgo8cGF0aCBpZD0iVmVjdG9yIiBkPSJNMjQuNjY0IDNIMTIuMjYwM0MxMi4yNjAzIDUuOTk0NDMgMTQuNzY5NyA4LjQzMTc2IDE3Ljg1MjcgOC40MzE3NkgyMC4xNDdWMTAuNTU1N0MyMC4xNDcgMTMuNTUwMSAyMi42NTY1IDE1Ljk4NzUgMjUuNzM5NSAxNS45ODc1VjQuMDQ0NTdDMjUuNzM5NSAzLjQ1MjY1IDI1LjI3MzUgMyAyNC42NjQgM1oiIGZpbGw9IiMyNjg0RkYiLz4KPHBhdGggaWQ9IlZlY3Rvcl8yIiBkPSJNMTguNTMzOSA4Ljk4ODc3SDYuMTMwMTNDNi4xMzAxMyAxMS45ODMyIDguNjM5NTYgMTQuNDIwNSAxMS43MjI2IDE0LjQyMDVIMTQuMDE2OVYxNi41NzkzQzE0LjAxNjkgMTkuNTczNyAxNi41MjY0IDIyLjAxMTEgMTkuNjA5NCAyMi4wMTExVjEwLjAzMzNDMTkuNjA5NCA5LjQ3NjIzIDE5LjE0MzMgOC45ODg3NyAxOC41MzM5IDguOTg4NzdaIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CjxwYXRoIGlkPSJWZWN0b3JfMyIgZD0iTTEyLjQwMzggMTUuMDEyNUgwQzAgMTguMDA2OSAyLjUwOTQzIDIwLjQ0NDIgNS41OTI0NSAyMC40NDQySDcuODg2NzlWMjIuNTY4MkM3Ljg4Njc5IDI1LjU2MjYgMTAuMzk2MiAyNy45OTk5IDEzLjQ3OTIgMjcuOTk5OVYxNi4wNTdDMTMuNDc5MiAxNS40NjUxIDEyLjk3NzQgMTUuMDEyNSAxMi40MDM4IDE1LjAxMjVaIiBmaWxsPSJ1cmwoI3BhaW50MV9saW5lYXIpIi8+CjwvZz4KPC9nPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyIiB4MT0iMTkuMzQ1NSIgeTE9IjkuMDE4ODIiIHgyPSIxNC4yMzAyIiB5Mj0iMTQuNDUiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agb2Zmc2V0PSIwLjE3NiIgc3RvcC1jb2xvcj0iIzAwNTJDQyIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMyNjg0RkYiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDFfbGluZWFyIiB4MT0iMTMuNTYwMSIgeTE9IjE1LjA1MjUiIHgyPSI3LjYzNTYyIiB5Mj0iMjAuOTg3NCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBvZmZzZXQ9IjAuMTc2IiBzdG9wLWNvbG9yPSIjMDA1MkNDIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI2ODRGRiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=" alt=""></div>        <div class="tools">тест-кейсы · трекер багов</div>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Эти роли работают вместе: разработчик пишет код, аналитик объясняет, что нужно сделать, тестировщик проверяет результат.</div>
+  </div>
+</section>
+<!-- 8 -->
+<section class="slide" data-title="Профессии в IT: продукт и модель">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Профессии</p>
+    <h2>Профессии в IT: продукт и модель</h2>
+  </header>
+  <div class="body">
+    <div class="roles c3">
+      <div class="role r" style="--d:70">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6c10 0 18 7.6 18 17 0 6-5 9-9 9h-4c-2.5 0-4 2-4 4 0 3-2.4 6-6 6-8 0-13-7.6-13-18C6 14 14 6 24 6z"/><circle cx="18" cy="17" r="2.4"/><circle cx="28" cy="15" r="2.4"/><circle cx="33" cy="23" r="2.4"/></g></svg></div>
+        <h3>Дизайнер</h3>
+        <p>Проектирует интерфейс и удобство работы: как выглядят экраны и как по ним идёт пользователь.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjAwIDMwMCIgd2lkdGg9IjE2NjciIGhlaWdodD0iMjUwMCI+PHN0eWxlPi5zdDB7ZmlsbDojMGFjZjgzfS5zdDF7ZmlsbDojYTI1OWZmfS5zdDJ7ZmlsbDojZjI0ZTFlfS5zdDN7ZmlsbDojZmY3MjYyfS5zdDR7ZmlsbDojMWFiY2ZlfTwvc3R5bGU+PHRpdGxlPkZpZ21hLmxvZ288L3RpdGxlPjxkZXNjPkNyZWF0ZWQgdXNpbmcgRmlnbWE8L2Rlc2M+PHBhdGggaWQ9InBhdGgwX2ZpbGwiIGNsYXNzPSJzdDAiIGQ9Ik01MCAzMDBjMjcuNiAwIDUwLTIyLjQgNTAtNTB2LTUwSDUwYy0yNy42IDAtNTAgMjIuNC01MCA1MHMyMi40IDUwIDUwIDUweiIvPjxwYXRoIGlkPSJwYXRoMV9maWxsIiBjbGFzcz0ic3QxIiBkPSJNMCAxNTBjMC0yNy42IDIyLjQtNTAgNTAtNTBoNTB2MTAwSDUwYy0yNy42IDAtNTAtMjIuNC01MC01MHoiLz48cGF0aCBpZD0icGF0aDFfZmlsbF8xXyIgY2xhc3M9InN0MiIgZD0iTTAgNTBDMCAyMi40IDIyLjQgMCA1MCAwaDUwdjEwMEg1MEMyMi40IDEwMCAwIDc3LjYgMCA1MHoiLz48cGF0aCBpZD0icGF0aDJfZmlsbCIgY2xhc3M9InN0MyIgZD0iTTEwMCAwaDUwYzI3LjYgMCA1MCAyMi40IDUwIDUwcy0yMi40IDUwLTUwIDUwaC01MFYweiIvPjxwYXRoIGlkPSJwYXRoM19maWxsIiBjbGFzcz0ic3Q0IiBkPSJNMjAwIDE1MGMwIDI3LjYtMjIuNCA1MC01MCA1MHMtNTAtMjIuNC01MC01MCAyMi40LTUwIDUwLTUwIDUwIDIyLjQgNTAgNTB6Ii8+PC9zdmc+" alt=""></div>        <div class="tools">Figma · макеты экранов</div>
+      </div>
+      <div class="role r" style="--d:130">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 42V7M13 9h22l-4 7 4 7H13"/></g></svg></div>
+        <h3>Менеджер продукта</h3>
+        <p>Ставит цели, планирует сроки и координирует команду, чтобы продукт вышел вовремя.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzYiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCA3NiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9ImxvZ28tZ3JhZGllbnQtYmx1ZS1qaXJhIj4KPGcgaWQ9IkppcmEiPgo8cGF0aCBkPSJNMzguODk2MyA2LjEzMzcxSDQxLjcyODNWMjAuMTMwOUM0MS43MjgzIDIzLjgyMTcgNDAuMDQzNCAyNi4zOTgzIDM2LjEzNTkgMjYuMzk4M0MzNC42NjYxIDI2LjM5ODMgMzMuNTE4OSAyNi4xNTQ2IDMyLjczMDIgMjUuODc2VjIzLjE5NUMzMy41OTA2IDIzLjU0MzIgMzQuNjMwMiAyMy43MTczIDM1LjY2OTggMjMuNzE3M0MzOC4wNzE3IDIzLjcxNzMgMzguODk2MyAyMi4zMjQ1IDM4Ljg5NjMgMjAuMzA1VjYuMTMzNzFaIiBmaWxsPSIjMjUzODU4Ii8+CjxwYXRoIGQ9Ik00Ni45MjY2IDUuMDU0MzJDNDguMDM3OSA1LjA1NDMyIDQ4LjgyNjYgNS43MTU4OCA0OC44MjY2IDYuODk5NzJDNDguODI2NiA4LjA0ODc1IDQ4LjAzNzkgOC43NDUxMyA0Ni45MjY2IDguNzQ1MTNDNDUuODE1MiA4Ljc0NTEzIDQ1LjAyNjYgOC4wODM1NyA0NS4wMjY2IDYuODk5NzJDNDUuMDI2NiA1Ljc1MDcgNDUuODE1MiA1LjA1NDMyIDQ2LjkyNjYgNS4wNTQzMlpNNDUuNTI4NSAxMC45Mzg3SDQ4LjI1M1YyNi4yNTkxSDQ1LjUyODVWMTAuOTM4N1oiIGZpbGw9IiMyNTM4NTgiLz4KPHBhdGggZD0iTTU0Ljk5MjQgMjYuMjU5MUg1Mi4zMzk1VjEwLjkzODdINTQuOTkyNFYxMy42MTk4QzU1LjkyNDQgMTEuODA5MiA1Ny41MDE4IDEwLjUyMDkgNjAuNTg0OCAxMC42OTVWMTMuMjcxNkM1Ny4xMDc1IDEyLjkyMzQgNTQuOTkyNCAxMy45MzMxIDU0Ljk5MjQgMTcuMjA2MVYyNi4yNTkxWiIgZmlsbD0iIzI1Mzg1OCIvPgo8cGF0aCBkPSJNNzMuMzExMiAyMy41MDg0QzcyLjMwNzUgMjUuNTI3OSA3MC40MDc1IDI2LjU3MjQgNjcuOTY5NyAyNi41NzI0QzYzLjc3NTQgMjYuNTcyNCA2MS42NjAzIDIzLjEyNTQgNjEuNjYwMyAxOC41OTg5QzYxLjY2MDMgMTQuMjgxMyA2My44ODI5IDEwLjYyNTQgNjguMjkyNCAxMC42MjU0QzcwLjU4NjcgMTAuNjI1NCA3Mi4zNzkyIDExLjYzNTEgNzMuMzExMiAxMy42MTk4VjEwLjkzODdINzYuMDM1OFYyNi4yNTkxSDczLjMxMTJWMjMuNTA4NFpNNjguNjg2NyAyNC4xMzUxQzcxLjEyNDUgMjQuMTM1MSA3My4yNzU0IDIyLjYzNzkgNzMuMjc1NCAxOS4yMjU2VjE4LjAwN0M3My4yNzU0IDE0LjU5NDcgNzEuMzAzNyAxMy4wOTc1IDY4Ljk3MzUgMTMuMDk3NUM2NS45MjYzIDEzLjA5NzUgNjQuMzQ5IDE1LjA0NzQgNjQuMzQ5IDE4LjU5ODlDNjQuMzg0OCAyMi4yODk3IDY1Ljg5MDUgMjQuMTM1MSA2OC42ODY3IDI0LjEzNTFaIiBmaWxsPSIjMjUzODU4Ii8+CjwvZz4KPGcgaWQ9Ikljb24iPgo8cGF0aCBpZD0iVmVjdG9yIiBkPSJNMjQuNjY0IDNIMTIuMjYwM0MxMi4yNjAzIDUuOTk0NDMgMTQuNzY5NyA4LjQzMTc2IDE3Ljg1MjcgOC40MzE3NkgyMC4xNDdWMTAuNTU1N0MyMC4xNDcgMTMuNTUwMSAyMi42NTY1IDE1Ljk4NzUgMjUuNzM5NSAxNS45ODc1VjQuMDQ0NTdDMjUuNzM5NSAzLjQ1MjY1IDI1LjI3MzUgMyAyNC42NjQgM1oiIGZpbGw9IiMyNjg0RkYiLz4KPHBhdGggaWQ9IlZlY3Rvcl8yIiBkPSJNMTguNTMzOSA4Ljk4ODc3SDYuMTMwMTNDNi4xMzAxMyAxMS45ODMyIDguNjM5NTYgMTQuNDIwNSAxMS43MjI2IDE0LjQyMDVIMTQuMDE2OVYxNi41NzkzQzE0LjAxNjkgMTkuNTczNyAxNi41MjY0IDIyLjAxMTEgMTkuNjA5NCAyMi4wMTExVjEwLjAzMzNDMTkuNjA5NCA5LjQ3NjIzIDE5LjE0MzMgOC45ODg3NyAxOC41MzM5IDguOTg4NzdaIiBmaWxsPSJ1cmwoI3BhaW50MF9saW5lYXIpIi8+CjxwYXRoIGlkPSJWZWN0b3JfMyIgZD0iTTEyLjQwMzggMTUuMDEyNUgwQzAgMTguMDA2OSAyLjUwOTQzIDIwLjQ0NDIgNS41OTI0NSAyMC40NDQySDcuODg2NzlWMjIuNTY4MkM3Ljg4Njc5IDI1LjU2MjYgMTAuMzk2MiAyNy45OTk5IDEzLjQ3OTIgMjcuOTk5OVYxNi4wNTdDMTMuNDc5MiAxNS40NjUxIDEyLjk3NzQgMTUuMDEyNSAxMi40MDM4IDE1LjAxMjVaIiBmaWxsPSJ1cmwoI3BhaW50MV9saW5lYXIpIi8+CjwvZz4KPC9nPgo8ZGVmcz4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyIiB4MT0iMTkuMzQ1NSIgeTE9IjkuMDE4ODIiIHgyPSIxNC4yMzAyIiB5Mj0iMTQuNDUiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agb2Zmc2V0PSIwLjE3NiIgc3RvcC1jb2xvcj0iIzAwNTJDQyIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMyNjg0RkYiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDFfbGluZWFyIiB4MT0iMTMuNTYwMSIgeTE9IjE1LjA1MjUiIHgyPSI3LjYzNTYyIiB5Mj0iMjAuOTg3NCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBvZmZzZXQ9IjAuMTc2IiBzdG9wLWNvbG9yPSIjMDA1MkNDIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI2ODRGRiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=" alt=""></div>        <div class="tools">трекер задач · документы</div>
+      </div>
+      <div class="role r" style="--d:190">
+        <div class="pic"><svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="6"/><rect x="20" y="20" width="8" height="8" rx="2"/><path d="M19 13V6M29 13V6M19 42v-7M29 42v-7M13 19H6M13 29H6M42 19h-7M42 29h-7"/></g></svg></div>
+        <h3>ML-инженер</h3>
+        <p>Создаёт модели, которые обучаются на данных: рекомендации, прогнозы, языковые модели.</p>
+<div class="logorow sm"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOmNjPSJodHRwOi8vd2ViLnJlc291cmNlLm9yZy9jYy8iIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIxMTBweCIgaGVpZ2h0PSIxMTBweCIgdmlld0JveD0iMC4yMSAtMC4wNzcgMTEwIDExMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwLjIxIC0wLjA3NyAxMTAgMTEwIiB4bWw6c3BhY2U9InByZXNlcnZlIj48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzFfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjYzLjgxNTkiIHkxPSI1Ni42ODI5IiB4Mj0iMTE4LjQ5MzQiIHkyPSIxLjgyMjUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgLTEgLTUzLjI5NzQgNjYuNDMyMSkiPiA8c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiMzODdFQjgiLz4gPHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMzY2OTk0Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBmaWxsPSJ1cmwoI1NWR0lEXzFfKSIgZD0iTTU1LjAyMy0wLjA3N2MtMjUuOTcxLDAtMjYuMjUsMTAuMDgxLTI2LjI1LDEyLjE1NmMwLDMuMTQ4LDAsMTIuNTk0LDAsMTIuNTk0aDI2Ljc1djMuNzgxIGMwLDAtMjcuODUyLDAtMzcuMzc1LDBjLTcuOTQ5LDAtMTcuOTM4LDQuODMzLTE3LjkzOCwyNi4yNWMwLDE5LjY3Myw3Ljc5MiwyNy4yODEsMTUuNjU2LDI3LjI4MWMyLjMzNSwwLDkuMzQ0LDAsOS4zNDQsMCBzMC05Ljc2NSwwLTEzLjEyNWMwLTUuNDkxLDIuNzIxLTE1LjY1NiwxNS40MDYtMTUuNjU2YzE1LjkxLDAsMTkuOTcxLDAsMjYuNTMxLDBjMy45MDIsMCwxNC45MDYtMS42OTYsMTQuOTA2LTE0LjQwNiBjMC0xMy40NTIsMC0xNy44OSwwLTI0LjIxOUM4Mi4wNTQsMTEuNDI2LDgxLjUxNS0wLjA3Nyw1NS4wMjMtMC4wNzd6IE00MC4yNzMsOC4zOTJjMi42NjIsMCw0LjgxMywyLjE1LDQuODEzLDQuODEzIGMwLDIuNjYxLTIuMTUxLDQuODEzLTQuODEzLDQuODEzcy00LjgxMy0yLjE1MS00LjgxMy00LjgxM0MzNS40NiwxMC41NDIsMzcuNjExLDguMzkyLDQwLjI3Myw4LjM5MnoiLz48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzJfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9Ijk3LjA0NDQiIHkxPSIyMS42MzIxIiB4Mj0iMTU1LjY2NjUiIHkyPSItMzQuNTMwOCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAtNTMuMjk3NCA2Ni40MzIxKSI+IDxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRTA1MiIvPiA8c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNGRkMzMzEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjU1ZHSURfMl8pIiBkPSJNNTUuMzk3LDEwOS45MjNjMjUuOTU5LDAsMjYuMjgyLTEwLjI3MSwyNi4yODItMTIuMTU2YzAtMy4xNDgsMC0xMi41OTQsMC0xMi41OTRINTQuODk3di0zLjc4MSBjMCwwLDI4LjAzMiwwLDM3LjM3NSwwYzguMDA5LDAsMTcuOTM4LTQuOTU0LDE3LjkzOC0yNi4yNWMwLTIzLjMyMi0xMC41MzgtMjcuMjgxLTE1LjY1Ni0yNy4yODFjLTIuMzM2LDAtOS4zNDQsMC05LjM0NCwwIHMwLDEwLjIxNiwwLDEzLjEyNWMwLDUuNDkxLTIuNjMxLDE1LjY1Ni0xNS40MDYsMTUuNjU2Yy0xNS45MSwwLTE5LjQ3NiwwLTI2LjUzMiwwYy0zLjg5MiwwLTE0LjkwNiwxLjg5Ni0xNC45MDYsMTQuNDA2IGMwLDE0LjQ3NSwwLDE4LjI2NSwwLDI0LjIxOUMyOC4zNjYsMTAwLjQ5NywzMS41NjIsMTA5LjkyMyw1NS4zOTcsMTA5LjkyM3ogTTcwLjE0OCwxMDEuNDU0Yy0yLjY2MiwwLTQuODEzLTIuMTUxLTQuODEzLTQuODEzIHMyLjE1LTQuODEzLDQuODEzLTQuODEzYzIuNjYxLDAsNC44MTMsMi4xNTEsNC44MTMsNC44MTNTNzIuODA5LDEwMS40NTQsNzAuMTQ4LDEwMS40NTR6Ii8+PC9zdmc+" alt=""><img src="data:image/svg+xml;base64,PHN2ZyBpZD0iQXJ0d29yayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgdmlld0JveD0iMCAwIDY2OS4zNiA0MjcuOCI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOm5vbmU7fS5jbHMtMntjbGlwLXBhdGg6dXJsKCNjbGlwLXBhdGgpO30uY2xzLTN7ZmlsbDp1cmwoI2xpbmVhci1ncmFkaWVudCk7fS5jbHMtNHtjbGlwLXBhdGg6dXJsKCNjbGlwLXBhdGgtMik7fS5jbHMtNXtmaWxsOnVybCgjbGluZWFyLWdyYWRpZW50LTIpO30uY2xzLTZ7ZmlsbDojNDI1MDY2O308L3N0eWxlPjxjbGlwUGF0aCBpZD0iY2xpcC1wYXRoIj48cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iNDAyIDExMi41OSAzMzcuNDcgNzUuNzIgMzM3LjQ3IDIyNi44NCAzNjMuMjUgMjExLjg4IDM2My4yNSAxNjkuMzYgMzgyLjcyIDE4MC42MyAzODIuNjEgMTUxLjU0IDM2My4yNSAxNDAuNDggMzYzLjI1IDEyMy41OSA0MDIuMDkgMTQ2LjAzIDQwMiAxMTIuNTkiLz48L2NsaXBQYXRoPjxsaW5lYXJHcmFkaWVudCBpZD0ibGluZWFyLWdyYWRpZW50IiB4MT0iMjYxLjE4IiB5MT0iMTUxLjEiIHgyPSI0MTkuNjUiIHkyPSIxNTEuMSIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmNmYwMCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmYTgwMCIvPjwvbGluZWFyR3JhZGllbnQ+PGNsaXBQYXRoIGlkPSJjbGlwLXBhdGgtMiI+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9IjI2Ny4xNCAxMTIuNTkgMzMxLjY3IDc1LjcyIDMzMS42NyAyMjYuODQgMzA1Ljg5IDIxMS44OCAzMDUuODkgMTIzLjU5IDI2Ny4wNSAxNDYuMDMgMjY3LjE0IDExMi41OSIvPjwvY2xpcFBhdGg+PGxpbmVhckdyYWRpZW50IGlkPSJsaW5lYXItZ3JhZGllbnQtMiIgeDE9IjI2MC4xMSIgeTE9IjE1MS4xIiB4Mj0iNDE4LjU4IiB5Mj0iMTUxLjEiIHhsaW5rOmhyZWY9IiNsaW5lYXItZ3JhZGllbnQiLz48L2RlZnM+PHRpdGxlPkZ1bGxDb2xvclByaW1hcnkgVmVydGljYWw8L3RpdGxlPjxnIGNsYXNzPSJjbHMtMiI+PHJlY3QgY2xhc3M9ImNscy0zIiB4PSIyNjEuMTgiIHk9Ijc1LjE3IiB3aWR0aD0iMTU4LjQ3IiBoZWlnaHQ9IjE1MS44NiIvPjwvZz48ZyBjbGFzcz0iY2xzLTQiPjxyZWN0IGNsYXNzPSJjbHMtNSIgeD0iMjYwLjExIiB5PSI3NS4xNyIgd2lkdGg9IjE1OC40NyIgaGVpZ2h0PSIxNTEuODYiLz48L2c+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNMTM3LjMyLDI4Ny42SDExNHY2NC4yM0gxMDEuMTVWMjg3LjZINzguMDdWMjc3LjE0aDU5LjI1WiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTE1Mi43NywzNTIuODVxLTExLjg1LDAtMTkuMjEtNy40NnQtNy4zNi0xOS44OFYzMjRhMzMuNCwzMy40LDAsMCwxLDMuMi0xNC44NSwyNC40LDI0LjQsMCwwLDEsOS0xMC4xOCwyMy43NiwyMy43NiwwLDAsMSwxMi45Mi0zLjY0cTExLjM0LDAsMTcuNTIsNy4yM1QxNzUsMzIzdjVIMTM4Ljc2cS41Nyw2Ljg5LDQuNiwxMC44OGExMy43NiwxMy43NiwwLDAsMCwxMC4xMyw0QTE2Ljg5LDE2Ljg5LDAsMCwwLDE2Ny40NCwzMzZsNi43Miw2LjQxYTIyLjQxLDIyLjQxLDAsMCwxLTguOSw3LjcyQTI3Ljg0LDI3Ljg0LDAsMCwxLDE1Mi43NywzNTIuODVabS0xLjQ5LTQ3LjU1YTEwLjQ5LDEwLjQ5LDAsMCwwLTguMjgsMy41OXEtMy4xNywzLjU4LTQsMTBoMjMuNzVWMzE4cS0uNDEtNi4yNS0zLjMzLTkuNDZBMTAuNDEsMTAuNDEsMCwwLDAsMTUxLjI4LDMwNS4zWiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTE5Ni4yNywyOTYuMzJsLjM2LDYuNDFhMjAsMjAsMCwwLDEsMTYuMTYtNy40M3ExNy4zNCwwLDE3LjY0LDE5Ljg1djM2LjY4SDIxOHYtMzZjMC0zLjUzLS43Ni02LjEzLTIuMjgtNy44M3MtNC0yLjU0LTcuNDctMi41NHEtNy41MywwLTExLjIzLDYuODN2MzkuNUgxODQuNTJWMjk2LjMyWiIvPjxwYXRoIGNsYXNzPSJjbHMtNiIgZD0iTTI3MC44OCwzMzYuNzVhNS42NCw1LjY0LDAsMCwwLTIuNzQtNS4wOHEtMi43NS0xLjc2LTkuMTEtMy4wOGE0Ni43OCw0Ni43OCwwLDAsMS0xMC42Mi0zLjM5cS05LjMzLTQuNTEtOS4zMy0xMy4wOGExNC43NCwxNC43NCwwLDAsMSw2LTEycTYuMDYtNC44MywxNS4zOS00LjgyLDkuOTQsMCwxNi4wOCw0LjkyQTE1LjYxLDE1LjYxLDAsMCwxLDI4Mi43MywzMTNIMjcwLjI3YTcuNjcsNy42NywwLDAsMC0yLjY3LTYsMTAuMjMsMTAuMjMsMCwwLDAtNy4wOC0yLjM5LDExLDExLDAsMCwwLTYuNjksMS45LDYsNiwwLDAsMC0yLjYsNS4wOCw1LjA2LDUuMDYsMCwwLDAsMi40Miw0LjQ2cTIuNCwxLjU5LDkuNzQsMy4yMWE0Ni4yMiw0Ni4yMiwwLDAsMSwxMS41MiwzLjg1LDE2LjI3LDE2LjI3LDAsMCwxLDYuMjEsNS4zNiwxMy42NCwxMy42NCwwLDAsMSwyLDcuNTksMTQuNDUsMTQuNDUsMCwwLDEtNi4yMSwxMi4xM3EtNi4xOSw0LjY1LTE2LjI2LDQuNjRhMjguNjYsMjguNjYsMCwwLDEtMTIuMTUtMi40NiwyMCwyMCwwLDAsMS04LjMxLTYuNzcsMTYsMTYsMCwwLDEtMy05LjI5aDEyLjExYTguNzcsOC43NywwLDAsMCwzLjMzLDYuOCwxMywxMywwLDAsMCw4LjE2LDIuMzlxNC45MiwwLDcuNDktMS44OEE1Ljc3LDUuNzcsMCwwLDAsMjcwLjg4LDMzNi43NVoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik0yODkuNTYsMzIzLjU2YTMyLjY2LDMyLjY2LDAsMCwxLDMuMjMtMTQuNywyMy41NCwyMy41NCwwLDAsMSw5LjA4LTEwLjA1LDI1LjYxLDI1LjYxLDAsMCwxLDEzLjQ0LTMuNTFxMTEuMjQsMCwxOC4yMyw3LjIzdDcuNTcsMTkuMThsLjA1LDIuOTNBMzMuMDcsMzMuMDcsMCwwLDEsMzM4LDMzOS4zMWEyMy4zOSwyMy4zOSwwLDAsMS05LDEwLDI1Ljc4LDI1Ljc4LDAsMCwxLTEzLjU3LDMuNTRxLTExLjc1LDAtMTguOC03LjgydC03LjA1LTIwLjg1Wk0zMDIsMzI0LjY0cTAsOC41NywzLjU0LDEzLjQxYTExLjQ5LDExLjQ5LDAsMCwwLDkuODUsNC44NSwxMS4zNywxMS4zNywwLDAsMCw5LjgyLTQuOTJxMy41Mi00Ljk0LDMuNTItMTQuNDIsMC04LjQyLTMuNjItMTMuMzRhMTIuMTksMTIuMTksMCwwLDAtMTkuNTItLjA3UTMwMiwzMTUsMzAyLDMyNC42NFoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik0zNzguNjYsMzA3LjcxYTMxLjE2LDMxLjE2LDAsMCwwLTUuMDctLjQxcS04LjU4LDAtMTEuNTUsNi41N3YzOEgzNDkuNThWMjk2LjMyaDExLjlsLjMxLDYuMjFxNC41MS03LjIzLDEyLjUxLTcuMjNhMTEuODMsMTEuODMsMCwwLDEsNC40MS43MVoiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik00MzAuNzgsMzIwLjE4SDQwMC43MnYzMS42NWgtMTNWMjc3LjE0aDQ3LjQ1VjI4Ny42SDQwMC43MnYyMi4yMWgzMC4wNloiLz48cGF0aCBjbGFzcz0iY2xzLTYiIGQ9Ik00NTUuNDEsMzUxLjgzSDQ0Mi45NFYyNzdoMTIuNDdaIi8+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNNDY0LjU0LDMyMy41NmEzMi43OSwzMi43OSwwLDAsMSwzLjIzLTE0LjcsMjMuNiwyMy42LDAsMCwxLDkuMDgtMTAuMDUsMjUuNjEsMjUuNjEsMCwwLDEsMTMuNDQtMy41MXExMS4yMywwLDE4LjI0LDcuMjN0Ny41NywxOS4xOGwwLDIuOTNBMzIuOTMsMzIuOTMsMCwwLDEsNTEzLDMzOS4zMWEyMy4yNiwyMy4yNiwwLDAsMS05LDEwLDI1LjcyLDI1LjcyLDAsMCwxLTEzLjU2LDMuNTRxLTExLjc2LDAtMTguODEtNy44MnQtNy0yMC44NVpNNDc3LDMyNC42NHEwLDguNTcsMy41NCwxMy40MWExMi4zNCwxMi4zNCwwLDAsMCwxOS42Ny0uMDdxMy41MS00Ljk0LDMuNTEtMTQuNDIsMC04LjQyLTMuNjEtMTMuMzRhMTEuNTYsMTEuNTYsMCwwLDAtOS44My00LjkyLDExLjQzLDExLjQzLDAsMCwwLTkuNjksNC44NVE0NzcsMzE1LDQ3NywzMjQuNjRaIi8+PHBhdGggY2xhc3M9ImNscy02IiBkPSJNNTcyLjQsMzM0LjY0bDguODItMzguMzJoMTIuMTZsLTE1LjEzLDU1LjUxSDU2OGwtMTEuOS0zOC4xMi0xMS43LDM4LjEySDUzNC4xM0w1MTksMjk2LjMyaDEyLjE2bDksMzcuOTEsMTEuMzktMzcuOTFoOS4zOVoiLz48L3N2Zz4=" alt=""><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG9yOiBBZG9iZSBJbGx1c3RyYXRvciAxNy4xLjAsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNWRyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwLjYgMTA2Ny45IDkwLjMgMTA5LjEiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMC42IDEwNjcuOSA5MC4zIDEwOS4xIiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxwYXRoIGZpbGw9IiNFRTRDMkMiIGQ9Ik03Ny42LDEwOTkuNmwtOC4xLDguMWMxMy4zLDEzLjMsMTMuMywzNC43LDAsNDcuOGMtMTMuMywxMy4zLTM0LjcsMTMuMy00Ny44LDANCgkJYy0xMy4zLTEzLjMtMTMuMy0zNC43LDAtNDcuOGwwLDBsMjEuMS0yMS4xbDMtM2wwLDB2LTE1LjlsLTMxLjgsMzEuOGMtMTcuNywxNy43LTE3LjcsNDYuMywwLDY0YzE3LjcsMTcuNyw0Ni4zLDE3LjcsNjMuNywwDQoJCUM5NS4zLDExNDUuOCw5NS4zLDExMTcuNCw3Ny42LDEwOTkuNnoiLz4NCgk8Y2lyY2xlIGZpbGw9IiNFRTRDMkMiIGN4PSI2MS43IiBjeT0iMTA5MS44IiByPSI1LjkiLz4NCjwvZz4NCjwvc3ZnPg0K" alt=""></div>        <div class="tools">Python · ML-библиотеки</div>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Именно это направление — машинное обучение и модели на данных — мы будем изучать на курсе.</div>
+  </div>
+</section>
+<!-- 9 -->
+<section class="slide" data-title="Чем пользуется разработчик">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Инструменты</p>
+    <h2>Чем пользуется разработчик</h2>
+  </header>
+  <div class="body">
+    <div class="tiles c3">
+      <div class="tile r" style="--d:70">
+        <div class="lg"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPG1hc2sgaWQ9Im1hc2swIiBtYXNrLXR5cGU9ImFscGhhIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNzAuOTExOSA5OS4zMTcxQzcyLjQ4NjkgOTkuOTMwNyA3NC4yODI4IDk5Ljg5MTQgNzUuODcyNSA5OS4xMjY0TDk2LjQ2MDggODkuMjE5N0M5OC42MjQyIDg4LjE3ODcgMTAwIDg1Ljk4OTIgMTAwIDgzLjU4NzJWMTYuNDEzM0MxMDAgMTQuMDExMyA5OC42MjQzIDExLjgyMTggOTYuNDYwOSAxMC43ODA4TDc1Ljg3MjUgMC44NzM3NTZDNzMuNzg2MiAtMC4xMzAxMjkgNzEuMzQ0NiAwLjExNTc2IDY5LjUxMzUgMS40NDY5NUM2OS4yNTIgMS42MzcxMSA2OS4wMDI4IDEuODQ5NDMgNjguNzY5IDIuMDgzNDFMMjkuMzU1MSAzOC4wNDE1TDEyLjE4NzIgMjUuMDA5NkMxMC41ODkgMjMuNzk2NSA4LjM1MzYzIDIzLjg5NTkgNi44NjkzMyAyNS4yNDYxTDEuMzYzMDMgMzAuMjU0OUMtMC40NTI1NTIgMzEuOTA2NCAtMC40NTQ2MzMgMzQuNzYyNyAxLjM1ODUzIDM2LjQxN0wxNi4yNDcxIDUwLjAwMDFMMS4zNTg1MyA2My41ODMyQy0wLjQ1NDYzMyA2NS4yMzc0IC0wLjQ1MjU1MiA2OC4wOTM4IDEuMzYzMDMgNjkuNzQ1M0w2Ljg2OTMzIDc0Ljc1NDFDOC4zNTM2MyA3Ni4xMDQzIDEwLjU4OSA3Ni4yMDM3IDEyLjE4NzIgNzQuOTkwNUwyOS4zNTUxIDYxLjk1ODdMNjguNzY5IDk3LjkxNjdDNjkuMzkyNSA5OC41NDA2IDcwLjEyNDYgOTkuMDEwNCA3MC45MTE5IDk5LjMxNzFaTTc1LjAxNTIgMjcuMjk4OUw0NS4xMDkxIDUwLjAwMDFMNzUuMDE1MiA3Mi43MDEyVjI3LjI5ODlaIiBmaWxsPSJ3aGl0ZSIvPgo8L21hc2s+CjxnIG1hc2s9InVybCgjbWFzazApIj4KPHBhdGggZD0iTTk2LjQ2MTQgMTAuNzk2Mkw3NS44NTY5IDAuODc1NTQyQzczLjQ3MTkgLTAuMjcyNzczIDcwLjYyMTcgMC4yMTE2MTEgNjguNzUgMi4wODMzM0wxLjI5ODU4IDYzLjU4MzJDLTAuNTE1NjkzIDY1LjIzNzMgLTAuNTEzNjA3IDY4LjA5MzcgMS4zMDMwOCA2OS43NDUyTDYuODEyNzIgNzQuNzU0QzguMjk3OTMgNzYuMTA0MiAxMC41MzQ3IDc2LjIwMzYgMTIuMTMzOCA3NC45OTA1TDkzLjM2MDkgMTMuMzY5OUM5Ni4wODYgMTEuMzAyNiAxMDAgMTMuMjQ2MiAxMDAgMTYuNjY2N1YxNi40Mjc1QzEwMCAxNC4wMjY1IDk4LjYyNDYgMTEuODM3OCA5Ni40NjE0IDEwLjc5NjJaIiBmaWxsPSIjMDA2NUE5Ii8+CjxnIGZpbHRlcj0idXJsKCNmaWx0ZXIwX2QpIj4KPHBhdGggZD0iTTk2LjQ2MTQgODkuMjAzOEw3NS44NTY5IDk5LjEyNDVDNzMuNDcxOSAxMDAuMjczIDcwLjYyMTcgOTkuNzg4NCA2OC43NSA5Ny45MTY3TDEuMjk4NTggMzYuNDE2OUMtMC41MTU2OTMgMzQuNzYyNyAtMC41MTM2MDcgMzEuOTA2MyAxLjMwMzA4IDMwLjI1NDhMNi44MTI3MiAyNS4yNDZDOC4yOTc5MyAyMy44OTU4IDEwLjUzNDcgMjMuNzk2NCAxMi4xMzM4IDI1LjAwOTVMOTMuMzYwOSA4Ni42MzAxQzk2LjA4NiA4OC42OTc0IDEwMCA4Ni43NTM4IDEwMCA4My4zMzM0VjgzLjU3MjZDMTAwIDg1Ljk3MzUgOTguNjI0NiA4OC4xNjIyIDk2LjQ2MTQgODkuMjAzOFoiIGZpbGw9IiMwMDdBQ0MiLz4KPC9nPgo8ZyBmaWx0ZXI9InVybCgjZmlsdGVyMV9kKSI+CjxwYXRoIGQ9Ik03NS44NTc4IDk5LjEyNjNDNzMuNDcyMSAxMDAuMjc0IDcwLjYyMTkgOTkuNzg4NSA2OC43NSA5Ny45MTY2QzcxLjA1NjQgMTAwLjIyMyA3NSA5OC41ODk1IDc1IDk1LjMyNzhWNC42NzIxM0M3NSAxLjQxMDM5IDcxLjA1NjQgLTAuMjIzMTA2IDY4Ljc1IDIuMDgzMjlDNzAuNjIxOSAwLjIxMTQwMiA3My40NzIxIC0wLjI3MzY2NiA3NS44NTc4IDAuODczNjMzTDk2LjQ1ODcgMTAuNzgwN0M5OC42MjM0IDExLjgyMTcgMTAwIDE0LjAxMTIgMTAwIDE2LjQxMzJWODMuNTg3MUMxMDAgODUuOTg5MSA5OC42MjM0IDg4LjE3ODYgOTYuNDU4NiA4OS4yMTk2TDc1Ljg1NzggOTkuMTI2M1oiIGZpbGw9IiMxRjlDRjAiLz4KPC9nPgo8ZyBzdHlsZT0ibWl4LWJsZW5kLW1vZGU6b3ZlcmxheSIgb3BhY2l0eT0iMC4yNSI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNzAuODUxMSA5OS4zMTcxQzcyLjQyNjEgOTkuOTMwNiA3NC4yMjIxIDk5Ljg5MTMgNzUuODExNyA5OS4xMjY0TDk2LjQgODkuMjE5N0M5OC41NjM0IDg4LjE3ODcgOTkuOTM5MiA4NS45ODkyIDk5LjkzOTIgODMuNTg3MVYxNi40MTMzQzk5LjkzOTIgMTQuMDExMiA5OC41NjM1IDExLjgyMTcgOTYuNDAwMSAxMC43ODA3TDc1LjgxMTcgMC44NzM2OTVDNzMuNzI1NSAtMC4xMzAxOSA3MS4yODM4IDAuMTE1Njk5IDY5LjQ1MjcgMS40NDY4OEM2OS4xOTEyIDEuNjM3MDUgNjguOTQyIDEuODQ5MzcgNjguNzA4MiAyLjA4MzM1TDI5LjI5NDMgMzguMDQxNEwxMi4xMjY0IDI1LjAwOTZDMTAuNTI4MyAyMy43OTY0IDguMjkyODUgMjMuODk1OSA2LjgwODU1IDI1LjI0NkwxLjMwMjI1IDMwLjI1NDhDLTAuNTEzMzM0IDMxLjkwNjQgLTAuNTE1NDE1IDM0Ljc2MjcgMS4yOTc3NSAzNi40MTY5TDE2LjE4NjMgNTBMMS4yOTc3NSA2My41ODMyQy0wLjUxNTQxNSA2NS4yMzc0IC0wLjUxMzMzNCA2OC4wOTM3IDEuMzAyMjUgNjkuNzQ1Mkw2LjgwODU1IDc0Ljc1NEM4LjI5Mjg1IDc2LjEwNDIgMTAuNTI4MyA3Ni4yMDM2IDEyLjEyNjQgNzQuOTkwNUwyOS4yOTQzIDYxLjk1ODZMNjguNzA4MiA5Ny45MTY3QzY5LjMzMTcgOTguNTQwNSA3MC4wNjM4IDk5LjAxMDQgNzAuODUxMSA5OS4zMTcxWk03NC45NTQ0IDI3LjI5ODlMNDUuMDQ4MyA1MEw3NC45NTQ0IDcyLjcwMTJWMjcuMjk4OVoiIGZpbGw9InVybCgjcGFpbnQwX2xpbmVhcikiLz4KPC9nPgo8L2c+CjxkZWZzPgo8ZmlsdGVyIGlkPSJmaWx0ZXIwX2QiIHg9Ii04LjM5NDExIiB5PSIxNS44MjkxIiB3aWR0aD0iMTE2LjcyNyIgaGVpZ2h0PSI5Mi4yNDU2IiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIGNvbG9yLWludGVycG9sYXRpb24tZmlsdGVycz0ic1JHQiI+CjxmZUZsb29kIGZsb29kLW9wYWNpdHk9IjAiIHJlc3VsdD0iQmFja2dyb3VuZEltYWdlRml4Ii8+CjxmZUNvbG9yTWF0cml4IGluPSJTb3VyY2VBbHBoYSIgdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDEyNyAwIi8+CjxmZU9mZnNldC8+CjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQuMTY2NjciLz4KPGZlQ29sb3JNYXRyaXggdHlwZT0ibWF0cml4IiB2YWx1ZXM9IjAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAuMjUgMCIvPgo8ZmVCbGVuZCBtb2RlPSJvdmVybGF5IiBpbjI9IkJhY2tncm91bmRJbWFnZUZpeCIgcmVzdWx0PSJlZmZlY3QxX2Ryb3BTaGFkb3ciLz4KPGZlQmxlbmQgbW9kZT0ibm9ybWFsIiBpbj0iU291cmNlR3JhcGhpYyIgaW4yPSJlZmZlY3QxX2Ryb3BTaGFkb3ciIHJlc3VsdD0ic2hhcGUiLz4KPC9maWx0ZXI+CjxmaWx0ZXIgaWQ9ImZpbHRlcjFfZCIgeD0iNjAuNDE2NyIgeT0iLTguMDc1NTgiIHdpZHRoPSI0Ny45MTY3IiBoZWlnaHQ9IjExNi4xNTEiIGZpbHRlclVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgY29sb3ItaW50ZXJwb2xhdGlvbi1maWx0ZXJzPSJzUkdCIj4KPGZlRmxvb2QgZmxvb2Qtb3BhY2l0eT0iMCIgcmVzdWx0PSJCYWNrZ3JvdW5kSW1hZ2VGaXgiLz4KPGZlQ29sb3JNYXRyaXggaW49IlNvdXJjZUFscGhhIiB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMTI3IDAiLz4KPGZlT2Zmc2V0Lz4KPGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iNC4xNjY2NyIvPgo8ZmVDb2xvck1hdHJpeCB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMCAwIDAgMC4yNSAwIi8+CjxmZUJsZW5kIG1vZGU9Im92ZXJsYXkiIGluMj0iQmFja2dyb3VuZEltYWdlRml4IiByZXN1bHQ9ImVmZmVjdDFfZHJvcFNoYWRvdyIvPgo8ZmVCbGVuZCBtb2RlPSJub3JtYWwiIGluPSJTb3VyY2VHcmFwaGljIiBpbjI9ImVmZmVjdDFfZHJvcFNoYWRvdyIgcmVzdWx0PSJzaGFwZSIvPgo8L2ZpbHRlcj4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDBfbGluZWFyIiB4MT0iNDkuOTM5MiIgeTE9IjAuMjU3ODEyIiB4Mj0iNDkuOTM5MiIgeTI9Ijk5Ljc0MjMiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0id2hpdGUiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+Cg==" alt="" class="lg"></div>
+        <h3>Редактор кода</h3>
+        <p>VS Code: в нём пишут программы, запускают их и сразу видят ошибки.</p>
+      </div>
+      <div class="tile r" style="--d:130">
+        <div class="lg"><img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOmNjPSJodHRwOi8vd2ViLnJlc291cmNlLm9yZy9jYy8iIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIxMTBweCIgaGVpZ2h0PSIxMTBweCIgdmlld0JveD0iMC4yMSAtMC4wNzcgMTEwIDExMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwLjIxIC0wLjA3NyAxMTAgMTEwIiB4bWw6c3BhY2U9InByZXNlcnZlIj48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzFfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjYzLjgxNTkiIHkxPSI1Ni42ODI5IiB4Mj0iMTE4LjQ5MzQiIHkyPSIxLjgyMjUiIGdyYWRpZW50VHJhbnNmb3JtPSJtYXRyaXgoMSAwIDAgLTEgLTUzLjI5NzQgNjYuNDMyMSkiPiA8c3RvcCBvZmZzZXQ9IjAiIHN0eWxlPSJzdG9wLWNvbG9yOiMzODdFQjgiLz4gPHN0b3Agb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMzY2OTk0Ii8+PC9saW5lYXJHcmFkaWVudD48cGF0aCBmaWxsPSJ1cmwoI1NWR0lEXzFfKSIgZD0iTTU1LjAyMy0wLjA3N2MtMjUuOTcxLDAtMjYuMjUsMTAuMDgxLTI2LjI1LDEyLjE1NmMwLDMuMTQ4LDAsMTIuNTk0LDAsMTIuNTk0aDI2Ljc1djMuNzgxIGMwLDAtMjcuODUyLDAtMzcuMzc1LDBjLTcuOTQ5LDAtMTcuOTM4LDQuODMzLTE3LjkzOCwyNi4yNWMwLDE5LjY3Myw3Ljc5MiwyNy4yODEsMTUuNjU2LDI3LjI4MWMyLjMzNSwwLDkuMzQ0LDAsOS4zNDQsMCBzMC05Ljc2NSwwLTEzLjEyNWMwLTUuNDkxLDIuNzIxLTE1LjY1NiwxNS40MDYtMTUuNjU2YzE1LjkxLDAsMTkuOTcxLDAsMjYuNTMxLDBjMy45MDIsMCwxNC45MDYtMS42OTYsMTQuOTA2LTE0LjQwNiBjMC0xMy40NTIsMC0xNy44OSwwLTI0LjIxOUM4Mi4wNTQsMTEuNDI2LDgxLjUxNS0wLjA3Nyw1NS4wMjMtMC4wNzd6IE00MC4yNzMsOC4zOTJjMi42NjIsMCw0LjgxMywyLjE1LDQuODEzLDQuODEzIGMwLDIuNjYxLTIuMTUxLDQuODEzLTQuODEzLDQuODEzcy00LjgxMy0yLjE1MS00LjgxMy00LjgxM0MzNS40NiwxMC41NDIsMzcuNjExLDguMzkyLDQwLjI3Myw4LjM5MnoiLz48bGluZWFyR3JhZGllbnQgaWQ9IlNWR0lEXzJfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9Ijk3LjA0NDQiIHkxPSIyMS42MzIxIiB4Mj0iMTU1LjY2NjUiIHkyPSItMzQuNTMwOCIgZ3JhZGllbnRUcmFuc2Zvcm09Im1hdHJpeCgxIDAgMCAtMSAtNTMuMjk3NCA2Ni40MzIxKSI+IDxzdG9wIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6I0ZGRTA1MiIvPiA8c3RvcCBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiNGRkMzMzEiLz48L2xpbmVhckdyYWRpZW50PjxwYXRoIGZpbGw9InVybCgjU1ZHSURfMl8pIiBkPSJNNTUuMzk3LDEwOS45MjNjMjUuOTU5LDAsMjYuMjgyLTEwLjI3MSwyNi4yODItMTIuMTU2YzAtMy4xNDgsMC0xMi41OTQsMC0xMi41OTRINTQuODk3di0zLjc4MSBjMCwwLDI4LjAzMiwwLDM3LjM3NSwwYzguMDA5LDAsMTcuOTM4LTQuOTU0LDE3LjkzOC0yNi4yNWMwLTIzLjMyMi0xMC41MzgtMjcuMjgxLTE1LjY1Ni0yNy4yODFjLTIuMzM2LDAtOS4zNDQsMC05LjM0NCwwIHMwLDEwLjIxNiwwLDEzLjEyNWMwLDUuNDkxLTIuNjMxLDE1LjY1Ni0xNS40MDYsMTUuNjU2Yy0xNS45MSwwLTE5LjQ3NiwwLTI2LjUzMiwwYy0zLjg5MiwwLTE0LjkwNiwxLjg5Ni0xNC45MDYsMTQuNDA2IGMwLDE0LjQ3NSwwLDE4LjI2NSwwLDI0LjIxOUMyOC4zNjYsMTAwLjQ5NywzMS41NjIsMTA5LjkyMyw1NS4zOTcsMTA5LjkyM3ogTTcwLjE0OCwxMDEuNDU0Yy0yLjY2MiwwLTQuODEzLTIuMTUxLTQuODEzLTQuODEzIHMyLjE1LTQuODEzLDQuODEzLTQuODEzYzIuNjYxLDAsNC44MTMsMi4xNTEsNC44MTMsNC44MTNTNzIuODA5LDEwMS40NTQsNzAuMTQ4LDEwMS40NTR6Ii8+PC9zdmc+" alt="" class="lg"></div>
+        <h3>Язык программирования</h3>
+        <p>Python и его окружение — язык курса: у него свои правила записи команд.</p>
+      </div>
+      <div class="tile r" style="--d:190">
+        <div class="lg"><svg viewBox="0 0 48 48" width="62" height="62" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="38" height="30" rx="6"/><path d="M12 20l5 4-5 4M22 30h13"/></g></svg></div>
+        <h3>Терминал</h3>
+        <p>Командная строка: через неё запускают программы и ставят библиотеки.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Редактор кода подсказывает, язык задаёт правила, терминал запускает программы — это базовый набор для работы.</div>
+  </div>
+</section>
+<!-- 10 -->
+<section class="slide" data-title="Инструменты команды">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Инструменты</p>
+    <h2>Инструменты команды</h2>
+  </header>
+  <div class="body">
+    <div class="tiles c3">
+      <div class="tile r" style="--d:70">
+        <div class="lg"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTggMEMzLjU4IDAgMCAzLjU4IDAgOEMwIDExLjU0IDIuMjkgMTQuNTMgNS40NyAxNS41OUM1Ljg3IDE1LjY2IDYuMDIgMTUuNDIgNi4wMiAxNS4yMUM2LjAyIDE1LjAyIDYuMDEgMTQuMzkgNi4wMSAxMy43MkM0IDE0LjA5IDMuNDggMTMuMjMgMy4zMiAxMi43OEMzLjIzIDEyLjU1IDIuODQgMTEuODQgMi41IDExLjY1QzIuMjIgMTEuNSAxLjgyIDExLjEzIDIuNDkgMTEuMTJDMy4xMiAxMS4xMSAzLjU3IDExLjcgMy43MiAxMS45NEM0LjQ0IDEzLjE1IDUuNTkgMTIuODEgNi4wNSAxMi42QzYuMTIgMTIuMDggNi4zMyAxMS43MyA2LjU2IDExLjUzQzQuNzggMTEuMzMgMi45MiAxMC42NCAyLjkyIDcuNThDMi45MiA2LjcxIDMuMjMgNS45OSAzLjc0IDUuNDNDMy42NiA1LjIzIDMuMzggNC40MSAzLjgyIDMuMzFDMy44MiAzLjMxIDQuNDkgMy4xIDYuMDIgNC4xM0M2LjY2IDMuOTUgNy4zNCAzLjg2IDguMDIgMy44NkM4LjcgMy44NiA5LjM4IDMuOTUgMTAuMDIgNC4xM0MxMS41NSAzLjA5IDEyLjIyIDMuMzEgMTIuMjIgMy4zMUMxMi42NiA0LjQxIDEyLjM4IDUuMjMgMTIuMyA1LjQzQzEyLjgxIDUuOTkgMTMuMTIgNi43IDEzLjEyIDcuNThDMTMuMTIgMTAuNjUgMTEuMjUgMTEuMzMgOS40NyAxMS41M0M5Ljc2IDExLjc4IDEwLjAxIDEyLjI2IDEwLjAxIDEzLjAxQzEwLjAxIDE0LjA4IDEwIDE0Ljk0IDEwIDE1LjIxQzEwIDE1LjQyIDEwLjE1IDE1LjY3IDEwLjU1IDE1LjU5QzEzLjcxIDE0LjUzIDE2IDExLjUzIDE2IDhDMTYgMy41OCAxMi40MiAwIDggMFoiIHRyYW5zZm9ybT0ic2NhbGUoNjQpIiBmaWxsPSIjMUIxRjIzIi8+Cjwvc3ZnPgo=" alt="" class="lg"></div>
+        <h3>Git и GitHub</h3>
+        <p>Хранение кода и история изменений: видно, кто, что и когда менял в проекте.</p>
+      </div>
+      <div class="tile r" style="--d:130">
+        <div class="lg"><svg viewBox="0 0 48 48" width="62" height="62" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="38" height="34" rx="6"/><path d="M13 14v16M24 14v10M35 14v20"/></g></svg></div>
+        <h3>Трекер задач</h3>
+        <p>Jira или Trello: список задач команды и их статус — кто над чем работает.</p>
+      </div>
+      <div class="tile r" style="--d:190">
+        <div class="lg"><svg viewBox="0 0 48 48" width="62" height="62" aria-hidden="true"><g fill="none" stroke="#1E7EE8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 8l3.2 8.2L30 19.5l-7.8 3.3L19 31l-3.2-8.2L8 19.5l7.8-3.3z"/><path d="M35 27l1.8 4.4L41 33l-4.2 1.6L35 39l-1.8-4.4L29 33l4.2-1.6z"/></g></svg></div>
+        <h3>Документация и ИИ</h3>
+        <p>Помогают искать ответы, разбирать чужой код и быстрее вникать в задачу.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Инструменты разработчика — это не только редактор кода: без Git и трекера задач команда не сможет работать вместе.</div>
+  </div>
+</section>
+<!-- 11 -->
+<section class="slide" data-title="Путь задачи: семь этапов">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Путь задачи</p>
+    <h2>Путь задачи: семь этапов</h2>
+  </header>
+  <div class="body">
+    <div><svg class="ill r" style="--d:70" viewBox="0 0 1520 380" aria-hidden="true"><path d="M110 190H1410" stroke="#CDE5FF" stroke-width="6" stroke-linecap="round"/><g transform="translate(104 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 42V7M13 9h22l-4 7 4 7H13"/></g><text x="130" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Идея и цель</text><circle cx="130" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="130" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">1</text><text x="130" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">зачем продукт</text><text x="130" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">и что он решает</text><g transform="translate(314 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h16l8 8v30H12z"/><path d="M28 5v9h8"/><path d="M18 24h12M18 31h12"/></g><text x="340" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Требования</text><circle cx="340" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="340" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">2</text><text x="340" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">что именно</text><text x="340" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">нужно сделать</text><g transform="translate(524 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6c10 0 18 7.6 18 17 0 6-5 9-9 9h-4c-2.5 0-4 2-4 4 0 3-2.4 6-6 6-8 0-13-7.6-13-18C6 14 14 6 24 6z"/><circle cx="18" cy="17" r="2.4"/><circle cx="28" cy="15" r="2.4"/><circle cx="33" cy="23" r="2.4"/></g><text x="550" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Дизайн</text><circle cx="550" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="550" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">3</text><text x="550" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">как выглядит</text><text x="550" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">и как устроен</text><g transform="translate(734 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="38" height="30" rx="6"/><path d="M5 18h38"/><path d="M14 27h9M14 33h14"/></g><text x="760" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Разработка</text><circle cx="760" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="760" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">4</text><text x="760" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">фронтенд</text><text x="760" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">и бэкенд</text><g transform="translate(944 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="24" rx="7"/><path d="M18 13V8M30 13V8M13 22H6M42 22h-7M13 30H6M42 30h-7"/></g><text x="970" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Тестирование</text><circle cx="970" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="970" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">5</text><text x="970" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">ищем ошибки</text><text x="970" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">до выпуска</text><g transform="translate(1154 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5c7 5 10 13 10 21l-6 6H20l-6-6c0-8 3-16 10-21z"/><circle cx="24" cy="19" r="3.4"/><path d="M14 32l-4 10 8-3M34 32l4 10-8-3"/></g><text x="1180" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Выпуск</text><circle cx="1180" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="1180" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">6</text><text x="1180" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">продукт отдаём</text><text x="1180" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">пользователям</text><g transform="translate(1364 26) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="7"/><path d="M24 4v7M24 37v7M4 24h7M37 24h7M9.5 9.5l5 5M33.5 33.5l5 5M38.5 9.5l-5 5M14.5 33.5l-5 5"/></g><text x="1390" y="136" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Поддержка</text><circle cx="1390" cy="190" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="1390" y="202" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">7</text><text x="1390" y="276" font-size="22" fill="#6E7E92" text-anchor="middle">обновления</text><text x="1390" y="302" font-size="22" fill="#6E7E92" text-anchor="middle">и новые функции</text></svg></div>
+    <div class="note r" style="--d:300">Этапы идут по порядку, а после выпуска продукт живёт дальше: его поддерживают и обновляют.</div>
+  </div>
+</section>
+<!-- 12 -->
+<section class="slide" data-title="Кто участвует на каждом этапе">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Путь задачи</p>
+    <h2>Кто участвует на каждом этапе</h2>
+  </header>
+  <div class="body">
+    <div class="attend r" style="--d:70">
+      <div class="r hd"><div>Этап</div>
+        <div>Разработчик</div>
+        <div>Аналитик</div>
+        <div>Дизайнер</div>
+        <div>Тестировщик</div>
+        <div>Менеджер</div>
+        <div>ML-инженер</div>
+      </div>
+      <div class="r"><div class="step">Идея и цель</div>
+        <div class="dash">·</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+      </div>
+      <div class="r"><div class="step">Требования</div>
+        <div class="dash">·</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+      </div>
+      <div class="r"><div class="step">Дизайн</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+      </div>
+      <div class="r"><div class="step">Разработка</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="mark">●</div>
+      </div>
+      <div class="r"><div class="step">Тестирование</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+      </div>
+      <div class="r"><div class="step">Выпуск</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+      </div>
+      <div class="r"><div class="step">Поддержка</div>
+        <div class="mark">●</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="dash">·</div>
+        <div class="mark">●</div>
+        <div class="mark">●</div>
+      </div>
+    </div>
+    <div class="note r" style="--d:400">Это пример: в разных командах роли распределяются по-своему, а один человек может закрывать несколько этапов.</div>
+  </div>
+</section>
+<!-- 13 -->
+<section class="slide" data-title="План курса">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Курс</p>
+    <h2>План курса</h2>
+  </header>
+  <div class="body">
+    <div><svg class="ill r" style="--d:70" viewBox="0 0 1520 380" aria-hidden="true"><path d="M120 200H1400" stroke="#CDE5FF" stroke-width="6" stroke-linecap="round"/><g transform="translate(174 60) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10h13a5 5 0 015 5v27a5 5 0 00-5-5H6z"/><path d="M42 10H29a5 5 0 00-5 5v27a5 5 0 015-5h13z"/></g><circle cx="200" cy="200" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="200" y="212" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">1</text><text x="200" y="152" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Основы Python</text><text x="200" y="286" font-size="22" fill="#6E7E92" text-anchor="middle">переменные, циклы,</text><text x="200" y="312" font-size="22" fill="#6E7E92" text-anchor="middle">функции и файлы</text><g transform="translate(544 60) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 37a8 8 0 010-16 10 10 0 0119-2 7 7 0 011 14z"/></g><circle cx="570" cy="200" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="570" y="212" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">2</text><text x="570" y="152" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Работа с API</text><text x="570" y="286" font-size="22" fill="#6E7E92" text-anchor="middle">запросы к сервисам,</text><text x="570" y="312" font-size="22" fill="#6E7E92" text-anchor="middle">обмен данными</text><g transform="translate(914 60) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="6"/><rect x="20" y="20" width="8" height="8" rx="2"/><path d="M19 13V6M29 13V6M19 42v-7M29 42v-7M13 19H6M13 29H6M42 19h-7M42 29h-7"/></g><circle cx="940" cy="200" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="940" y="212" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">3</text><text x="940" y="152" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Языковые модели</text><text x="940" y="286" font-size="22" fill="#6E7E92" text-anchor="middle">как работают</text><text x="940" y="312" font-size="22" fill="#6E7E92" text-anchor="middle">нейросети и чаты</text><g transform="translate(1284 60) scale(1.08333)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5c7 5 10 13 10 21l-6 6H20l-6-6c0-8 3-16 10-21z"/><circle cx="24" cy="19" r="3.4"/><path d="M14 32l-4 10 8-3M34 32l4 10-8-3"/></g><circle cx="1310" cy="200" r="46" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="3"/><text x="1310" y="212" font-size="36" fill="#1168CC" text-anchor="middle" font-weight="700">4</text><text x="1310" y="152" font-size="26" fill="#0B3E7A" text-anchor="middle" font-weight="700">Два проекта</text><text x="1310" y="286" font-size="22" fill="#6E7E92" text-anchor="middle">своя программа</text><text x="1310" y="312" font-size="22" fill="#6E7E92" text-anchor="middle">и защита проекта</text><rect x="120" y="330" width="160" height="42" rx="21" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="200" y="358" font-size="22" fill="#FFFFFF" text-anchor="middle" font-weight="700">мы здесь</text></svg></div>
+    <div class="note r" style="--d:300">После каждого блока — практика, а в конце курса — два собственных проекта.</div>
+  </div>
+</section>
+<!-- 14 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <div class="num">Сервис 1</div>
+        <h3>Яндекс Еда</h3>
+        <p>Заказы из ресторанов и доставка: кто нужен в команде сервиса.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <div class="num">Сервис 2</div>
+        <h3>СберБанк Онлайн</h3>
+        <p>Платежи и переводы: какие роли делают банковское приложение.</p>
+      </div>
+      <div class="card r" style="--d:190">
+        <div class="num">Сервис 3</div>
+        <h3>GigaChat</h3>
+        <p>Чат с языковой моделью: кто обучает и запускает модель.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Для каждого сервиса — своя команда. Разбираем роли и то, чем каждая занимается.</div>
+  </div>
+</section>
+<!-- 15 -->
+<section class="slide" data-title="Яндекс Еда: карта команды">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Сервис 1</p>
+    <h2>Яндекс Еда: карта команды</h2>
+  </header>
+  <div class="body">
+    <div><svg class="ill mid r" style="--d:70;width:1200px;height:300px" viewBox="0 0 1520 380" aria-hidden="true"><path d="M195 118H1350" stroke="#A8D3FF" stroke-width="4"/><path d="M195 240H1350" stroke="#A8D3FF" stroke-width="4"/><rect x="30" y="10" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(56 32) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 42V7M13 9h22l-4 7 4 7H13"/></g><text x="126" y="62" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Менеджер</text><path d="M195 94V118" stroke="#A8D3FF" stroke-width="4"/><rect x="415" y="10" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(441 32) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 41h34"/><rect x="11" y="26" width="7" height="15" rx="2"/><rect x="21" y="18" width="7" height="23" rx="2"/><rect x="31" y="10" width="7" height="31" rx="2"/></g><text x="511" y="62" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Аналитик</text><path d="M580 94V118" stroke="#A8D3FF" stroke-width="4"/><rect x="800" y="10" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(826 32) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6c10 0 18 7.6 18 17 0 6-5 9-9 9h-4c-2.5 0-4 2-4 4 0 3-2.4 6-6 6-8 0-13-7.6-13-18C6 14 14 6 24 6z"/><circle cx="18" cy="17" r="2.4"/><circle cx="28" cy="15" r="2.4"/><circle cx="33" cy="23" r="2.4"/></g><text x="896" y="62" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Дизайнер</text><path d="M965 94V118" stroke="#A8D3FF" stroke-width="4"/><rect x="1185" y="10" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(1211 32) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="40" height="32" rx="6"/><path d="M4 18h40"/><circle cx="12" cy="13" r="1.7"/><circle cx="18" cy="13" r="1.7"/><path d="M12 26h14M12 32h9"/></g><text x="1281" y="62" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Фронтенд</text><path d="M1350 94V118" stroke="#A8D3FF" stroke-width="4"/><rect x="30" y="266" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(56 288) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="8" width="36" height="14" rx="5"/><rect x="6" y="26" width="36" height="14" rx="5"/><path d="M14 15h3M14 33h3"/></g><text x="126" y="318" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Бэкенд</text><path d="M195 240V266" stroke="#A8D3FF" stroke-width="4"/><rect x="415" y="266" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(441 288) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="24" rx="7"/><path d="M18 13V8M30 13V8M13 22H6M42 22h-7M13 30H6M42 30h-7"/></g><text x="511" y="318" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">Тестировщик</text><path d="M580 240V266" stroke="#A8D3FF" stroke-width="4"/><rect x="800" y="266" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(826 288) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="7"/><path d="M24 4v7M24 37v7M4 24h7M37 24h7M9.5 9.5l5 5M33.5 33.5l5 5M38.5 9.5l-5 5M14.5 33.5l-5 5"/></g><text x="896" y="318" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">DevOps</text><path d="M965 240V266" stroke="#A8D3FF" stroke-width="4"/><rect x="1185" y="266" width="330" height="84" rx="22" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(1211 288) scale(0.916667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="13" width="22" height="22" rx="6"/><rect x="20" y="20" width="8" height="8" rx="2"/><path d="M19 13V6M29 13V6M19 42v-7M29 42v-7M13 19H6M13 29H6M42 19h-7M42 29h-7"/></g><text x="1281" y="318" font-size="24" fill="#0B3E7A" text-anchor="start" font-weight="700">ML-инженер</text><path d="M1350 240V266" stroke="#A8D3FF" stroke-width="4"/><path d="M760 118V148" stroke="#A8D3FF" stroke-width="4"/><path d="M760 232V240" stroke="#A8D3FF" stroke-width="4"/><rect x="540" y="150" width="440" height="82" rx="24" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><text x="760" y="202" font-size="32" fill="#FFFFFF" text-anchor="middle" font-weight="700">Сервис «Яндекс Еда»</text></svg>
+      <div class="map two roles r" style="--d:170">
+        <div class="row"><div class="h">Роль</div><div class="h">Что делает в сервисе</div></div>
+        <div class="row quiz"><div class="rl">Менеджер продукта</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Решает, какие функции появятся в сервисе: например, слежение за заказом на карте</span></div></div>
+        <div class="row quiz"><div class="rl">Аналитик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Изучает данные о заказах и поездках курьеров: где скапливаются заказы, сколько идёт доставка</span></div></div>
+        <div class="row quiz"><div class="rl">Дизайнер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Продумывает экраны: выбор ресторана, корзину, оплату и карту, по которой едет курьер</span></div></div>
+        <div class="row quiz"><div class="rl">Фронтенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Делает приложение и сайт, где оформляют заказ и следят, где сейчас курьер</span></div></div>
+        <div class="row quiz"><div class="rl">Бэкенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Пишет сервер: принимает заказы, считает цену и время доставки, передаёт заказ курьеру</span></div></div>
+        <div class="row quiz"><div class="rl">Тестировщик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Проверяет заказы и оплату, ловит ошибки раньше, чем их увидит пользователь</span></div></div>
+        <div class="row quiz"><div class="rl">DevOps-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Следит, чтобы в час пик сервис выдержал нагрузку и не падал</span></div></div>
+        <div class="row quiz"><div class="rl">ML-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Обучает модели: подбор ресторанов, время доставки, подсказки курьеру</span></div></div>
+      </div>
+</div></div>
+  </section>
+<!-- 16 -->
+<section class="slide" data-title="СберБанк Онлайн: карта команды">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Сервис 2</p>
+    <h2>СберБанк Онлайн: карта команды</h2>
+  </header>
+  <div class="body">
+    <div class="dia">
+      <div><svg class="r" style="--d:70" viewBox="0 0 700 620" aria-hidden="true"><rect x="210" y="20" width="280" height="570" rx="38" fill="#F8FCFF" stroke="#CDE5FF" stroke-width="3"/><rect x="230" y="60" width="240" height="500" rx="26" fill="#FFFFFF" stroke="#E9F4FF" stroke-width="2"/><rect x="325" y="34" width="50" height="10" rx="5" fill="#CDE5FF" stroke="#CDE5FF" stroke-width="0"/><text x="350" y="106" font-size="19" fill="#1168CC" text-anchor="middle" font-weight="700">СберБанк Онлайн</text><rect x="252" y="124" width="196" height="92" rx="18" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><rect x="276" y="152" width="86" height="14" rx="7" fill="#FFFFFF" opacity=".92"/><rect x="276" y="178" width="52" height="10" rx="5" fill="#FFFFFF" opacity=".55"/><rect x="252" y="232" width="92" height="62" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(276 250) scale(0.625)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="38" height="26" rx="6"/><path d="M5 20h38M12 29h9"/></g><rect x="356" y="232" width="92" height="62" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(380 250) scale(0.625)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="11" y="21" width="26" height="20" rx="6"/><path d="M17 21v-5a7 7 0 0114 0v5"/></g><rect x="252" y="310" width="196" height="38" rx="14" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><rect x="268" y="324" width="110" height="10" rx="5" fill="#E9F4FF"/><rect x="252" y="356" width="196" height="38" rx="14" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><rect x="268" y="370" width="140" height="10" rx="5" fill="#E9F4FF"/><rect x="252" y="402" width="196" height="38" rx="14" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><rect x="268" y="416" width="90" height="10" rx="5" fill="#E9F4FF"/><rect x="252" y="452" width="196" height="44" rx="16" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><circle cx="300" cy="474" r="7" fill="#1E7EE8"/><circle cx="350" cy="474" r="7" fill="#CDE5FF"/><circle cx="400" cy="474" r="7" fill="#CDE5FF"/><g transform="translate(40 150) scale(1.66667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="8" width="36" height="14" rx="5"/><rect x="6" y="26" width="36" height="14" rx="5"/><path d="M14 15h3M14 33h3"/></g><text x="105" y="268" font-size="20" fill="#0B3E7A" text-anchor="middle" font-weight="700">сервер банка</text><g transform="translate(40 330) scale(1.66667)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="12" rx="15" ry="6"/><path d="M9 12v24c0 3.3 6.7 6 15 6s15-2.7 15-6V12"/><path d="M9 24c0 3.3 6.7 6 15 6s15-2.7 15-6"/></g><text x="105" y="448" font-size="20" fill="#0B3E7A" text-anchor="middle" font-weight="700">данные</text><rect x="500" y="60" width="190" height="220" rx="24" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><g transform="translate(553 76) scale(1.3)" fill="none" stroke="#1E7EE8" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5l16 6v13c0 10-7 16.6-16 20-9-3.4-16-10-16-20V11z"/><path d="M17 24l5 5 10-11"/></g><text x="595" y="184" font-size="20" fill="#1168CC" text-anchor="middle" font-weight="700">проверка</text><text x="595" y="210" font-size="20" fill="#1168CC" text-anchor="middle" font-weight="700">операций</text><text x="595" y="242" font-size="19" fill="#6E7E92" text-anchor="middle">модель ищет</text><text x="595" y="266" font-size="19" fill="#6E7E92" text-anchor="middle">мошенников</text></svg></div>
+            <div class="map two roles r" style="--d:170">
+        <div class="row"><div class="h">Роль</div><div class="h">Что делает в сервисе</div></div>
+        <div class="row quiz"><div class="rl">Менеджер продукта</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Решает, какие функции появятся в приложении: платежи, переводы, кэшбэк</span></div></div>
+        <div class="row quiz"><div class="rl">Аналитик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Изучает историю операций: где чаще платят картой, какие переводы подозрительны</span></div></div>
+        <div class="row quiz"><div class="rl">Дизайнер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Продумывает экраны: вход и подтверждение, баланс, переводы, история операций</span></div></div>
+        <div class="row quiz"><div class="rl">Фронтенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Делает приложение, в котором пользователь входит, платит и переводит деньги</span></div></div>
+        <div class="row quiz"><div class="rl">Бэкенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Пишет сервер: хранит счета и операции, проверяет пароль, считает платежи</span></div></div>
+        <div class="row quiz"><div class="rl">Тестировщик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Проверяет платежи и переводы: суммы, лимиты, ошибки ввода, повторные списания</span></div></div>
+        <div class="row quiz"><div class="rl">DevOps-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Следит, чтобы приложение работало круглосуточно и держало нагрузку</span></div></div>
+        <div class="row quiz"><div class="rl">ML-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Обучает модели, которые ищут мошеннические операции и подсказывают клиенту</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 17 -->
+<section class="slide" data-title="GigaChat: карта команды">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Сервис 3</p>
+    <h2>GigaChat: карта команды</h2>
+  </header>
+  <div class="body">
+    <div class="dia">
+      <div><svg class="r" style="--d:70" viewBox="0 0 700 620" aria-hidden="true"><rect x="40" y="20" width="620" height="580" rx="28" fill="#FFFFFF" stroke="#CDE5FF" stroke-width="3"/><rect x="40" y="20" width="620" height="76" rx="28" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><rect x="40" y="68" width="620" height="28" rx="0" fill="#E9F4FF" stroke="#E9F4FF" stroke-width="0"/><text x="78" y="70" font-size="26" fill="#1168CC" text-anchor="start" font-weight="700">GigaChat</text><circle cx="612" cy="58" r="20" fill="#1E7EE8"/><g transform="translate(598 44) scale(0.583333)" fill="none" stroke="#FFFFFF" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 8l3.2 8.2L30 19.5l-7.8 3.3L19 31l-3.2-8.2L8 19.5l7.8-3.3z"/><path d="M35 27l1.8 4.4L41 33l-4.2 1.6L35 39l-1.8-4.4L29 33l4.2-1.6z"/></g><rect x="300" y="130" width="320" height="84" rx="20" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><rect x="324" y="156" width="230" height="14" rx="7" fill="#FFFFFF" opacity=".92"/><rect x="324" y="182" width="150" height="12" rx="6" fill="#FFFFFF" opacity=".6"/><rect x="80" y="240" width="400" height="116" rx="20" fill="#E9F4FF" stroke="#CDE5FF" stroke-width="2"/><rect x="104" y="266" width="340" height="14" rx="7" fill="#CDE5FF"/><rect x="104" y="292" width="280" height="12" rx="6" fill="#CDE5FF"/><rect x="104" y="318" width="180" height="12" rx="6" fill="#CDE5FF"/><rect x="340" y="386" width="280" height="68" rx="20" fill="#1E7EE8" stroke="#1E7EE8" stroke-width="2"/><rect x="364" y="408" width="190" height="14" rx="7" fill="#FFFFFF" opacity=".92"/><rect x="364" y="430" width="120" height="10" rx="5" fill="#FFFFFF" opacity=".6"/><circle cx="120" cy="504" r="10" fill="#CDE5FF"/><circle cx="152" cy="504" r="10" fill="#CDE5FF"/><circle cx="184" cy="504" r="10" fill="#CDE5FF"/><text x="240" y="512" font-size="20" fill="#6E7E92" text-anchor="start">модель отвечает</text><rect x="80" y="540" width="520" height="44" rx="22" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/><text x="108" y="569" font-size="20" fill="#A8B6C6" text-anchor="start">написать сообщение…</text></svg></div>
+            <div class="map two roles r" style="--d:170">
+        <div class="row"><div class="h">Роль</div><div class="h">Что делает в сервисе</div></div>
+        <div class="row quiz"><div class="rl">Менеджер продукта</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Решает, что должна уметь модель и какие функции появятся в чате</span></div></div>
+        <div class="row quiz"><div class="rl">Аналитик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Изучает, как пользователи пишут запросы и в чём модель ошибается</span></div></div>
+        <div class="row quiz"><div class="rl">Дизайнер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Продумывает окно чата: поле ввода, ответы модели, кнопки и подсказки</span></div></div>
+        <div class="row quiz"><div class="rl">Фронтенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Делает сам чат: ленту сообщений, поле ввода и кнопку отправки</span></div></div>
+        <div class="row quiz"><div class="rl">Бэкенд-разработчик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Пишет сервер: принимает текст, обращается к модели и возвращает ответ</span></div></div>
+        <div class="row quiz"><div class="rl">Тестировщик</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Проверяет ответы модели: где она ошибается и как держит нагрузку</span></div></div>
+        <div class="row quiz"><div class="rl">DevOps-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Следит, чтобы модель отвечала быстро и серверы с GPU не падали</span></div></div>
+        <div class="row quiz"><div class="rl">ML-инженер</div><div class="ds"><span class="hide">нажми — что делает</span><span class="ans">Обучает и дообучает языковую модель, готовит для неё данные</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 18 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Разработчик решает задачи кодом и работает в команде</div>
+      <div>Основные направления: фронтенд, бэкенд и DevOps</div>
+      <div>В IT есть и другие профессии: аналитик, тестировщик, дизайнер, менеджер, ML-инженер</div>
+      <div>Задача проходит этапы — от идеи и требований до выпуска и поддержки</div>
+      <div>Код — только часть работы: чтение кода, обсуждение задач, поиск ошибок</div>
+      <div>Инструменты: редактор кода, язык, терминал, Git и GitHub, трекер задач, ИИ</div>
+    </div>
+  </div>
+</section>
+
+  </div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">18</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+  /* В этой лекции кода ещё нет — плееры запуска появляются с занятия 3. */
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+
+<script>
+/* ===== ПРАКТИКА: таблица ролей — «что делает» открывается по нажатию ===== */
+(function(){
+  var rows = document.querySelectorAll('.map.roles .row.quiz');
+  if (!rows.length) { return; }
+  Array.prototype.forEach.call(rows, function(row){
+    row.addEventListener('click', function(){ row.classList.toggle('shown'); });
+  });
+  window.resetQuiz = function(){
+    Array.prototype.forEach.call(rows, function(r){ r.classList.remove('shown'); });
+  };
+})();
+</script>
+<script>
+/* копирование шаблона названия записи */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
+  });
+})();
+</script>
+</body>
+</html>
