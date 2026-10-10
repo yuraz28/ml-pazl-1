@@ -1,4 +1,7 @@
-# Пересобирает оглавление index.html в корне репозитория, когда появляется новая презентация.
+# Пересобирает оглавление index.html (и служебную metod/index.html) из config.yaml.
+#
+# Файлы материалов могут лежать где угодно — структура репозитория сборке безразлична,
+# поэтому триггер ловит любой html/md, кроме самих генерируемых страниц.
 #
 # Если в main запрещён прямой push (branch protection), шаг «Коммит» не сработает
 # — тогда запускай scripts/build_lesson_index.py локально перед пушем.
@@ -8,10 +11,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "classes/**/*.html"
-      - "classes/**/*.md"
-      - "scripts/build_lesson_index.py"
+      - "**.html"
+      - "**.md"
+      - "!index.html"
+      - "!metod/**"
       - "config.yaml"
+      - "scripts/build_lesson_index.py"
   workflow_dispatch:
 
 permissions:
