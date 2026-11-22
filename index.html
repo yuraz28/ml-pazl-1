@@ -538,7 +538,11 @@ a{color:inherit}
     var t = openTs(l);
     return t ? Date.now() >= t : null;
   }
-  function isLocked(l) { return isOpen(l) === false; }
+  /* Служебная страница «/metod» (собирается из этой же в metod/index.html):
+     на ней открыты все занятия независимо от даты. На GitHub Pages страница
+     не публикуется — deploy-pages.yml кладёт в _site всё, кроме metod/. */
+  var UNLOCK = document.documentElement.hasAttribute("data-unlock-all");
+  function isLocked(l) { return !UNLOCK && isOpen(l) === false; }
   /* занятие «доступно», если есть хоть что-то: дека или описание */
   function available(l) { return (!!l.path || !!l.doc) && !isLocked(l); }
   function fmtOpens(l) {
@@ -591,7 +595,7 @@ a{color:inherit}
 
       // правый верхний угол: дата выхода у закрытых; «Soon...», если дата ещё не назначена
       var undated = isOpen(l) === null;
-      var date = locked ? fmtOpens(l) : (undated ? "Soon..." : "");
+      var date = (locked || UNLOCK) ? fmtOpens(l) : (undated ? "Soon..." : "");
       if (date) {
         var marks = document.createElement("div");
         marks.className = "marks";

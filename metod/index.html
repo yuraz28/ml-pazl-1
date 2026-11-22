@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="ru" data-unlock-all>
+<head>
+<meta charset="utf-8">
+<base href="../">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Материалы курса — ПАЗЛ — проверка</title>
+<meta name="description" content="Материалы курса «ПАЗЛ»: Python и ML.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231E7EE8'/%3E%3Ccircle cx='11' cy='11' r='4.2' fill='%23fff'/%3E%3Ccircle cx='21' cy='21' r='4.2' fill='%23FF8E00'/%3E%3C/svg%3E">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html{
+  scroll-behavior:smooth;
+  /* фон на html, без background-attachment:fixed — иначе при печати и в
+     полноэкранных скриншотах низ страницы остаётся белым */
+  background:radial-gradient(1300px 760px at 12% -12%, #12508F 0%, #0A3160 38%, var(--night) 62%, #061D38 100%) #061D38;
+  min-height:100%;
+}
+body{
+  margin:0; min-height:100%;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  color:#fff; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+a{color:inherit}
+.wrap{max-width:1560px; margin:0 auto; padding:56px 40px 72px}
+
+/* --- шапка --- */
+.brand{display:flex; align-items:center; gap:12px; font-size:17px; font-weight:600; letter-spacing:.02em; color:rgba(255,255,255,.86)}
+.brand .dot{width:11px; height:11px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 5px rgba(255,142,0,.18)}
+.brand span.pill{
+  font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  padding:4px 10px; border-radius:999px; color:#BFE1FF; background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.14)
+}
+
+.head{margin:34px 0 6px}
+.head .eyebrow{font-size:15px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:#7FC0FF; margin-bottom:16px}
+.head h1{margin:0; font-size:clamp(38px,4.6vw,68px); line-height:1.02; font-weight:800; letter-spacing:-.025em}
+
+/* --- прогресс --- */
+.progress{display:flex; align-items:center; gap:18px; margin:30px 0 0; max-width:1000px}
+.progress .bar{flex:1; height:6px; border-radius:6px; background:rgba(255,255,255,.16); overflow:hidden}
+.progress .bar i{display:block; height:100%; width:0; border-radius:6px; background:linear-gradient(90deg,var(--blue) 0%, #59A6FF 100%); transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.progress .cnt{font-family:var(--mono); font-size:14px; letter-spacing:.04em; color:rgba(255,255,255,.78); white-space:nowrap}
+
+/* --- фильтры --- */
+.tools{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:34px 0 28px}
+.search{position:relative; flex:0 1 340px}
+.search input{
+  width:100%; padding:13px 16px 13px 42px; border-radius:14px; font:inherit; font-size:15px;
+  color:#fff; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); outline:none
+}
+.search input::placeholder{color:rgba(255,255,255,.45)}
+.search input:focus{border-color:var(--blue); background:rgba(255,255,255,.12)}
+.search svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); width:17px; height:17px; opacity:.5}
+.chip{
+  padding:11px 18px; border-radius:999px; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  color:rgba(255,255,255,.8); background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); transition:.18s
+}
+.chip:hover{background:rgba(255,255,255,.13); color:#fff}
+.chip[aria-pressed="true"]{background:#fff; border-color:#fff; color:var(--blue-900)}
+
+/* --- сетка занятий --- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px}
+.card{
+  position:relative; display:flex; flex-direction:column; gap:12px; min-height:156px;
+  padding:22px 22px 18px; border-radius:22px; background:#fff; color:var(--ink);
+  border:1px solid transparent; box-shadow:0 14px 34px rgba(3,17,34,.28);
+  text-decoration:none; transition:transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s, border-color .18s
+}
+.card:not(.off):hover{transform:translateY(-3px); border-color:var(--blue); box-shadow:0 20px 44px rgba(3,17,34,.36)}
+.card:focus-within{border-color:var(--blue)}
+.num{
+  align-self:flex-start; font-family:var(--mono); font-size:13px; font-weight:500; letter-spacing:.06em;
+  padding:5px 11px; border-radius:9px; background:var(--tint); color:var(--blue-700); border:1px solid #D5E9FF
+}
+.ttl{font-size:19px; line-height:1.26; font-weight:700; letter-spacing:-.01em; color:var(--ink); margin:0}
+.meta{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted)}
+.slides{font-family:var(--mono); font-size:12px; letter-spacing:.02em}
+
+/* метка в правом верхнем углу: дата выхода у закрытых занятий */
+.marks{position:absolute; top:16px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+.badge{
+  font-size:12px; font-weight:700; letter-spacing:.01em; padding:5px 11px; border-radius:999px;
+  background:var(--tint); color:var(--blue-700); border:1px solid #D5E9FF
+}
+
+/* кнопки внизу карточки */
+.acts{margin-top:auto; display:flex; flex-wrap:wrap; gap:10px}
+.btn{
+  display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:12px;
+  font:inherit; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; border:1px solid transparent;
+  transition:background .16s, color .16s, border-color .16s, box-shadow .16s
+}
+.btn.primary{background:var(--blue); color:#fff}
+.btn.primary:hover{background:var(--blue-700)}
+.btn.ghost{background:var(--tint); color:var(--blue-700); border-color:#D5E9FF}
+.btn.ghost:hover{background:#DCEDFF}
+.btn:focus-visible{outline:3px solid var(--orange); outline-offset:2px}
+.btn.is-off{background:rgba(16,26,38,.055); color:#AAB7C6; border-color:rgba(16,26,38,.08); cursor:not-allowed}
+
+.card.off{
+  background:rgba(255,255,255,.055); border:1px dashed rgba(255,255,255,.22); box-shadow:none; color:rgba(255,255,255,.55)
+}
+.card.off .num{background:rgba(255,255,255,.09); color:rgba(255,255,255,.62); border-color:rgba(255,255,255,.16)}
+.card.off .ttl{color:rgba(255,255,255,.62)}
+.card.off .meta{color:rgba(255,255,255,.42)}
+.card.off .badge{background:rgba(255,255,255,.1); color:rgba(255,255,255,.82); border-color:rgba(255,255,255,.2)}
+.card.off .btn.is-off{background:rgba(255,255,255,.05); color:rgba(255,255,255,.42); border-color:rgba(255,255,255,.1)}
+.card.hidden{display:none}
+
+.empty{grid-column:1/-1; padding:40px 4px; color:rgba(255,255,255,.6); font-size:16px}
+
+/* --- подвал --- */
+@media (max-width:640px){ .wrap{padding:36px 20px 56px} }
+@media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand"><span class="dot"></span>ПАЗЛ<span class="pill">Python · ML</span></div>
+
+  <header class="head">
+    <div class="eyebrow">Материалы курса</div>
+    <h1>Все занятия курса</h1>
+      </header>
+
+  <div class="progress">
+    <div class="bar"><i id="bar"></i></div>
+    <div class="cnt" id="cnt">— / —</div>
+  </div>
+
+  <div class="tools">
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+      <input id="q" type="search" placeholder="Номер или тема занятия…" autocomplete="off" aria-label="Поиск занятия">
+    </label>
+    <button class="chip" id="f-all" aria-pressed="true">Все занятия</button>
+    <button class="chip" id="f-ready" aria-pressed="false">Доступные</button>
+  </div>
+
+  <main class="grid" id="grid" aria-live="polite"></main>
+
+</div>
+
+<!--lessons:data-->
+  <script id="lessons" type="application/json">
+{
+  "schema": 1,
+  "title": "Машинное обучение",
+  "lessons": [
+    {
+      "n": 1,
+      "title": "Вводное занятие",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-10-05",
+      "doc": "docs/lesson-01.html"
+    },
+    {
+      "n": 2,
+      "title": "Введение в профессию и инструменты",
+      "slides": 18,
+      "path": "classes/02-lessons/02-vvedenie-v-professiyu.html",
+      "opens": "2026-10-12",
+      "doc": "docs/lesson-02.html"
+    },
+    {
+      "n": 3,
+      "title": "Профессии в IT: AI, бэкенд и фронтенд",
+      "slides": 24,
+      "path": "classes/03-lessons/03-proficii-v-it.html",
+      "opens": "2026-10-12",
+      "doc": "docs/lesson-03.html"
+    },
+    {
+      "n": 4,
+      "title": "Первые шаги в Python",
+      "slides": 31,
+      "path": "classes/04-lessons/04-pervye-shagi-v-python.html",
+      "opens": "2026-10-19",
+      "doc": "docs/lesson-04.html"
+    },
+    {
+      "n": 5,
+      "title": "Ввод и вывод данных",
+      "slides": 26,
+      "path": "classes/05-lessons/05-vvod-i-vyvod-dannyh.html",
+      "opens": "2026-10-19",
+      "doc": "docs/lesson-05.html"
+    },
+    {
+      "n": 6,
+      "title": "Целочисленная арифметика",
+      "slides": 41,
+      "path": "classes/06-lessons/06-celochislennaya-arifmetika.html",
+      "opens": "2026-11-02",
+      "doc": "docs/lesson-06.html"
+    },
+    {
+      "n": 7,
+      "title": "Условный оператор",
+      "slides": 31,
+      "path": "classes/07-lessons/07-uslovnyy-operator.html",
+      "opens": "2026-11-09",
+      "doc": "docs/lesson-07.html"
+    },
+    {
+      "n": 8,
+      "title": "Типы данных",
+      "slides": 35,
+      "path": "classes/08-lessons/08-tipy-dannyh.html",
+      "opens": "2026-11-09",
+      "doc": "docs/lesson-08.html"
+    },
+    {
+      "n": 9,
+      "title": "Цикл for",
+      "slides": 24,
+      "path": "classes/09-lessons/09-cikl-for.html",
+      "opens": "2026-11-16",
+      "doc": "docs/lesson-09.html"
+    },
+    {
+      "n": 10,
+      "title": "Цикл while",
+      "slides": 24,
+      "path": "classes/10-lessons/10-cikl-while.html",
+      "opens": "2026-11-16",
+      "doc": "docs/lesson-10.html"
+    },
+    {
+      "n": 11,
+      "title": "Строки",
+      "slides": 32,
+      "path": "classes/11-lessons/11-stroki.html",
+      "opens": "2026-11-23",
+      "doc": "docs/lesson-11.html"
+    },
+    {
+      "n": 12,
+      "title": "Списки",
+      "slides": 27,
+      "path": "classes/12-lessons/12-spiski.html",
+      "opens": "2026-11-23",
+      "doc": "docs/lesson-12.html"
+    },
+    {
+      "n": 13,
+      "title": "Функции",
+      "slides": 29,
+      "path": "classes/13-lessons/13-funkcii.html",
+      "opens": "2026-11-30",
+      "doc": "docs/lesson-13.html"
+    },
+    {
+      "n": 14,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-11-30"
+    },
+    {
+      "n": 15,
+      "title": "История LLM и машинного обучения",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-12-07",
+      "doc": "docs/lesson-15.html"
+    },
+    {
+      "n": 16,
+      "title": "Промпт-инжиниринг",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-12-07",
+      "doc": "docs/lesson-16.html"
+    },
+    {
+      "n": 17,
+      "title": "Применение нейросетей",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-12-14",
+      "doc": "docs/lesson-17.html"
+    },
+    {
+      "n": 18,
+      "title": "Ретро",
+      "slides": 0,
+      "path": null,
+      "opens": "2026-12-14",
+      "doc": "docs/lesson-18.html"
+    },
+    {
+      "n": 19,
+      "title": "Вложенные списки",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-11",
+      "doc": "docs/lesson-19.html"
+    },
+    {
+      "n": 20,
+      "title": "Кортежи и множества",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-11",
+      "doc": "docs/lesson-20.html"
+    },
+    {
+      "n": 21,
+      "title": "Словари",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-18",
+      "doc": "docs/lesson-21.html"
+    },
+    {
+      "n": 22,
+      "title": "Работа с файлами txt",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-18",
+      "doc": "docs/lesson-22.html"
+    },
+    {
+      "n": 23,
+      "title": "Модуль csv",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-25",
+      "doc": "docs/lesson-23.html"
+    },
+    {
+      "n": 24,
+      "title": "JSON файлы",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-01-25",
+      "doc": "docs/lesson-24.html"
+    },
+    {
+      "n": 25,
+      "title": "Повторение Python",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-01",
+      "doc": "docs/lesson-25.html"
+    },
+    {
+      "n": 26,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-01"
+    },
+    {
+      "n": 27,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-08"
+    },
+    {
+      "n": 28,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-08"
+    },
+    {
+      "n": 29,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-15"
+    },
+    {
+      "n": 30,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-15"
+    },
+    {
+      "n": 31,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-02-22"
+    },
+    {
+      "n": 32,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-01"
+    },
+    {
+      "n": 33,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-01"
+    },
+    {
+      "n": 34,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-08"
+    },
+    {
+      "n": 35,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-08"
+    },
+    {
+      "n": 36,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-15"
+    },
+    {
+      "n": 37,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-15"
+    },
+    {
+      "n": 38,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-29"
+    },
+    {
+      "n": 39,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-03-29"
+    },
+    {
+      "n": 40,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-05"
+    },
+    {
+      "n": 41,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-05"
+    },
+    {
+      "n": 42,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-12"
+    },
+    {
+      "n": 43,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-12"
+    },
+    {
+      "n": 44,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-19"
+    },
+    {
+      "n": 45,
+      "title": "",
+      "slides": 0,
+      "path": null,
+      "opens": "2027-04-19"
+    }
+  ]
+}
+  </script>
+  <!--/lessons:data-->
+
+<script>
+(function () {
+  "use strict";
+
+  var PAGE = JSON.parse((document.getElementById("lessons") || {}).textContent || "{}");
+  var LESSONS = Array.isArray(PAGE.lessons) ? PAGE.lessons : [];
+  var state = { q: "", onlyReady: false };
+
+  var grid = document.getElementById("grid");
+  var bar = document.getElementById("bar");
+  var cnt = document.getElementById("cnt");
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function plural(n, one, few, many) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+    return many;
+  }
+
+  var MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  var MSK = "+03:00";                 // дата открытия понимается по московскому времени
+
+  /* opens из config.yaml: "YYYY-MM-DD" — дата открытия, "soon" — дата неизвестна */
+  function openDate(l) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String((l && l.opens) || "").trim());
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function openTs(l) {
+    var o = openDate(l);
+    return o ? Date.parse(o.y + "-" + pad(o.mo) + "-" + pad(o.d) + "T00:00:00" + MSK) : 0;
+  }
+  function isOpen(l) {                 // null — даты нет; true/false — открыто/закрыто
+    var t = openTs(l);
+    return t ? Date.now() >= t : null;
+  }
+  /* Служебная страница «/metod» (собирается из этой же в metod/index.html):
+     на ней открыты все занятия независимо от даты. На GitHub Pages страница
+     не публикуется — deploy-pages.yml кладёт в _site всё, кроме metod/. */
+  var UNLOCK = document.documentElement.hasAttribute("data-unlock-all");
+  function isLocked(l) { return !UNLOCK && isOpen(l) === false; }
+  /* занятие «доступно», если есть хоть что-то: дека или описание */
+  function available(l) { return (!!l.path || !!l.doc) && !isLocked(l); }
+  function fmtOpens(l) {
+    var o = openDate(l);
+    return o ? (o.d + " " + MONTHS[o.mo - 1]) : "";
+  }
+  /* кнопка действия: активная ссылка либо неактивная «плашка» */
+  function actionButton(on, cls, label, href, hint) {
+    var el;
+    if (on && href) {
+      el = document.createElement("a");
+      el.className = cls;
+      el.href = href;
+      el.target = "_blank";
+      el.rel = "noopener";
+    } else {
+      el = document.createElement("span");
+      el.className = cls + " is-off";
+      el.setAttribute("aria-disabled", "true");
+      if (hint) el.title = hint;
+    }
+    text(el, label);
+    return el;
+  }
+
+  function lessonCount() { return LESSONS.length; }
+  function readyCount() { return LESSONS.filter(available).length; }
+
+  function text(el, s) { el.textContent = s; } // всегда через textContent — содержимое деков не доверяем
+
+  var h1 = document.querySelector(".head h1");
+  if (h1 && PAGE.title) text(h1, PAGE.title);
+
+  function render() {
+    var q = state.q.trim().toLowerCase();
+    var shown = 0;
+    grid.innerHTML = "";
+
+    LESSONS.forEach(function (l) {
+      var hasFile = !!l.path;
+      var hasDoc = !!l.doc;
+      var locked = isLocked(l);
+      var avail = (hasFile || hasDoc) && !locked;
+      var hay = ("занятие " + l.n + " занятие " + pad(l.n) + " " + pad(l.n) + " " + (l.title || "")).toLowerCase();
+      var match = (!q || hay.indexOf(q) !== -1) && (!state.onlyReady || avail);
+      var deck = l.path || "";
+
+      var card = document.createElement("article");
+      card.className = "card" + (avail ? "" : " off");
+
+      // правый верхний угол: дата выхода у закрытых; «Soon...», если дата ещё не назначена
+      var undated = isOpen(l) === null;
+      var date = (locked || UNLOCK) ? fmtOpens(l) : (undated ? "Soon..." : "");
+      if (date) {
+        var marks = document.createElement("div");
+        marks.className = "marks";
+        var badge = document.createElement("span");
+        badge.className = "badge";
+        text(badge, date);
+        marks.appendChild(badge);
+        card.appendChild(marks);
+      }
+
+      var num = document.createElement("span");
+      num.className = "num";
+      text(num, "Занятие " + pad(l.n));
+      card.appendChild(num);
+
+      var ttl = document.createElement("p");
+      ttl.className = "ttl";
+      text(ttl, l.title ? l.title : (avail ? "Материалы занятия" : "Презентация готовится"));
+      card.appendChild(ttl);
+
+      if (l.slides) {
+        var meta = document.createElement("span");
+        meta.className = "meta";
+        var sl = document.createElement("span");
+        sl.className = "slides";
+        text(sl, l.slides + " " + plural(l.slides, "слайд", "слайда", "слайдов"));
+        meta.appendChild(sl);
+        card.appendChild(meta);
+      }
+
+      // внизу карточки — две кнопки: презентация и описание
+      var acts = document.createElement("div");
+      acts.className = "acts";
+      acts.appendChild(actionButton(
+        hasFile && !locked, "btn primary", "Презентация", deck,
+        locked ? "Занятие откроется " + (fmtOpens(l) || "позже") : "Презентация ещё не готова"
+      ));
+      acts.appendChild(actionButton(
+        hasDoc && !locked, "btn ghost", "Описание", l.doc || "",
+        locked ? "Занятие откроется " + (fmtOpens(l) || "позже") : "Описание ещё не готово"
+      ));
+      card.appendChild(acts);
+
+      if (!match) { card.classList.add("hidden"); } else { shown++; }
+      grid.appendChild(card);
+    });
+
+    if (!shown) {
+      var empty = document.createElement("div");
+      empty.className = "empty";
+      text(empty, lessonCount()
+        ? "Ничего не нашлось. Сбрось фильтр или измени запрос."
+        : "Список занятий пока не собран.");
+      grid.appendChild(empty);
+    }
+
+    var ready = readyCount(), total = lessonCount();
+    bar.style.width = (total ? Math.round(ready / total * 100) : 0) + "%";
+    text(cnt, ready + " / " + total + " " + plural(total, "занятие", "занятия", "занятий"));
+  }
+
+  /* --- управление --- */
+  document.getElementById("q").addEventListener("input", function (e) {
+    state.q = e.target.value; render();
+  });
+  document.getElementById("f-all").addEventListener("click", function () {
+    state.onlyReady = false;
+    this.setAttribute("aria-pressed", "true");
+    document.getElementById("f-ready").setAttribute("aria-pressed", "false");
+    render();
+  });
+  document.getElementById("f-ready").addEventListener("click", function () {
+    state.onlyReady = true;
+    this.setAttribute("aria-pressed", "true");
+    document.getElementById("f-all").setAttribute("aria-pressed", "false");
+    render();
+  });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target.tagName;
+    if (e.key === "/" && t !== "INPUT" && t !== "TEXTAREA") {
+      e.preventDefault();
+      document.getElementById("q").focus();
+    }
+  });
+
+  render();
+  setInterval(render, 60000);   // раз в минуту пересчитываем доступность занятий
+})();
+</script>
+</body>
+</html>
