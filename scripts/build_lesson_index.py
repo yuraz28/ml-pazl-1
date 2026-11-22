@@ -32,7 +32,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INDEX = REPO_ROOT / "index.html"
 CONFIG = REPO_ROOT / "config.yaml"
 DOCS = REPO_ROOT / "docs"          # собранные страницы «Описание» из markdown
-METOD = REPO_ROOT / "metod"        # служебная страница «/metod»: все занятия открыты
 
 try:  # необязательная зависимость: без неё описание собирается как обычный текст
     import markdown as _markdown
@@ -330,26 +329,6 @@ def render_json_block(data: dict) -> str:
     return f'{OPEN_MARK}\n  <script id="lessons" type="application/json">\n{body}\n  </script>\n  {CLOSE_MARK}'
 
 
-def build_metod(index_text: str) -> str:
-    """Страница «/metod» — то же оглавление, но все занятия открыты.
-
-    Собирается из готового index.html, чтобы шаблон был один. Отличия:
-    data-unlock-all (страница игнорирует дату opens), <base href="../"> —
-    относительные ссылки classes/… и docs/… ведут в корень сайта,
-    и noindex, чтобы страница не попадала в поиск.
-    """
-    page = index_text.replace('<html lang="ru">', '<html lang="ru" data-unlock-all>', 1)
-    page = page.replace(
-        '<meta charset="utf-8">',
-        '<meta charset="utf-8">\n'
-        '<base href="../">\n'
-        '<meta name="robots" content="noindex,nofollow">',
-        1,
-    )
-    return page.replace('<title>Материалы курса — ПАЗЛ</title>',
-                        '<title>Материалы курса — ПАЗЛ — проверка</title>', 1)
-
-
 def patch_index(data: dict, check_only: bool) -> int:
     stats = (f"{len(data['lessons'])} занятий, "
              f"{sum(1 for e in data['lessons'] if e.get('path'))} с презентациями, "
@@ -361,15 +340,9 @@ def patch_index(data: dict, check_only: bool) -> int:
         return 2
     new_text = text[:i] + render_json_block(data) + text[j + len(CLOSE_MARK):]
 
-    metod_out = METOD / "index.html"
-    metod_page = build_metod(new_text)
-    metod_old = metod_out.read_text(encoding="utf-8") if metod_out.is_file() else None
-
     fresh = []
     if new_text != text:
         fresh.append(f"{INDEX.name} нужно пересобрать")
-    if metod_old != metod_page:
-        fresh.append(f"{metod_out.relative_to(REPO_ROOT)} нужно пересобрать")
 
     if not fresh:
         print(f"OK: оглавление актуально ({stats})")
@@ -384,9 +357,6 @@ def patch_index(data: dict, check_only: bool) -> int:
         print(f"Обновил {INDEX.relative_to(REPO_ROOT)}: {stats}")
     else:
         print(f"OK: {INDEX.name} уже актуален ({stats})")
-    METOD.mkdir(parents=True, exist_ok=True)
-    metod_out.write_text(metod_page, encoding="utf-8")
-    print(f"Обновил {metod_out.relative_to(REPO_ROOT)} — страница проверки, все занятия открыты")
     return 0
 
 
