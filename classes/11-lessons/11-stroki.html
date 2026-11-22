@@ -213,7 +213,6 @@ svg text{font-family:'Inter',Arial,sans-serif}
 <div class="stage" id="stage">
 <div class="deck" id="deck">
 <!-- 1 -->
-<!-- 1 -->
 <section class="slide active ttl" data-title="Титул">
   <header class="sh r">
     <p class="eyebrow">Код и пазл · Python</p>
@@ -240,10 +239,10 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="fn-bd">
         <div class="fn-row">
           <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
-          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
-          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
-          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
-          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+          <div class="seg var"><span class="tok">011</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Строки</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">16.11</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 011 Строки 16.11" title="Скопировать «1ПМ0 011 Строки 16.11»">
             <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
             <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
             <span class="cb-lbl">Скопировать шаблон</span>
@@ -467,7 +466,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
         <div class="run-console" data-role="console" aria-live="polite"></div>
       </div>
     </div>
-    <div class="note r" style="--d:240">Плюс склеивает строки, звёздочка повторяет: 'да' * 3 — это 'дадада'. Ставить строку рядом с числом без пробела-разделителя нельзя, получится 'ИванПетров'.</div>
+    <div class="note r" style="--d:240">Плюс склеивает строки, звёздочка повторяет: 'да' * 3 — это 'дадада'. Пробел — тоже символ, поэтому 'Иван' + 'Петров' даст 'ИванПетров': разделитель пишем руками. А строку с числом через плюс не сложить — Python остановится с ошибкой.</div>
   </div>
 </section>
 
@@ -594,7 +593,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="card r" style="--d:150"><div class="num">Задача 3</div><h3>Слово-перевёртыш</h3><p>Сравниваем слово с его перевёртышем: True или False.</p></div>
       <div class="card r" style="--d:190"><div class="num">Доп. задание</div><h3>Слова в обратном порядке</h3><p>Разворачиваем слова текста: срез [::-1] и метод join().</p></div>
     </div>
-    <div class="note r" style="--d:250">Работаем в VS Code: файл <b>lesson10.py</b>.</div>
+    <div class="note r" style="--d:250">Работаем в VS Code: файл <b>lesson11.py</b>.</div>
   </div>
 </section>
 
@@ -792,10 +791,10 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <div class="run r" data-run="w2a" style="--d:140">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
-        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">С конца: барабан</button><button class="chip" type="button" data-val="b">С конца: шалаш</button></div>
+        <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">Слово: барабан</button><button class="chip" type="button" data-val="b">Слово: шалаш</button></div>
       </div>
       <div class="run-grid">
-        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print(word[-1])</span><span class="ln" data-no="3">print(word[-3:])</span><span class="ln" data-no="4">print(word[::-1])</span></pre>
+        <pre class="run-code"><span class="ln" data-no="1">word = input('Введите слово: ')</span><span class="ln" data-no="2">print('Наоборот:', word[::-1])</span></pre>
         <div class="run-console" data-role="console" aria-live="polite"></div>
       </div>
     </div>
@@ -1295,17 +1294,13 @@ svg text{font-family:'Inter',Arial,sans-serif}
       ]}
     ],
     'w2a': [
-      { val:'a', label:'С конца: барабан', steps:[
+      { val:'a', label:'Слово: барабан', steps:[
         { ln:1, out:{ t:'word = барабан' } },
-        { ln:2, out:{ t:'н', kind:'p' } },
-        { ln:3, out:{ t:'бан', kind:'p' } },
-        { ln:4, out:{ t:'набараб', kind:'p' } }
+        { ln:2, out:{ t:'Наоборот: набараб', kind:'p' } }
       ]},
-      { val:'b', label:'С конца: шалаш', steps:[
+      { val:'b', label:'Слово: шалаш', steps:[
         { ln:1, out:{ t:'word = шалаш' } },
-        { ln:2, out:{ t:'ш', kind:'p' } },
-        { ln:3, out:{ t:'лаш', kind:'p' } },
-        { ln:4, out:{ t:'шалаш', kind:'p' } }
+        { ln:2, out:{ t:'Наоборот: шалаш', kind:'p' } }
       ]}
     ],
     'w2': [

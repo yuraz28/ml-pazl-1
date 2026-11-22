@@ -268,10 +268,10 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="fn-bd">
         <div class="fn-row">
           <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
-          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
-          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
-          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
-          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+          <div class="seg var"><span class="tok">012</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Списки</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">16.11</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 012 Списки 16.11" title="Скопировать «1ПМ0 012 Списки 16.11»">
             <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
             <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
             <span class="cb-lbl">Скопировать шаблон</span>
@@ -527,7 +527,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="card r" style="--d:70"><div class="num">ошибка 1</div><h3>IndexError</h3><p>Обратились к numbers[len(numbers)] — такого индекса нет. Последний равен len(numbers) − 1.</p><code>numbers[len(numbers)]</code></div>
       <div class="card r" style="--d:120"><div class="num">ошибка 2</div><h3>a = a.sort()</h3><p>Метод вернул None и затёр список. sort() просто вызывают.</p><code>a = a.sort()  →  None</code></div>
       <div class="card r" style="--d:170"><div class="num">ошибка 3</div><h3>Максимум с нуля</h3><p>Если все числа отрицательные, ответом станет 0 — число, которого в списке нет. Начинайте с первого элемента.</p><code>maximum = numbers[0]</code></div>
-      <div class="card r" style="--d:220"><div class="num">ошибка 4</div><h3>Забыли int()</h3><p>В списке окажутся строки, и сортировка со сравнениями дадут неверный результат.</p><code>numbers.append(int(input()))</code></div>
+      <div class="card r" style="--d:220"><div class="num">ошибка 4</div><h3>Забыли int()</h3><p>В списке окажутся строки — сортировка и сравнение будут работать неправильно.</p><code>numbers.append(int(input()))</code></div>
     </div>
   </div>
 </section>
@@ -563,7 +563,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="card r" style="--d:150"><div class="num">задача 2</div><h3>Сортировка в две стороны</h3><p>Выводим те же числа по возрастанию и по убыванию.</p></div>
       <div class="card r" style="--d:230"><div class="num">задача 3</div><h3>Только чётные</h3><p>Собираем в отдельный список числа, которые делятся на 2.</p></div>
     </div>
-    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson11.py</b>.</div>
+    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson12.py</b>.</div>
   </div>
 </section>
 
@@ -645,8 +645,8 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <p class="eyebrow">Практика · Задача 1 · Шаг 2</p>
     <h2>Максимум и минимум за один перебор</h2>
   </header>
-  <div class="body">
-    <div class="note r" style="--d:70">За первое число принимаем и максимум, и минимум. Дальше идём по списку: если число больше максимума — запоминаем его, если меньше минимума — тоже.</div>
+  <div class="body" style="gap:24px">
+    <div class="note r" style="--d:70">За первое число принимаем и максимум, и минимум. Дальше идём по списку: число больше максимума — запоминаем, меньше минимума — тоже.</div>
     <div class="run r" data-run="m2" style="--d:140">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
@@ -668,7 +668,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
     <h2>Полное решение</h2>
   </header>
   <div class="body">
-    <div class="run r" data-run="mm" style="--d:70">
+    <div class="run sm r" data-run="mm" style="--d:70">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
         <div class="chips" data-role="variants"><button class="chip on" type="button" data-val="a">4 числа: 4, 9, 2, 7</button><button class="chip" type="button" data-val="b">1 число: 5</button><button class="chip" type="button" data-val="c">3 числа: -5, -3, -8</button></div>
@@ -943,8 +943,6 @@ svg text{font-family:'Inter',Arial,sans-serif}
     </div>
   </div>
 </section>
-
-<!-- 27 -->
 
 </div>
 </div>
