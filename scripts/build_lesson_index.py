@@ -337,19 +337,26 @@ def build_metod(index_text: str) -> str:
     """Страница «/metod» — то же оглавление, но все занятия открыты.
 
     Собирается из готового index.html, чтобы шаблон был один. Отличия:
-    data-unlock-all (страница игнорирует дату opens), <base href="../"> —
-    относительные ссылки classes/… и docs/… ведут в корень сайта,
+    data-unlock-all (страница игнорирует дату opens), data-root="../" — префикс
+    к относительным ссылкам classes/… и docs/…, чтобы они вели в корень сайта,
     и noindex, чтобы страница не попадала в поиск.
+
+    Почему data-root, а не <base href="../">: сервер отдаёт CSP base-uri 'none',
+    браузер тег игнорирует и ссылки уезжают в /metod/docs/… Скрипт страницы
+    склеивает ROOT + путь сам (см. index.html).
 
     На GitHub Pages эта страница НЕ публикуется: deploy-pages.yml собирает
     _site без папки metod/. В репозитории она лежит (и коммитится) — так её
     видно в истории и правки шаблона применяются к обеим страницам.
     """
-    page = index_text.replace('<html lang="ru">', '<html lang="ru" data-unlock-all>', 1)
+    page = index_text.replace(
+        '<html lang="ru">',
+        '<html lang="ru" data-unlock-all data-root="../">',
+        1,
+    )
     page = page.replace(
         '<meta charset="utf-8">',
         '<meta charset="utf-8">\n'
-        '<base href="../">\n'
         '<meta name="robots" content="noindex,nofollow">',
         1,
     )

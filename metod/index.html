@@ -1,8 +1,7 @@
 <!doctype html>
-<html lang="ru" data-unlock-all>
+<html lang="ru" data-unlock-all data-root="../">
 <head>
 <meta charset="utf-8">
-<base href="../">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Материалы курса — ПАЗЛ — проверка</title>
@@ -544,6 +543,11 @@ a{color:inherit}
      на ней открыты все занятия независимо от даты. На GitHub Pages страница
      не публикуется — deploy-pages.yml кладёт в _site всё, кроме metod/. */
   var UNLOCK = document.documentElement.hasAttribute("data-unlock-all");
+  /* Пути в данных (classes/…, docs/…) — от корня сайта. Сама страница может
+     лежать в подпапке (служебная /metod/), поэтому префикс берём из data-root
+     у <html>. <base href> для этого не годится: сервер отдаёт CSP base-uri 'none',
+     браузер тег игнорирует и ссылки уезжают в /metod/docs/… */
+  var ROOT = document.documentElement.getAttribute("data-root") || "";
   function isLocked(l) { return !UNLOCK && isOpen(l) === false; }
   /* занятие «доступно», если есть хоть что-то: дека или описание */
   function available(l) { return (!!l.path || !!l.doc) && !isLocked(l); }
@@ -557,7 +561,7 @@ a{color:inherit}
     if (on && href) {
       el = document.createElement("a");
       el.className = cls;
-      el.href = href;
+      el.href = ROOT + href;
       el.target = "_blank";
       el.rel = "noopener";
     } else {
