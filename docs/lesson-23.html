@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Модуль csv — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 23. Модуль csv</h1>
+<h2>Цель занятия</h2>
+<p>Научиться читать и записывать таблицы в формате CSV – самом распространённом формате табличных данных. Разобрать, чем <code>csv</code> удобнее ручного разбора строки через <code>split</code>, и почему в CSV все значения приходят строками. Посчитать статистику по таблице оценок и сохранить результат обратно в CSV.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Что такое CSV</h3>
+<p><strong>CSV</strong> – <em>comma separated values</em>, «значения, разделённые запятой». Это обычный текстовый файл, где каждая строка – одна запись, а поля внутри строки разделены запятой:</p>
+<pre><code>ученик,математика,русский,информатика
+Аня,5,4,5
+Марк,4,4,3
+</code></pre>
+<p>Первая строка почти всегда – <strong>заголовки</strong>: названия столбцов. Дальше идут данные.</p>
+<p>Такие файлы умеет открывать любой Excel, Google Таблицы, LibreOffice. Выгрузка оценок из электронного журнала, список товаров, статистика по городу – всё это обычно CSV.</p>
+<h3>Зачем модуль, если есть split</h3>
+<p>Первая мысль: прочитать файл (занятие 22) и разбить строку через <code>split(',')</code>. Для простой таблицы это сработает. Проблемы начинаются, когда:</p>
+<ul>
+<li>внутри значения встречается запятая – например, адрес «Москва, ул. Ленина, 5». CSV оборачивает такое поле в кавычки, а <code>split</code> этого не понимает;</li>
+<li>в конце строки стоит перевод строки <code>\n</code>, и последнее поле получается с лишним символом;</li>
+<li>файл сохранён Windows-программой с <code>\r\n</code> на конце строк.</li>
+</ul>
+<p>Модуль <code>csv</code> из стандартной библиотеки решает это сам. Подключается как любой другой модуль:</p>
+<pre><code class="language-python">import csv
+</code></pre>
+<p><code>import</code> подключает готовый набор функций. В стандартной библиотеке Python их очень много: <code>csv</code>, <code>json</code> (следующее занятие), <code>random</code>, <code>math</code>. Ставить ничего не нужно – они идут вместе с Python. Установка сторонних библиотек будет на занятии 27.</p>
+<h3>Чтение таблицы</h3>
+<pre><code class="language-python">import csv
+
+with open('marks.csv', 'r', newline='', encoding='utf-8') as f:
+    rows = list(csv.reader(f))
+
+print(rows)
+# [['ученик', 'математика', 'русский', 'информатика'],
+#  ['Аня', '5', '4', '5'], ['Марк', '4', '4', '3'], ...]
+</code></pre>
+<p><code>csv.reader(f)</code> – это «читалка»: она отдаёт по одному списку на каждую строку файла. <code>list(...)</code> собирает все строки в список списков – та самая вложенная структура из занятия 19.</p>
+<p>Три детали, которые надо соблюдать всегда:</p>
+<ul>
+<li><strong><code>newline=''</code></strong> при открытии. Без него на Windows и macOS может появиться лишняя пустая строка между записями, потому что Python и <code>csv</code> по-своему обрабатывают переводы строк.</li>
+<li><strong><code>encoding='utf-8'</code></strong> – как и в обычных файлах, иначе русские заголовки превратятся в мусор.</li>
+<li><strong>Все значения – строки.</strong> Даже оценки: <code>'5'</code>, а не <code>5</code>. CSV не хранит типы, он хранит текст.</li>
+</ul>
+<h3>Преобразование значений</h3>
+<p>Раз всё строки, числа придётся превращать явно – знакомым <code>int()</code> (занятие 8):</p>
+<pre><code class="language-python">row = ['Аня', '5', '4', '5']
+print(row[0])              # Аня
+print(row[1] + row[2])     # 54 - склеились строки!
+print(int(row[1]) + int(row[2]))   # 9 - сложились числа
+</code></pre>
+<p>Это самая частая ошибка при работе с CSV: <code>'5' + '4'</code> даёт <code>'54'</code>, а не <code>9</code>. И <code>sum(row[1:])</code> выдаст <code>TypeError</code>, потому что <code>sum</code> не умеет складывать строки.</p>
+<h3>Запись таблицы</h3>
+<pre><code class="language-python">import csv
+
+with open('result.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['ученик', 'средний балл'])
+    writer.writerow(['Аня', 4.67])
+</code></pre>
+<p><code>writerow(список)</code> записывает одну строку, сам расставляя запятые и кавычки там, где нужно. <code>newline=''</code> обязателен и здесь, иначе между строками появятся пустые.</p>
+<p>Метод <code>writerows(список_строк)</code> записывает сразу много строк. Режим <code>'a'</code> – чтобы не стереть то, что уже лежит в файле:</p>
+<pre><code class="language-python">with open('result.csv', 'a', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerows([['Аня', 4.67], ['Марк', 3.67]])
+</code></pre>
+<p>Режимы <code>'w'</code> и <code>'a'</code> работают так же, как у текстовых файлов: <code>'w'</code> перезаписывает файл, <code>'a'</code> дописывает в конец.</p>
+<h3>Разделитель: запятая или точка с запятой</h3>
+<p>Русская версия Excel часто сохраняет CSV не с запятой, а с <strong>точкой с запятой</strong> – потому что запятая в русской локали используется как десятичный разделитель.</p>
+<pre><code>ученик;математика;русский
+Аня;5;4
+</code></pre>
+<p>Пусть такой файл из Excel лежит рядом как <code>marks_excel.csv</code>. При чтении обычным <code>csv.reader</code> он придёт одной колонкой. Разделитель указывают параметром <code>delimiter</code>:</p>
+<pre><code class="language-python">with open('marks_excel.csv', 'r', newline='', encoding='utf-8') as f:
+    rows = list(csv.reader(f, delimiter=';'))
+</code></pre>
+<p>Если таблица разобралась неправильно – первым делом посмотрите файл в текстовом редакторе (в VS Code) и проверьте, чем разделены поля.</p>
+<h3>Связь со следующим занятием</h3>
+<p>CSV – плоская таблица: строки и столбцы, без вложенности. Если данные сложнее (ученик, у которого оценки по предметам, а у каждого предмета ещё и дата), CSV становится неудобным. Для таких случаев есть JSON – о нём на занятии 24.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Статистика по таблице оценок</h3>
+<p>Есть таблица оценок класса. Нужно посчитать средний балл каждого ученика, найти лучшего и вывести средние баллы по предметам. Результат сохранить в новый CSV.</p>
+<h4>Шаг 1. Создать таблицу</h4>
+<p>В папке занятия создайте файл <code>marks.csv</code>:</p>
+<pre><code>ученик,математика,русский,информатика
+Аня,5,4,5
+Марк,4,4,3
+Лиза,5,5,5
+Тимур,3,4,3
+</code></pre>
+<p>Программа – <code>lesson23.py</code> в той же папке.</p>
+<h4>Шаг 2. Прочитать таблицу</h4>
+<pre><code class="language-python">import csv
+
+with open('marks.csv', 'r', newline='', encoding='utf-8') as f:
+    rows = list(csv.reader(f))
+
+header = rows[0]
+students = rows[1:]
+
+print('Предметы:', header[1:])
+print('Учеников:', len(students))
+</code></pre>
+<p>Заголовок отделяем от данных срезом <code>rows[1:]</code>. Дальше работаем только со <code>students</code>, иначе первая строка попадёт в расчёты и <code>int('математика')</code> выдаст ошибку.</p>
+<p>Ожидаемый вывод:</p>
+<pre><code>Предметы: ['математика', 'русский', 'информатика']
+Учеников: 4
+</code></pre>
+<h4>Шаг 3. Средний балл каждого ученика</h4>
+<pre><code class="language-python">averages = []
+for row in students:
+    name = row[0]
+    marks = row[1:]
+    total = 0
+    for mark in marks:
+        total += int(mark)
+    average = total / len(marks)
+    averages.append((average, name))
+    print(name, '- средний балл', round(average, 2))
+</code></pre>
+<p><code>round(число, 2)</code> округляет до двух знаков после запятой – встроенная функция, работает как <code>len</code>.</p>
+<p>Пары собираем в список кортежей «средний балл, имя» (занятие 20) – это заодно подготовит сортировку на следующем шаге.</p>
+<h4>Шаг 4. Лучший ученик</h4>
+<pre><code class="language-python">averages.sort(reverse=True)
+print('Лучший средний балл:', averages[0][1], '-', round(averages[0][0], 2))
+</code></pre>
+<p>Сортировка кортежей идёт по первому элементу, то есть по среднему баллу. <code>reverse=True</code> – по убыванию, значит первый в списке и есть лучший. <code>averages[0][1]</code> – имя лучшего, <code>averages[0][0]</code> – его балл.</p>
+<p>Дополнительно: найдите ученика с самым низким баллом – это последний элемент списка.</p>
+<h4>Шаг 5. Средние по предметам</h4>
+<p>Здесь идём не по строкам, а по столбцам. Заголовок подсказывает, в каком столбце что лежит: <code>header[i]</code> – название, <code>row[i]</code> – оценка.</p>
+<pre><code class="language-python">for i in range(1, len(header)):
+    subject = header[i]
+    total = 0
+    for row in students:
+        total += int(row[i])
+    print(subject, '- средний по классу', round(total / len(students), 2))
+</code></pre>
+<p>Ожидаемый вывод:</p>
+<pre><code>математика - средний по классу 4.25
+русский - средний по классу 4.25
+информатика - средний по классу 4.0
+</code></pre>
+<h4>Шаг 6. Сохранить результат в CSV</h4>
+<pre><code class="language-python">with open('marks_report.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['ученик', 'средний балл'])
+    for average, name in averages:
+        writer.writerow([name, round(average, 2)])
+
+print('Отчёт сохранён в marks_report.csv')
+</code></pre>
+<p>Проверьте файл: откройте его в VS Code и в Excel. Обратите внимание, что в списке <code>averages</code> порядок уже по убыванию балла – отчёт получится с рейтингом, а не в исходном порядке.</p>
+<h4>Шаг 7. Доработки на выбор</h4>
+<ul>
+<li>Добавить в отчёт столбец «лучший предмет» для каждого ученика.</li>
+<li>Прочитать таблицу с разделителем <code>;</code> – сохраните копию через Excel как «CSV (разделители – точка с запятой)».</li>
+<li>Посчитать, сколько в классе пятёрок, четвёрок и троек (словарь из занятия 21).</li>
+<li>Добавить нового ученика в конец файла: открыть на запись в режиме <code>'a'</code> и дописать строку.</li>
+<li>Сделать так, чтобы имя файла спрашивалось через <code>input()</code>.</li>
+</ul>
+<h3>Частые ошибки</h3>
+<ul>
+<li><code>int('ученик')</code> – в расчёт попала строка заголовка. Данные берутся срезом <code>rows[1:]</code>.</li>
+<li><code>'5' + '4'</code> вместо <code>int('5') + int('4')</code> – получается <code>'54'</code>. В CSV всё строки.</li>
+<li>Забыли <code>newline=''</code> – в файле появились пустые строки между записями.</li>
+<li>Таблица разобралась в одну колонку – не тот разделитель. Нужен <code>delimiter=';'</code> (или наоборот запятая).</li>
+<li><code>KeyError</code>/<code>IndexError</code> при <code>row[i]</code> – в строке меньше полей, чем в заголовке (лишняя запятая или пустое поле в файле).</li>
+<li><code>round(total / 0)</code> – деление на <code>len(students)</code>, когда список пуст (например, в файле только заголовок).</li>
+<li>Открыли CSV в Excel, сохранили – и разделители поехали. Данные правят в VS Code или проверяют настройки импорта в Excel.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>CSV – текстовый формат таблиц: строка файла = запись, поля разделены запятой, первая строка обычно заголовки.</li>
+<li>Модуль <code>csv</code> подключается через <code>import csv</code>, читает через <code>csv.reader(f)</code> и пишет через <code>csv.writer(f)</code> и <code>writerow()</code>.</li>
+<li>При открытии файла нужны <code>newline=''</code> и <code>encoding='utf-8'</code>; для русского Excel часто дополнительно <code>delimiter=';'</code>.</li>
+<li>Все значения из CSV приходят строками: числа преобразуют через <code>int()</code> или <code>float()</code>.</li>
+<li>Читая таблицу, держите отдельно заголовок и данные: <code>header = rows[0]</code>, <code>students = rows[1:]</code>.</li>
+<li>По строкам считают характеристики учеников, по столбцам (<code>row[i]</code> для всех строк) – характеристики предметов.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

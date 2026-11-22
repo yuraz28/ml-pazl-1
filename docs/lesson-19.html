@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Вложенные списки — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 19. Вложенные списки</h1>
+<h2>Цель занятия</h2>
+<p>Начать вторую часть курса Python и разобраться с вложенными списками – списком, внутри которого лежат другие списки. Научиться брать элемент по двум индексам и обходить такую структуру вложенными циклами. Собрать игру «Крестики-нолики», поле которой как раз и есть вложенный список.</p>
+<hr />
+<h2>Теория</h2>
+<h3>С чего начинается вторая часть</h3>
+<p>В первой части мы прошли весь базовый набор: переменные, <code>input</code>/<code>print</code>, числа и строки, условия, циклы <code>for</code> и <code>while</code>, списки и функции. Каждая тема теперь будет опираться на предыдущие – новых «с нуля» тем почти не останется.</p>
+<p>Вторая часть – про то, как хранить сложные данные. Оценки класса, поле для игры, телефонная книга, содержимое файла: всё это плоским списком не описать. Начнём с самого простого усложнения – списка внутри списка.</p>
+<h3>Список списков</h3>
+<p>До сих пор список был «в одну линию»: <code>['молоко', 'хлеб', 'сыр']</code>. Но таблица в одну линию не помещается. Идея простая: <strong>таблица – это список строк, а каждая строка – список клеток</strong>.</p>
+<p>Поле для крестиков-ноликов 3×3 выглядит так:</p>
+<pre><code class="language-python">board = [
+    [' ', ' ', ' '],
+    [' ', ' ', ' '],
+    [' ', ' ', ' '],
+]
+</code></pre>
+<p>Внешний список – это три строки поля. Каждый элемент внешнего списка – сам список из трёх клеток. Пробел означает пустую клетку.</p>
+<p>Размеры считаются как обычно:</p>
+<pre><code class="language-python">print(len(board))       # 3 - сколько строк
+print(len(board[0]))    # 3 - сколько клеток в первой строке
+</code></pre>
+<h3>Два индекса вместо одного</h3>
+<p><code>board[1]</code> – это вторая строка целиком, то есть список <code>[' ', ' ', ' ']</code>. Чтобы достать одну клетку, нужен второй индекс: <code>board[1][2]</code> – вторая строка, третий элемент.</p>
+<p>Читается слева направо: сначала выбираем строку, потом внутри неё – клетку. Так же устроены адреса в таблице: сначала номер строки, потом номер столбца.</p>
+<pre><code class="language-python">marks = [
+    ['Аня', 5, 4, 5],
+    ['Марк', 4, 4, 3],
+]
+
+print(marks[0][0])      # Аня
+print(marks[1][2])      # 4
+print(marks[0])         # ['Аня', 5, 4, 5] - вся строка
+print(marks[1][1:])     # [4, 3] - срез внутри строки
+</code></pre>
+<p>Вложенность не ограничена двумя уровнями: внутрь клетки можно положить ещё список. Но на практике больше двух-трёх уровней читать уже тяжело, и в таких местах лучше заводить словари (занятие 21).</p>
+<p>Запись <code>board[1][2]</code> – это два отдельных действия. Можно разложить по переменным, и иногда так понятнее:</p>
+<pre><code class="language-python">row = 1
+col = 2
+board[row][col] = 'X'
+</code></pre>
+<h3>Вложенные циклы</h3>
+<p>Чтобы пройти по всем клеткам, нужны два цикла: внешний перебирает строки, внутренний – клетки внутри строки.</p>
+<pre><code class="language-python">for row in board:
+    for cell in row:
+        print(cell)
+</code></pre>
+<p>Если нужны не сами значения, а индексы (например, чтобы задать координаты), перебираем по номерам:</p>
+<pre><code class="language-python">for i in range(len(board)):
+    for j in range(len(board[i])):
+        print(i, j, board[i][j])
+</code></pre>
+<p>Аналогия – обход зала: сначала перебираем ряды, внутри каждого ряда – места. Ряд и место вместе задают одно конкретное кресло.</p>
+<p>Внутренний цикл создаётся заново для каждой строки. Поэтому <code>len(board[i])</code> – правильнее, чем <code>len(board[0])</code>: строки теоретически могут быть разной длины.</p>
+<h3>Ловушка: как НЕ надо создавать поле</h3>
+<p>Хочется написать коротко – «сделай три одинаковые строки»:</p>
+<pre><code class="language-python">board = [[' '] * 3] * 3
+</code></pre>
+<p>Код запускается без ошибки, но работает неправильно. Умножение списка не копирует содержимое, а повторяет <strong>ссылку</strong> на один и тот же список. В итоге все три строки – это одна и та же строка в памяти. Меняем одну клетку – меняются три:</p>
+<pre><code class="language-python">board = [[' '] * 3] * 3
+board[0][0] = 'X'
+print(board)
+# [['X', ' ', ' '], ['X', ' ', ' '], ['X', ' ', ' ']]
+</code></pre>
+<p>Правильно – создать каждую строку отдельно, в цикле:</p>
+<pre><code class="language-python">board = []
+for i in range(3):
+    row = [' ', ' ', ' ']
+    board.append(row)
+</code></pre>
+<p>Внутри одной строки умножение <code>[' '] * 3</code> безопасно: строки из пробелов – обычные текстовые значения, их копирование ничего не ломает. Опасность только когда повторяют <strong>список внутри списка</strong>.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Игра «Крестики-нолики»</h3>
+<p>Собираем игру для двух игроков за одним компьютером. Поле – вложенный список. Игроки ходят по очереди, вводя номер клетки от 1 до 9. Нумерация как на телефоне:</p>
+<pre><code> 1 | 2 | 3
+---+---+---
+ 4 | 5 | 6
+---+---+---
+ 7 | 8 | 9
+</code></pre>
+<p>Создайте файл <code>lesson19.py</code> в папке занятия.</p>
+<h4>Шаг 1. Поле и его показ</h4>
+<pre><code class="language-python">board = [
+    [' ', ' ', ' '],
+    [' ', ' ', ' '],
+    [' ', ' ', ' '],
+]
+
+
+def show_board():
+    print()
+    for i in range(3):
+        print(' ' + ' | '.join(board[i]))
+        if i &lt; 2:
+            print('---+---+---')
+</code></pre>
+<p><code>' | '.join(board[i])</code> склеивает три клетки строки через разделитель <code>|</code> (метод <code>join</code> из занятия 11). Разделительную линию печатаем после первой и второй строки, но не после третьей – для этого проверка <code>if i &lt; 2</code>.</p>
+<p>Проверим:</p>
+<pre><code class="language-python">show_board()
+
+#    |   |  
+# ---+---+---
+#    |   |  
+# ---+---+---
+#    |   |  
+</code></pre>
+<h4>Шаг 2. Ход игрока</h4>
+<p>Пользователь вводит номер клетки от 1 до 9, а нам нужны два индекса. Номер 5 – это вторая строка (индекс 1) и вторая клетка (индекс 1). Номер 8 – третья строка (индекс 2), вторая клетка (индекс 1).</p>
+<p>Такое преобразование делается двумя операциями из занятия 6: целочисленным делением <code>//</code> и остатком <code>%</code>.</p>
+<pre><code class="language-python">def make_move(number, symbol):
+    row = (number - 1) // 3
+    col = (number - 1) % 3
+    if board[row][col] != ' ':
+        print('Клетка уже занята')
+        return False
+    board[row][col] = symbol
+    return True
+</code></pre>
+<p>Почему <code>number - 1</code>: номера начинаются с 1, а индексы с 0. Дальше <code>// 3</code> даёт номер строки (номера 1–3 → строка 0, 4–6 → строка 1, 7–9 → строка 2), а <code>% 3</code> – позицию внутри строки.</p>
+<p>Функция возвращает <code>True</code>, если ход сделан, и <code>False</code>, если клетка занята. Это пригодится в главном цикле: неудачный ход не должен передавать очередь другому игроку.</p>
+<h4>Шаг 3. Проверка победы</h4>
+<p>Выиграть можно восемью способами: три строки, три столбца, две диагонали. Строки и столбцы проверяем в одном цикле, диагонали – отдельно.</p>
+<pre><code class="language-python">def check_win(symbol):
+    for i in range(3):
+        if board[i][0] == board[i][1] == board[i][2] == symbol:
+            return True
+        if board[0][i] == board[1][i] == board[2][i] == symbol:
+            return True
+    if board[0][0] == board[1][1] == board[2][2] == symbol:
+        return True
+    if board[0][2] == board[1][1] == board[2][0] == symbol:
+        return True
+    return False
+</code></pre>
+<p>Двойное равенство в Python читается как «и то, и другое»: <code>a == b == c == symbol</code> истинно, когда все четыре значения совпадают. Отдельно проверяем, что это именно символ игрока, иначе три пустые клетки тоже считались бы победой.</p>
+<p>Обратите внимание: <code>board[i][0]</code> – клетка в строке <code>i</code> и столбце <code>0</code>. Когда <code>i</code> меняется от 0 до 2, это перебор одного столбца сверху вниз.</p>
+<h4>Шаг 4. Ничья и главный цикл</h4>
+<p>Ничья – когда поле заполнено, а победителя нет. Проверить просто: ищем хотя бы один пробел.</p>
+<pre><code class="language-python">def is_full():
+    for row in board:
+        if ' ' in row:
+            return False
+    return True
+</code></pre>
+<p>Теперь сам игровой цикл. Игроки ходят, пока кто-то не победит или поле не заполнится. Символ меняется после каждого успешного хода.</p>
+<pre><code class="language-python">print('Клетки нумеруются так:')
+print(' 1 | 2 | 3')
+print('---+---+---')
+print(' 4 | 5 | 6')
+print('---+---+---')
+print(' 7 | 8 | 9')
+
+symbol = 'X'
+while True:
+    show_board()
+    number = int(input('Ход ' + symbol + ', номер клетки: '))
+    if number &lt; 1 or number &gt; 9:
+        print('Номер должен быть от 1 до 9')
+        continue
+    if not make_move(number, symbol):
+        continue
+    if check_win(symbol):
+        show_board()
+        print('Победили', symbol)
+        break
+    if is_full():
+        show_board()
+        print('Ничья')
+        break
+    symbol = 'O' if symbol == 'X' else 'X'
+</code></pre>
+<p>Разберём ключевые места:</p>
+<ul>
+<li><code>while True</code> и <code>break</code> – уже знакомый каркас из занятия 10: играем, пока не случится выход.</li>
+<li><code>continue</code> при ошибке ввода и при занятой клетке возвращает нас к началу цикла. Ход при этом не переходит к другому игроку – очередь остаётся у того же.</li>
+<li><code>if not make_move(...)</code> читается как «если ход не удался».</li>
+<li><code>symbol = 'O' if symbol == 'X' else 'X'</code> – короткая запись смены игрока. Обратите внимание на вторую часть: там именно <code>'X'</code>, а не <code>'O'</code>. Если перепутать, второй игрок будет ходить бесконечно, а первый – один раз. Проверяйте такие строки запуском, а не глазами.</li>
+</ul>
+<p>Запустите игру и сыграйте партию до победы одной из сторон.</p>
+<h4>Шаг 5. Доработки на выбор</h4>
+<ul>
+<li>Сделать поле 4×4 (победа – четыре в ряд). Что придётся поменять в <code>check_win</code>?</li>
+<li>Не давать ходить в занятую клетку без подсказки – печатать, какие номера ещё свободны.</li>
+<li>Считать счёт партий: после победы спрашивать «ещё раз?» и обнулять поле.</li>
+<li>Подсвечивать выигрышную линию, выводя вместо разделителей <code>***</code>.</li>
+</ul>
+<h3>Частые ошибки</h3>
+<ul>
+<li><code>board[1, 2]</code> вместо <code>board[1][2]</code>. Питон воспримет <code>1, 2</code> как кортеж и выдаст <code>TypeError: list indices must be integers or slices, not tuple</code>. Скобки – отдельные, для каждого индекса.</li>
+<li>Путаница «номер клетки» и «индексы». Номер от 1 до 9 – для человека, индексы от 0 до 2 – для программы. Пересчёт делает <code>make_move</code>.</li>
+<li>Поле создано умножением <code>[[' '] * 3] * 3</code> – все строки оказываются одной и той же. Симптом: один ход ставит три крестика.</li>
+<li>В <code>check_win</code> сравнивают только две клетки (<code>board[i][0] == board[i][1]</code>), и победа засчитывается на двух символах.</li>
+<li>Забыли <code>return False</code> в конце <code>check_win</code> – функция вернёт <code>None</code>, и <code>if check_win(...)</code> сработает неправильно.</li>
+<li>Убрали <code>continue</code> после занятой клетки – игрок теряет ход из-за собственной опечатки.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Вложенный список – список, элементами которого являются списки. Таблицу удобно хранить именно так: внешний список – строки, внутренние – клетки строки.</li>
+<li>Один элемент достаётся двумя индексами по очереди: <code>board[строка][столбец]</code>. Срезы и <code>len</code> работают на каждом уровне отдельно.</li>
+<li>Обход вложенного списка делают вложенными циклами: внешний по строкам, внутренний по клеткам.</li>
+<li><code>[[' '] * 3] * 3</code> создаёт три ссылки на одну строку. Строки нужно создавать по отдельности, в цикле.</li>
+<li>В игре номер клетки 1–9 превращается в индексы через <code>(number - 1) // 3</code> и <code>(number - 1) % 3</code>, а победа проверяется по строкам, столбцам и диагоналям.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

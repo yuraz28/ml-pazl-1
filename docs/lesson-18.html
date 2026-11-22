@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ретро — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 18. Ретро</h1>
+<h2>Цель занятия</h2>
+<p>Понять, что такое ретро и зачем команды его проводят. Оглянуться на три прошедших блока — профессии, Python часть 1, введение в LLM — честно оценить, что получилось, а что просело. Выбрать одну-две конкретные цели на январь и первый шаг к ним.</p>
+<hr />
+<h2>Что такое ретро</h2>
+<p><strong>Ретро</strong> (retrospective, «взгляд назад») — короткая встреча после этапа работы, на которой команда отвечает на три вопроса:</p>
+<ol>
+<li>Что получилось хорошо?</li>
+<li>Что мешало и что не получилось?</li>
+<li>Что мы изменим в следующий раз?</li>
+</ol>
+<p>Придумали это в IT-командах: работа идёт короткими отрезками (спринтами, обычно 1–2 недели), и после каждого команда ненадолго останавливается и разбирает, как всё прошло. Полчаса разговора экономят недели повторения одних и тех же ошибок.</p>
+<p>Аналогия — разбор матча по записи. Тренер не кричит «ты плохой», он показывает момент, где защита провалилась, и вместе с командой решает, что делать иначе. Смысл не в оценке людей, а в настройке процесса.</p>
+<h3>Правила, без которых ретро не работает</h3>
+<ul>
+<li><strong>Обсуждаем работу, а не людей.</strong> Не «Петя тормоз», а «мы не успевали сдавать домашки, потому что задания приходили в день дедлайна».</li>
+<li><strong>Можно говорить о проблемах честно.</strong> Если на ретро нельзя сказать «я не понял темы», ретро превращается в отчёт и становится бесполезным.</li>
+<li><strong>Заканчиваем решением.</strong> Ретро без «что изменим» — просто разговор. Нужно одно-два конкретных изменения, а не десять пожеланий.</li>
+<li><strong>Все высказываются.</strong> Молчание — не согласие, а незаданный вопрос.</li>
+</ul>
+<hr />
+<h2>Зачем это вам</h2>
+<p>В курсе у вас есть баллы за занятия и домашки, и есть личный рейтинг. Это не для того, чтобы кого-то наказать: баллы показывают, где вы реально закрепили материал, а где прошли мимо. Ретро — способ прочитать эту картину и решить, что делать дальше.</p>
+<p>Ещё одна причина проще: в январе начинается Python часть 2 (вложенные списки, словари, файлы, потом API и проекты). Там всё время нужно то, что было в части 1. Если сейчас не закрыть дырку в циклах, в словарях будет больно вдвойне.</p>
+<hr />
+<h2>Квиз по трём блокам</h2>
+<p>Отвечаем сами, без подсказок и без модели. Потом сверяемся с ответами и отмечаем, где поплыли.</p>
+<ol>
+<li>Чем машинное обучение отличается от обычного программирования? Сформулируйте в одном предложении.</li>
+<li>Что такое токен в LLM?</li>
+<li>Что выведет <code>print(7 // 2, 7 % 2)</code>?</li>
+<li>Что вернёт функция, внутри которой нет <code>return</code>?</li>
+<li>Какого типа значение возвращает <code>input()</code> и что с ним надо сделать, чтобы посчитать?</li>
+<li>Что выведет код?</li>
+</ol>
+<pre><code class="language-python">s = 'привет'
+print(s[1:4])
+</code></pre>
+<ol start="7">
+<li>Чем <code>for</code> отличается от <code>while</code>? Приведите пример задачи, где удобнее <code>while</code>.</li>
+<li>Что делает <code>break</code> и чем он отличается от <code>continue</code>?</li>
+<li>Промпт: назовите три элемента хорошего запроса к модели.</li>
+<li>Почему LLM может уверенно написать неправду? Объясните через то, как она устроена.</li>
+<li>Что у сервиса генерации картинок на входе и что на выходе?</li>
+<li>Назовите одно ограничение нейросетей и один этический вопрос, который мы обсуждали.</li>
+</ol>
+<h3>Ответы</h3>
+<p>Сверяться честно: сначала пишем свои ответы, потом смотрим. Там, где ответ не сошёлся, — это и есть тема, которую надо закрыть.</p>
+<ol>
+<li>В обычной программе правила пишет человек, в ML модель находит их сама по примерам (данные + правильные ответы).</li>
+<li>Кусочек текста, который модель выбирает за один шаг: слово, часть слова или знак препинания.</li>
+<li><code>3 1</code> — целочисленное деление и остаток.</li>
+<li><code>None</code> («ничего»).</li>
+<li>Строку (<code>str</code>); чтобы считать, нужно привести к числу: <code>int(input())</code> или <code>float(...)</code>.</li>
+<li><code>рив</code> — срез с индекса 1 включительно по 4 не включая.</li>
+<li><code>for</code> — когда число повторений известно или есть готовая последовательность; <code>while</code> — когда повторяем, пока условие истинно (игра «угадай число», меню до выхода).</li>
+<li><code>break</code> прерывает цикл целиком, <code>continue</code> пропускает остаток текущего шага и переходит к следующему.</li>
+<li>Любые три из: задача, контекст, данные, формат, роль.</li>
+<li>Она не хранит факты списком, а подбирает вероятное продолжение текста: правдоподобное и проверенное — для неё не одно и то же.</li>
+<li>На входе текст-описание, на выходе изображение.</li>
+<li>Ограничения: артефакты, галлюцинации, зависимость от данных, нет настоящего понимания. Этические: дипфейки, чужие лицо и голос, авторские права, сдача ИИ-текста за свой.</li>
+</ol>
+<hr />
+<h2>Задание 1. Светофор</h2>
+<p>Отметьте каждую тему цветом. Честно, для себя: это не оценка, а карта.</p>
+<ul>
+<li>🟢 зелёный — могу объяснить другому человеку;</li>
+<li>🟡 жёлтый — сделаю сам, но с подсказкой или подсматривая;</li>
+<li>🔴 красный — надо разобраться заново.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Тема</th>
+<th style="text-align: left;">Цвет</th>
+<th style="text-align: left;">Что конкретно не получается</th>
+<th style="text-align: left;">Что сделаю</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Профессии в IT, фронт/бэкенд/AI</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Переменные и типы данных</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>input()</code>, <code>print()</code>, f-строки</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Арифметика, <code>//</code> и <code>%</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Условия <code>if / elif / else</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Циклы <code>for</code> и <code>while</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Строки и срезы</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Списки</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Функции и <code>return</code></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">LLM: как работает, как обучают</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Промпты</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">Применение нейросетей</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+<p>Главное правило: в столбце «что сделаю» пишем действие, а не желание. Не «повторю списки», а «в каникулы сделаю три задачи на срезы и покажу куратору». Красных тем может быть много — это нормально, выбираем одну-две, а не все сразу.</p>
+<hr />
+<h2>Задание 2. Ретро в тройках</h2>
+<p>Делимся на тройки и по кругу отвечаем. У каждого по 2–3 минуты, остальные не перебивают и не спорят.</p>
+<ol>
+<li><strong>Что получилось?</strong> Конкретно: «разобрался с <code>while</code>», «перестал бояться ошибок в терминале», «научился формулировать промпт».</li>
+<li><strong>Что было трудно?</strong> Тоже конкретно: какая тема, в какой момент, что именно не сошлось.</li>
+<li><strong>Что сделаю иначе?</strong> Одно изменение на январь.</li>
+</ol>
+<p>Дальше группа выбирает одно общее наблюдение и озвучивает классу. Например: «нам всем было тяжело с задачами, где нужно было самим придумать решение, а не продолжить готовый код».</p>
+<p>Преподаватель записывает общие наблюдения на доску — это не отчёт для кого-то сверху, а список того, что мы поправим в курсе сами.</p>
+<hr />
+<h2>Задание 3. Цель на январь</h2>
+<p>Одна цель, конкретная и проверяемая. Формат простой:</p>
+<blockquote>
+<p><strong>К 15 января я смогу</strong> <strong><em>_</em>_ <strong>и проверю это так:</strong> </strong>____</p>
+</blockquote>
+<p>Примеры:</p>
+<ul>
+<li>«К 15 января я смогу написать игру «угадай число» без подсказок и проверю это так: покажу куратору код, он задаст два вопроса по коду».</li>
+<li>«К 15 января я смогу объяснить, чем <code>for</code> отличается от <code>while</code>, и проверю это так: расскажу это младшему брату/сестре и отвечу на его вопрос».</li>
+</ul>
+<p>Отдельно выпишите <strong>первый шаг на каникулах</strong> — маленький, на 20–30 минут: «перечитаю описание занятия 10 и решу две задачи из практики», «пересмотрю запись занятия 12 про срезы». Один шаг, не список из десяти пунктов.</p>
+<hr />
+<h2>Частые заблуждения</h2>
+<ul>
+<li><strong>«Ретро — это жалобы».</strong> Нет. Жалоба заканчивается на «всё плохо», ретро заканчивается на «делаем так»: одно изменение, которое зависит от нас.</li>
+<li><strong>«Ретро нужно преподавателю, а не мне».</strong> Смысл ретро — в вашей собственной карте: где дырка, что закрывать. Преподаватель просто помогает.</li>
+<li><strong>«Если тема красная, значит, я неспособный».</strong> Нет. Красная тема — это информация о том, что материал не сел, а не оценка человека. У всех разные темы красные, потому что все пришли с разным опытом.</li>
+<li><strong>«Надо повторить всё с начала».</strong> Не надо. Повторять всё — самый быстрый способ ничего не повторить. Работает точечно: одна тема, три задачи, проверка у куратора.</li>
+<li><strong>«Ретро один раз — и всё».</strong> Ретро делают регулярно, иначе через месяц снова непонятно, где вы находитесь.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Ретро — короткий разбор после этапа: что получилось, что мешало, что изменим. Обсуждаем работу, а не людей, и заканчиваем конкретным решением.</li>
+<li>Квиз показал, какие темы трёх блоков (профессии, Python часть 1, LLM) уже «ваши», а какие нужно закрыть.</li>
+<li>Светофор — рабочая карта прогресса: зелёный значит «объясню другому», а не «слышал на занятии».</li>
+<li>На январь выбираем одну-две цели и один первый шаг на каникулы: маленький и на 20–30 минут.</li>
+<li>Впереди Python часть 2: вложенные списки и «крестики-нолики», кортежи и множества, словари, файлы, CSV и JSON — а дальше API и первый проект. Всё это опирается на то, что было в части 1.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

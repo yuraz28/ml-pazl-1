@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Словари — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 21. Словари</h1>
+<h2>Цель занятия</h2>
+<p>Разобраться со словарём – коллекцией пар «ключ → значение». Научиться добавлять, менять и удалять пары, перебирать словарь и проверять наличие ключа. Применить это в четырёх типовых задачах: подсчёт частот, телефонная книга, группировка по признаку и объединение двух словарей.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Проблема, которую решает словарь</h3>
+<p>У нас уже есть список, кортеж и множество (занятия 12 и 20). Все три хранят <strong>значения</strong>. Но часто нужно хранить <strong>связь</strong>: имя → телефон, слово → сколько раз встретилось, товар → цена.</p>
+<p>Списком это делается неудобно. Пришлось бы держать две строки рядом или вложенные списки <code>['Аня', '+7 900 111-22-33']</code> – и каждый раз помнить, что <code>[0]</code> это имя, а <code>[1]</code> телефон. Добавили третий столбец – вся логика поехала.</p>
+<p><strong>Словарь</strong> хранит пары: по ключу сразу получаем значение, без перебора и без знания индекса.</p>
+<pre><code class="language-python">phonebook = {
+    'Аня': '+7 900 111-22-33',
+    'Марк': '+7 900 444-55-66',
+    'Лиза': '+7 900 777-88-99',
+}
+
+print(phonebook['Марк'])     # +7 900 444-55-66
+</code></pre>
+<p>Запись похожа на множество – тоже фигурные скобки, – но элементы идут парами через двоеточие. Отличие в главном: множество отвечает на вопрос «есть ли такое?», а словарь – «что соответствует этому?».</p>
+<h3>Ключи и значения</h3>
+<ul>
+<li><strong>Ключ</strong> – то, по чему ищем. В телефонной книге это имя.</li>
+<li><strong>Значение</strong> – то, что хранится. Здесь – номер телефона.</li>
+</ul>
+<p>Три правила, которые надо запомнить сразу:</p>
+<ol>
+<li><strong>Ключи уникальны.</strong> Двух одинаковых ключей в словаре быть не может.</li>
+<li><strong>Ключ – неизменяемый тип.</strong> Строка, число или кортеж (занятие 20). Список или множество ключом быть не может.</li>
+<li><strong>Порядок</strong> – это порядок добавления. Словарь помнит, в каком порядке ключи появились, но не сортирует их сам.</li>
+</ol>
+<pre><code class="language-python">mixed = {
+    'имя': 'Аня',        # ключ-строка
+    42: 'ответ',          # ключ-число
+    (3, 5): 'точка',      # ключ-кортеж
+}
+print(mixed['имя'])       # Аня
+print(mixed[(3, 5)])      # точка
+
+bad = {['Аня']: 'имя'}    # TypeError: unhashable type: 'list'
+</code></pre>
+<p>На практике ключами почти всегда бывают строки или числа. Кортеж-ключ нужен, когда ключ составной – например, пара «ряд и место».</p>
+<h3>Добавление, изменение, удаление</h3>
+<p>Обращение по ключу работает на чтение и на запись:</p>
+<pre><code class="language-python">phonebook = {'Аня': '+7 900 111-22-33'}
+
+phonebook['Марк'] = '+7 900 444-55-66'    # ключа не было - пара добавилась
+phonebook['Аня'] = '+7 900 000-00-00'     # ключ был - значение заменилось
+
+print(phonebook)
+# {'Аня': '+7 900 000-00-00', 'Марк': '+7 900 444-55-66'}
+</code></pre>
+<p>Запись <code>d[key] = value</code> никогда не выдаёт ошибку: если ключ есть – перезаписывает, если нет – создаёт. Это же и опасность: опечатка в имени ключа создаст новую пару вместо исправления старой.</p>
+<p>Удаление:</p>
+<pre><code class="language-python">del phonebook['Аня']          # удалить пару по ключу
+number = phonebook.pop('Марк')  # удалить и забрать значение в переменную
+</code></pre>
+<p>Если такого ключа нет, <code>del</code> и <code>pop</code> выдают <code>KeyError</code>.</p>
+<h3>Безопасное чтение и get()</h3>
+<p>Чтение несуществующего ключа – ошибка:</p>
+<pre><code class="language-python">phonebook = {'Аня': '+7 900 111-22-33'}
+print(phonebook['Петя'])
+# KeyError: 'Петя'
+</code></pre>
+<p>Поэтому сначала проверяют наличие ключа оператором <code>in</code>. Важно: <code>in</code> для словаря проверяет <strong>ключи</strong>, а не значения.</p>
+<pre><code class="language-python">if 'Петя' in phonebook:
+    print(phonebook['Петя'])
+else:
+    print('Нет такого контакта')
+</code></pre>
+<p>Второй способ – метод <code>get(ключ, значение_по_умолчанию)</code>. Он не падает, а возвращает «заглушку»:</p>
+<pre><code class="language-python">print(phonebook.get('Аня'))          # +7 900 111-22-33
+print(phonebook.get('Петя'))         # None
+print(phonebook.get('Петя', 'нет'))  # нет
+</code></pre>
+<p><code>get</code> особенно удобен, когда значение надо не просто прочитать, а прибавить к нему что-то – увидим это в подсчёте частот.</p>
+<h3>Методы и перебор</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Что нужно</th>
+<th style="text-align: left;">Как</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Все ключи</td>
+<td style="text-align: left;"><code>d.keys()</code> или просто <code>for key in d</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Все значения</td>
+<td style="text-align: left;"><code>d.values()</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Все пары</td>
+<td style="text-align: left;"><code>d.items()</code> – пары в виде кортежей</td>
+</tr>
+<tr>
+<td style="text-align: left;">Сколько пар</td>
+<td style="text-align: left;"><code>len(d)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Значение по ключу</td>
+<td style="text-align: left;"><code>d[key]</code> или <code>d.get(key)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Есть ли ключ</td>
+<td style="text-align: left;"><code>key in d</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Удалить пару</td>
+<td style="text-align: left;"><code>del d[key]</code>, <code>d.pop(key)</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Скопировать</td>
+<td style="text-align: left;"><code>d.copy()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Перебор по умолчанию идёт по ключам:</p>
+<pre><code class="language-python">marks = {'Аня': 5, 'Марк': 4, 'Лиза': 5}
+
+for name in marks:
+    print(name, marks[name])
+</code></pre>
+<p>А если нужны ключ и значение сразу, берут <code>items()</code> и распаковку (занятие 20 – там же и кортежи):</p>
+<pre><code class="language-python">for name, mark in marks.items():
+    print(name, '-', mark)
+</code></pre>
+<h3>Вложенные структуры</h3>
+<p>Значением может быть что угодно: список, другой словарь, вложенный список из занятия 19.</p>
+<pre><code class="language-python">student = {
+    'имя': 'Аня',
+    'класс': 10,
+    'оценки': {'математика': 5, 'русский': 4, 'информатика': 5},
+    'кружки': ['шахматы', 'робототехника'],
+}
+
+print(student['оценки']['математика'])    # 5
+print(student['кружки'][0])               # шахматы
+</code></pre>
+<p>Двойная индексация читается слева направо: сначала словарь оценок, потом оценка по предмету. Такую структуру – «список словарей» – мы будем использовать в проектах: одна запись о книге, ученике или товаре почти всегда описывается словарём.</p>
+<hr />
+<h2>Практика</h2>
+<p>Задачи пишем в файле <code>lesson21.py</code>. Первые две – короткие, их удобно проверять сразу после написания.</p>
+<h3>Задача 1. Частота слов</h3>
+<p>Дан текст. Нужно посчитать, сколько раз встречается каждое слово. Это классическая задача, и словарь – её родной инструмент.</p>
+<pre><code class="language-python">text = 'мама мыла раму мама мыла пол'
+
+counts = {}
+for word in text.split():
+    if word in counts:
+        counts[word] += 1
+    else:
+        counts[word] = 1
+
+print(counts)
+# {'мама': 2, 'мыла': 2, 'раму': 1, 'пол': 1}
+</code></pre>
+<p>Логика: слова в словаре пока нет – создаём пару со значением 1. Слово уже есть – увеличиваем счётчик на единицу. <code>split()</code> из занятия 11 разбивает строку по пробелам.</p>
+<p>Тот же результат короче, через <code>get</code>:</p>
+<pre><code class="language-python">counts = {}
+for word in text.split():
+    counts[word] = counts.get(word, 0) + 1
+
+print(counts)
+</code></pre>
+<p><code>counts.get(word, 0)</code> читается так: «дай значение по ключу <code>word</code>, а если ключа нет – считай, что там 0». Дальше прибавляем единицу и записываем обратно. На занятии 22 мы применим это к целому текстовому файлу.</p>
+<h3>Задача 2. Телефонная книга</h3>
+<pre><code class="language-python">phonebook = {
+    'Аня': '+7 900 111-22-33',
+    'Марк': '+7 900 444-55-66',
+    'Лиза': '+7 900 777-88-99',
+}
+
+name = input('Кого ищем? ')
+
+if name in phonebook:
+    print(name, '-', phonebook[name])
+else:
+    print('Нет такого контакта')
+
+phonebook['Тимур'] = '+7 900 000-11-22'
+phonebook['Марк'] = '+7 900 000-00-00'
+
+print('Контактов в книге:', len(phonebook))
+</code></pre>
+<p>Обратите внимание: <code>input</code> возвращает строку, и ключи у нас строки – преобразование не нужно. Если бы ключами были числа, пришлось бы писать <code>int(input(...))</code>, иначе <code>'5'</code> и <code>5</code> – разные ключи.</p>
+<p>Дополнительно: добавьте вывод всех контактов по алфавиту. Подсказка – <code>sorted(phonebook)</code> даёт отсортированный список ключей.</p>
+<h3>Задача 3. Группировка по оценке</h3>
+<p>Есть словарь «ученик → оценка». Нужно собрать обратный: «оценка → список учеников». Это первая задача, где значением становится список.</p>
+<pre><code class="language-python">marks = {'Аня': 5, 'Марк': 4, 'Лиза': 5, 'Тимур': 3, 'Стас': 4}
+
+by_mark = {}
+for name, mark in marks.items():
+    if mark not in by_mark:
+        by_mark[mark] = []
+    by_mark[mark].append(name)
+
+print(by_mark)
+# {5: ['Аня', 'Лиза'], 4: ['Марк', 'Стас'], 3: ['Тимур']}
+</code></pre>
+<p>Схема «проверил ключ – создал пустой список – добавил в список» повторяется в самых разных задачах: группировка товаров по категориям, писем по отправителям, слов по первой букве.</p>
+<p>Выведем результат по порядку оценок:</p>
+<pre><code class="language-python">for mark, names in by_mark.items():
+    print(mark, '-', ', '.join(names))
+</code></pre>
+<h3>Задача 4. Объединение с суммированием</h3>
+<p>Два словаря описывают остатки товара на складе в понедельник и в пятницу. Нужно получить общий итог: по одинаковым товарам количество складывается.</p>
+<pre><code class="language-python">monday = {'яблоки': 3, 'бананы': 2, 'груши': 1}
+friday = {'яблоки': 5, 'груши': 4, 'киви': 6}
+
+total = {}
+for key, value in monday.items():
+    total[key] = value
+for key, value in friday.items():
+    total[key] = total.get(key, 0) + value
+
+print(total)
+# {'яблоки': 8, 'бананы': 2, 'груши': 5, 'киви': 6}
+</code></pre>
+<p>Первый цикл переносит все пары как есть, второй добавляет к ним пятницу. Здесь снова работает <code>get(key, 0)</code>: для «яблок» в <code>total</code> уже лежит 3, для «киви» – ничего, поэтому берётся 0.</p>
+<p>Тот же трюк позволяет сложить любые два словаря с числовыми значениями: суммы покупок за два месяца, часы по предметам, очки в игре.</p>
+<h3>Частые ошибки</h3>
+<ul>
+<li><code>print(counts['слово'])</code> для нового слова – <code>KeyError</code>. Новый ключ появляется только при записи <code>counts['слово'] = 1</code>.</li>
+<li><code>counts[word] += 1</code> без предварительной проверки – тоже <code>KeyError</code> на первом вхождении. Нужен <code>if ... in</code> или <code>get</code>.</li>
+<li><code>if 'Аня' in phonebook.values()</code> – так ищут значение, а <code>in phonebook</code> ищет ключ. Для «есть ли такой человек» правильнее второй вариант.</li>
+<li>Опечатка в ключе при записи (<code>phonebook['Аня '] = ...</code>) молча создаёт новую пару. Проверяйте, что ключ совпадает посимвольно.</li>
+<li>Список в качестве ключа – <code>TypeError: unhashable type</code>. Ключи должны быть неизменяемыми: строка, число, кортеж.</li>
+<li><code>for value in marks</code> перебирает ключи, а не значения. Нужны значения – <code>marks.values()</code>.</li>
+<li>Попытка «починить» двойной индекс: <code>student['оценки', 'математика']</code> вместо <code>student['оценки']['математика']</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Словарь хранит пары «ключ → значение». Обращение по ключу мгновенное – не нужно перебирать элементы, как в списке.</li>
+<li>Ключи уникальны и неизменяемы: строка, число или кортеж. Порядок пар – порядок добавления.</li>
+<li><code>d[key] = value</code> добавляет пару или перезаписывает значение. <code>del</code> и <code>pop</code> удаляют, <code>in</code> проверяет наличие ключа, <code>get</code> читает без риска ошибки.</li>
+<li><code>keys()</code>, <code>values()</code>, <code>items()</code> дают ключи, значения и пары; <code>for key, value in d.items()</code> – обычный способ перебрать словарь с распаковкой.</li>
+<li>Значением может быть список или другой словарь – так описывают одну запись о человеке, товаре или книге.</li>
+<li>Схема <code>d[key] = d.get(key, 0) + 1</code> считает частоты, а <code>d[key] = d.get(key, 0) + value</code> суммирует значения при объединении словарей.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

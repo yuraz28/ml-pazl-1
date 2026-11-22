@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Кортежи и множества — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 20. Кортежи и множества</h1>
+<h2>Цель занятия</h2>
+<p>Познакомиться с двумя «родственниками» списка: кортежем – списком, который нельзя изменить, и множеством – коллекцией без повторов и без порядка. Понять, когда какой из четырёх типов коллекций нужен, и решить задачи, где кортежи и множества реально экономят код: удаление дублей и поиск общих элементов.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Четыре способа хранить набор данных</h3>
+<p>К этому занятию у нас есть строка и список. Оба – последовательности: элементы лежат по порядку, у каждого есть индекс. Но в жизни встречаются данные другого вида.</p>
+<ul>
+<li><code>'Аня'</code> – одно значение. Строка, если это текст.</li>
+<li><code>['Аня', 'Марк', 'Лиза']</code> – набор по порядку, элементы можно менять. Список.</li>
+<li><code>(3, 5)</code> – пара чисел, которая не должна меняться. Для этого есть кортеж.</li>
+<li><code>{'Аня', 'Марк', 'Лиза'}</code> – набор без повторов, где важен сам факт «кто есть», а не порядок. Для этого есть множество.</li>
+</ul>
+<p>Разница не в записи, а в том, какие операции разрешены. Дальше – по порядку.</p>
+<h3>Кортеж: список, который нельзя изменить</h3>
+<p>Кортеж записывают в круглых скобках:</p>
+<pre><code class="language-python">point = (3, 5)
+print(point[0], point[1])    # 3 5
+print(len(point))            # 2
+print(5 in point)            # True
+</code></pre>
+<p>Всё, что мы умеем делать со списком «на чтение», работает и здесь: индексы, срезы, <code>len</code>, <code>in</code>, перебор в цикле <code>for</code>.</p>
+<pre><code class="language-python">point = (3, 5)
+print(point[0])      # 3
+print(point[-1])     # 5
+print(point[0:2])    # (3, 5)
+</code></pre>
+<p>А изменить нельзя:</p>
+<pre><code class="language-python">point = (3, 5)
+point[0] = 7
+# TypeError: 'tuple' object does not support item assignment
+</code></pre>
+<p>Ошибка не случайная, а смысловая: кортеж создан для данных, которые не должны меняться. Координаты, размеры окна, цвет в формате <code>(255, 255, 255)</code>, название и автор книги – всё это «снимки», которые незачем править на месте.</p>
+<p>Две детали записи, с которыми путаются чаще всего:</p>
+<pre><code class="language-python">point = 3, 5          # скобки можно не писать, это тот же кортеж
+print(type(point))    # &lt;class 'tuple'&gt;
+
+one = (5,)            # кортеж из одного элемента - запятая обязательна
+print(type(one))      # &lt;class 'tuple'&gt;
+
+not_tuple = (5)       # а это просто число в скобках
+print(type(not_tuple))  # &lt;class 'int'&gt;
+</code></pre>
+<p>Скобки в Python часто означают «сначала посчитать внутри». Кортеж делает кортежем не скобка, а запятая.</p>
+<h3>Где кортежи реально нужны: несколько значений из функции</h3>
+<p>На занятии 13 функция возвращала одно значение. Но что, если нужно вернуть два – например, минимум и максимум?</p>
+<pre><code class="language-python">def min_max(numbers):
+    return min(numbers), max(numbers)
+
+
+result = min_max([4, 9, 2, 7])
+print(result)          # (2, 9)
+print(type(result))    # &lt;class 'tuple'&gt;
+</code></pre>
+<p><code>return a, b</code> собирает значения в кортеж. Дальше его удобно <strong>распаковать</strong> – разложить по переменным:</p>
+<pre><code class="language-python">low, high = min_max([4, 9, 2, 7])
+print(low)     # 2
+print(high)    # 9
+</code></pre>
+<p>Количество переменных слева должно совпадать с количеством значений справа, иначе будет <code>ValueError</code>.</p>
+<p>Распаковка пригодится и в бытовой задаче – поменять значения местами без третьей переменной:</p>
+<pre><code class="language-python">x = 1
+y = 2
+
+x, y = y, x
+print(x, y)    # 2 1
+</code></pre>
+<p>Справа сначала собирается кортеж <code>(2, 1)</code>, потом он раскладывается по переменным. В других языках для обмена нужна промежуточная переменная, здесь – одна строка.</p>
+<h3>Множество: коллекция без повторов</h3>
+<p>Множество записывают в фигурных скобках:</p>
+<pre><code class="language-python">letters = {'м', 'о', 'л', 'о', 'к', 'о'}
+print(letters)    # {'м', 'о', 'л', 'к'} - порядок может быть другим
+</code></pre>
+<p>Повторы исчезли сами. Это главное свойство: <strong>в множестве каждый элемент встречается один раз</strong>.</p>
+<p>Создать множество можно и из другой коллекции:</p>
+<pre><code class="language-python">print(set('молоко'))                        # {'м', 'о', 'л', 'к'}
+print(set([3, 5, 3, 7, 5, 3]))              # {3, 5, 7}
+empty = set()                               # пустое множество
+print(type(empty))                          # &lt;class 'set'&gt;
+</code></pre>
+<p><code>set()</code> из строки берёт отдельные символы, из списка – его элементы. Пустое множество создают только через <code>set()</code>: пара фигурных скобок <code>{}</code> означает словарь, с ним познакомимся на следующем занятии.</p>
+<p>Три важных ограничения:</p>
+<ul>
+<li><strong>Порядка нет.</strong> Не «элементы перемешались», а самого понятия «первый элемент» не существует. Порядок вывода может отличаться от запуска к запуску – это нормально, не баг.</li>
+<li><strong>Индексов нет.</strong> <code>letters[0]</code> выдаст <code>TypeError: 'set' object is not subscriptable</code>. Взять «первый» элемент нельзя, потому что «первого» нет.</li>
+<li><strong>Элементы уникальны.</strong> Добавили то, что уже есть, – ничего не произошло, ошибки не будет.</li>
+</ul>
+<p>Проверим вывод два раза подряд:</p>
+<pre><code class="language-python">print(set(['яблоко', 'банан', 'киви', 'груша']))
+# {'груша', 'киви', 'яблоко', 'банан'}
+# {'киви', 'груша', 'банан', 'яблоко'} - во втором запуске порядок другой
+</code></pre>
+<p>Поэтому множества печатают для проверки, а не для красивого вывода. Если нужен стабильный порядок – сортируют перед печатью или используют список.</p>
+<h3>Операции над множествами</h3>
+<p>Основные действия:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Операция</th>
+<th style="text-align: left;">Запись</th>
+<th style="text-align: left;">Что получается</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Добавить элемент</td>
+<td style="text-align: left;"><code>s.add(x)</code></td>
+<td style="text-align: left;">Множество с новым элементом</td>
+</tr>
+<tr>
+<td style="text-align: left;">Удалить элемент</td>
+<td style="text-align: left;"><code>s.remove(x)</code></td>
+<td style="text-align: left;">Без <code>x</code>; если его нет – ошибка <code>KeyError</code></td>
+</tr>
+<tr>
+<td style="text-align: left;">Удалить без ошибки</td>
+<td style="text-align: left;"><code>s.discard(x)</code></td>
+<td style="text-align: left;">Без <code>x</code>; если его нет – ничего не произойдёт</td>
+</tr>
+<tr>
+<td style="text-align: left;">Проверить наличие</td>
+<td style="text-align: left;"><code>x in s</code></td>
+<td style="text-align: left;"><code>True</code> или <code>False</code>, работает мгновенно</td>
+</tr>
+<tr>
+<td style="text-align: left;">Сколько элементов</td>
+<td style="text-align: left;"><code>len(s)</code></td>
+<td style="text-align: left;">Число уникальных элементов</td>
+</tr>
+<tr>
+<td style="text-align: left;">Объединение</td>
+<td style="text-align: left;"><code>a.union(b)</code></td>
+<td style="text-align: left;">Всё, что есть хотя бы в одном</td>
+</tr>
+<tr>
+<td style="text-align: left;">Пересечение</td>
+<td style="text-align: left;"><code>a.intersection(b)</code></td>
+<td style="text-align: left;">Только общее для обоих</td>
+</tr>
+<tr>
+<td style="text-align: left;">Разность</td>
+<td style="text-align: left;"><code>a.difference(b)</code></td>
+<td style="text-align: left;">Что есть в <code>a</code>, но нет в <code>b</code></td>
+</tr>
+</tbody>
+</table>
+<p>У трёх последних операций есть короткая запись знаками: <code>a | b</code>, <code>a &amp; b</code>, <code>a - b</code>. Знак <code>|</code> внутри таблицы печатать неудобно – он ломает разметку, поэтому в таблице указаны методы.</p>
+<p>Проверим на двух списках покупок:</p>
+<pre><code class="language-python">a = ['яблоко', 'банан', 'киви', 'груша']
+b = ['киви', 'груша', 'слива']
+
+print('Общие:', set(a) &amp; set(b))          # {'киви', 'груша'}
+print('Только у меня:', set(a) - set(b))  # {'яблоко', 'банан'}
+print('Всё вместе:', set(a) | set(b))     # пять фруктов
+</code></pre>
+<p><code>&amp;</code> и <code>|</code> читаются как «и» и «или»: пересечение – то, что подходит под оба условия, объединение – под хотя бы одно. Те же знаки, что в логических операторах из занятия 7, и смысл похожий.</p>
+<p>Перебрать множество можно обычным <code>for</code>:</p>
+<pre><code class="language-python">for letter in {'м', 'о', 'л', 'к'}:
+    print(letter)
+</code></pre>
+<p>Порядок обхода при этом не гарантирован.</p>
+<h3>Какой тип когда брать</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Нужно</th>
+<th style="text-align: left;">Тип</th>
+<th style="text-align: left;">Пример</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Менять элементы, важен порядок</td>
+<td style="text-align: left;">Список</td>
+<td style="text-align: left;">Список задач, поле игры</td>
+</tr>
+<tr>
+<td style="text-align: left;">Данные-«снимок», менять нельзя</td>
+<td style="text-align: left;">Кортеж</td>
+<td style="text-align: left;">Координаты, пара «минимум и максимум»</td>
+</tr>
+<tr>
+<td style="text-align: left;">Убрать повторы, искать общее</td>
+<td style="text-align: left;">Множество</td>
+<td style="text-align: left;">Уникальные слова, общие друзья</td>
+</tr>
+<tr>
+<td style="text-align: left;">Хранить пары «ключ → значение»</td>
+<td style="text-align: left;">Словарь</td>
+<td style="text-align: left;">Телефонная книга (занятие 21)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Практика</h2>
+<p>Задачи пишем в файле <code>lesson20.py</code> в папке занятия. Каждую проверяйте запуском: у коллекций много поведения, которое на глаз не угадывается.</p>
+<h3>Задача 1. Убрать дубли из списка</h3>
+<p>Дан список чисел с повторами. Нужно оставить каждое число по одному разу.</p>
+<p>Самый короткий путь – превратить список в множество и обратно:</p>
+<pre><code class="language-python">numbers = [3, 5, 3, 7, 5, 3]
+
+print(set(numbers))          # {3, 5, 7}
+print(list(set(numbers)))    # [3, 5, 7]
+</code></pre>
+<p>Работает, но есть подвох: <strong>порядок теряется</strong>. Для чисел это незаметно, а для списка имён или городов результат будет в случайном порядке.</p>
+<p>Если порядок важен, идём по списку и добавляем только то, чего ещё не было. Проверять будем по множеству: <code>x in set</code> отвечает мгновенно, в отличие от <code>x in list</code>, который перебирает элементы.</p>
+<pre><code class="language-python">numbers = [3, 5, 3, 7, 5, 3]
+
+unique = []
+seen = set()
+
+for x in numbers:
+    if x not in seen:
+        unique.append(x)
+        seen.add(x)
+
+print(unique)    # [3, 5, 7] - порядок первого появления сохранён
+</code></pre>
+<p>Здесь два контейнера с разными задачами: <code>unique</code> – результат в нужном порядке, <code>seen</code> – быстрая проверка «уже было?». Такой приём встречается в реальном коде постоянно.</p>
+<h3>Задача 2. Что есть в обоих списках</h3>
+<p>У двух ребят есть списки фильмов, которые они хотят посмотреть. Нужно найти общие.</p>
+<pre><code class="language-python">mine = ['Интерстеллар', 'Начало', 'Дюна', 'Матрица']
+friend = ['Дюна', 'Матрица', 'Гравитация']
+
+common = set(mine) &amp; set(friend)
+print('Посмотрим вместе:', common)
+print('Сколько общих:', len(common))
+</code></pre>
+<p>Проверьте сами, что получится из <code>set(friend) - set(mine)</code> и <code>set(mine) | set(friend)</code>.</p>
+<h3>Задача 3. Пара значений из функции</h3>
+<p>Напишите функцию, которая по списку чисел возвращает два значения: наименьшее и наибольшее. Потом распакуйте результат.</p>
+<pre><code class="language-python">def min_max(numbers):
+    return min(numbers), max(numbers)
+
+
+low, high = min_max([12, 4, 19, 7])
+print('Минимум:', low, 'Максимум:', high)
+</code></pre>
+<p>Функции <code>min</code> и <code>max</code> мы использовали на занятии 12 – здесь они просто возвращаются вместе, одним кортежем.</p>
+<p>Дополнительно: сделайте функцию <code>stats(numbers)</code>, которая возвращает три значения – минимум, максимум и среднее (сумма, делённая на <code>len</code>). Распакуйте все три в отдельные переменные.</p>
+<h3>Задача 4. Сколько разных букв в слове</h3>
+<pre><code class="language-python">word = 'молоко'
+letters = set(word)
+
+print(letters)               # {'м', 'о', 'л', 'к'}
+print('Разных букв:', len(letters))
+print('Буква о есть:', 'о' in letters)
+</code></pre>
+<p>По этому же принципу решается проверка «есть ли в слове повторяющиеся буквы»: если <code>len(set(word)) &lt; len(word)</code>, значит, какая-то буква встречается больше одного раза. Сравните с тем, как та же проверка выглядела бы на списках.</p>
+<h3>Частые ошибки</h3>
+<ul>
+<li><code>point[0] = 7</code> для кортежа – <code>TypeError</code>. Кортеж не меняется: нужен новый кортеж или список.</li>
+<li><code>one = (5)</code> вместо <code>one = (5,)</code> – получается число, а не кортеж из одного элемента.</li>
+<li><code>s = {}</code> вместо <code>s = set()</code> – создаётся словарь, а не пустое множество.</li>
+<li><code>letters[0]</code> – у множества нет индексов. Нужен <code>list(letters)[0]</code> (порядок при этом случайный) или перебор в цикле.</li>
+<li><code>s.remove(x)</code> для отсутствующего элемента – <code>KeyError</code>. Если непонятно, есть элемент или нет, – <code>discard</code>.</li>
+<li>Ожидание порядка при печати множества. Разный порядок в двух запусках – нормальное поведение.</li>
+<li><code>list(set(numbers))</code> там, где порядок важен. Дубли уйдут, но порядок потеряется – нужен вариант с <code>seen</code>.</li>
+<li><code>a &amp; b</code> для списков – <code>TypeError</code>. Операции множеств работают только с множествами, сначала <code>set(a)</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Кортеж – неизменяемая последовательность. Индексы, срезы, <code>len</code>, <code>in</code> и перебор работают так же, как у списка, но изменить элемент нельзя.</li>
+<li>Кортеж из одного элемента требует запятой: <code>(5,)</code>. Скобки необязательны, <code>3, 5</code> – тоже кортеж.</li>
+<li><code>return a, b</code> возвращает кортеж, а <code>low, high = ...</code> его распаковывает. Так из функции отдают несколько значений и меняют переменные местами.</li>
+<li>Множество хранит уникальные элементы без порядка и без индексов. Создаётся через <code>{...}</code> или <code>set(...)</code>, пустое – только через <code>set()</code>.</li>
+<li>Операции <code>&amp;</code>, <code>|</code>, <code>-</code> дают общее, объединение и разность. Проверка <code>x in set</code> работает мгновенно, поэтому множества берут для поиска дублей и общих элементов.</li>
+<li>Порядок элементов множества не гарантирован: печатать его «для красоты» нельзя, а для сохранения порядка нужен список с отдельным множеством <code>seen</code>.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

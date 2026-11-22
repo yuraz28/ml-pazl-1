@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Повторение Python — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 25. Повторение Python</h1>
+<h2>Цель занятия</h2>
+<p>Собрать всё, что было во второй части курса, в одну программу. Повторить условия, циклы, функции, списки, словари, работу с файлами и JSON, разобрать типичные ошибки. Написать «Библиотеку» – приложение со списком книг, меню и сохранением данных в <code>library.json</code>.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Карта Python: что мы уже умеем</h3>
+<p>Перед сборкой проекта полезно увидеть всю картину целиком. Ниже – всё, что нужно для сегодняшней программы, с указанием занятия.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Что</th>
+<th style="text-align: left;">Конструкция</th>
+<th style="text-align: left;">Занятие</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Вывести и спросить</td>
+<td style="text-align: left;"><code>print()</code>, <code>input()</code>, f-строки</td>
+<td style="text-align: left;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">Числа</td>
+<td style="text-align: left;"><code>+ - * / // % **</code>, <code>int()</code>, <code>round()</code></td>
+<td style="text-align: left;">6, 23</td>
+</tr>
+<tr>
+<td style="text-align: left;">Ветвление</td>
+<td style="text-align: left;"><code>if / elif / else</code>, <code>and / or / not</code></td>
+<td style="text-align: left;">7</td>
+</tr>
+<tr>
+<td style="text-align: left;">Повтор</td>
+<td style="text-align: left;"><code>for</code>, <code>range()</code>, <code>while</code>, <code>break</code>, <code>continue</code></td>
+<td style="text-align: left;">9, 10</td>
+</tr>
+<tr>
+<td style="text-align: left;">Текст</td>
+<td style="text-align: left;"><code>split()</code>, <code>strip()</code>, <code>join()</code>, срезы</td>
+<td style="text-align: left;">11</td>
+</tr>
+<tr>
+<td style="text-align: left;">Список</td>
+<td style="text-align: left;">индексы, срезы, <code>append</code>, <code>pop</code>, <code>sort</code></td>
+<td style="text-align: left;">12</td>
+</tr>
+<tr>
+<td style="text-align: left;">Функции</td>
+<td style="text-align: left;"><code>def</code>, параметры, <code>return</code>, локальные переменные</td>
+<td style="text-align: left;">13</td>
+</tr>
+<tr>
+<td style="text-align: left;">Вложенные списки</td>
+<td style="text-align: left;">двойной индекс, вложенные циклы</td>
+<td style="text-align: left;">19</td>
+</tr>
+<tr>
+<td style="text-align: left;">Кортежи и множества</td>
+<td style="text-align: left;">распаковка, <code>set()</code>, <code>&amp;</code>, <code>-</code></td>
+<td style="text-align: left;">20</td>
+</tr>
+<tr>
+<td style="text-align: left;">Словари</td>
+<td style="text-align: left;"><code>d[key]</code>, <code>get</code>, <code>items</code>, <code>in</code></td>
+<td style="text-align: left;">21</td>
+</tr>
+<tr>
+<td style="text-align: left;">Файлы</td>
+<td style="text-align: left;"><code>with open(...)</code>, <code>read</code>, <code>write</code>, режимы</td>
+<td style="text-align: left;">22</td>
+</tr>
+<tr>
+<td style="text-align: left;">Таблицы</td>
+<td style="text-align: left;"><code>csv.reader</code>, <code>csv.writer</code></td>
+<td style="text-align: left;">23</td>
+</tr>
+<tr>
+<td style="text-align: left;">JSON</td>
+<td style="text-align: left;"><code>json.load</code>, <code>json.dump</code></td>
+<td style="text-align: left;">24</td>
+</tr>
+</tbody>
+</table>
+<p>Сегодня новых тем нет – только сборка. Это нормальный этап: умение соединять знакомые части в работающую программу ценится выше, чем знание редких конструкций.</p>
+<h3>Из чего состоит любое приложение</h3>
+<p>Почти всякая программа с данными устроена одинаково:</p>
+<ol>
+<li><strong>Загрузить данные</strong> из файла (JSON – занятие 24).</li>
+<li><strong>Показать меню</strong> и спросить, что делать (цикл <code>while True</code>, <code>if/elif</code> – занятия 10, 7).</li>
+<li><strong>Выполнить действие</strong>: добавить, показать, найти, изменить. Каждое действие – отдельная функция (занятие 13).</li>
+<li><strong>Сохранить данные</strong> обратно в файл, чтобы изменения не потерялись.</li>
+</ol>
+<p>Так устроены заметки в телефоне, список книг, трекер привычек. Разница только в том, какие поля хранятся.</p>
+<h3>Данные: список словарей</h3>
+<p>Одна книга – это словарь (занятие 21):</p>
+<pre><code class="language-python">{'title': 'Дюна', 'author': 'Герберт', 'year': 1965, 'read': False}
+</code></pre>
+<p>Библиотека – список таких словарей. Файл <code>library.json</code> содержит массив верхнего уровня:</p>
+<pre><code class="language-json">[
+  {&quot;title&quot;: &quot;Дюна&quot;, &quot;author&quot;: &quot;Герберт&quot;, &quot;year&quot;: 1965, &quot;read&quot;: false}
+]
+</code></pre>
+<p>Поле <code>read</code> – логическое значение, а не строка: <code>True</code>/<code>False</code> в Python, <code>true</code>/<code>false</code> в JSON. Сравнивать его надо с <code>if book['read']:</code>, а не с <code>'True'</code>.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Программа «Библиотека»</h3>
+<p>Приложение хранит список книг между запусками: можно добавить книгу, посмотреть все, найти по названию или автору, отметить прочитанной и посмотреть статистику.</p>
+<h4>Шаг 1. Файл данных и загрузка</h4>
+<p>В папке занятия создайте <code>library.json</code> с содержимым <code>[]</code> (пустой список). Программа – <code>lesson25.py</code>.</p>
+<pre><code class="language-python">import json
+
+FILE = 'library.json'
+
+
+def load_books():
+    with open(FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def save_books(books):
+    with open(FILE, 'w', encoding='utf-8') as f:
+        json.dump(books, f, ensure_ascii=False, indent=2)
+</code></pre>
+<p>Имя файла вынесено в константу <code>FILE</code>: если понадобится поменять, правим в одном месте, а не в трёх.</p>
+<p>Функция <code>save_books</code> каждый раз перезаписывает файл целиком. Для библиотеки из сотни книг это мгновенно, а код получается простым: не нужно думать, что именно изменилось.</p>
+<h4>Шаг 2. Добавление книги</h4>
+<pre><code class="language-python">def add_book(books):
+    title = input('Название: ')
+    author = input('Автор: ')
+    year = int(input('Год: '))
+    books.append({'title': title, 'author': author, 'year': year, 'read': False})
+    save_books(books)
+    print('Книга добавлена')
+</code></pre>
+<p>Словарь собирается сразу с четырьмя полями. Новая книга по умолчанию не прочитана – <code>read: False</code>. Сохраняем сразу после изменения: если программа закроется аварийно, данные уже на диске.</p>
+<h4>Шаг 3. Показ списка</h4>
+<pre><code class="language-python">def show_books(books):
+    if len(books) == 0:
+        print('Библиотека пуста')
+        return
+    for i in range(len(books)):
+        book = books[i]
+        mark = '[x]' if book['read'] else '[ ]'
+        print(i + 1, mark, book['author'], '-', book['title'], '(' + str(book['year']) + ')')
+</code></pre>
+<p><code>return</code> без значения выходит из функции, если показывать нечего. Метка <code>[x]</code>/<code>[ ]</code> – знакомая запись из «Списка задач» (занятие 13).</p>
+<p>Нумерация с единицы: пользователь видит <code>i + 1</code>, а в списке книга лежит под индексом <code>i</code>. Это же соответствие понадобится в шаге 5.</p>
+<h4>Шаг 4. Поиск</h4>
+<pre><code class="language-python">def find_book(books):
+    text = input('Что искать? ').lower()
+    found = 0
+    for book in books:
+        if text in book['title'].lower() or text in book['author'].lower():
+            mark = '[x]' if book['read'] else '[ ]'
+            print(mark, book['author'], '-', book['title'])
+            found += 1
+    if found == 0:
+        print('Ничего не найдено')
+</code></pre>
+<p>Поиск идёт по двум полям сразу, поэтому в условии <code>or</code>. <code>lower()</code> нужен, чтобы «дюна» находила «Дюну». Счётчик <code>found</code> отличает «ничего не нашлось» от «нашлось, но поиск отработал».</p>
+<h4>Шаг 5. Отметка «прочитано»</h4>
+<pre><code class="language-python">def mark_read(books):
+    number = int(input('Номер книги: '))
+    if 1 &lt;= number &lt;= len(books):
+        books[number - 1]['read'] = True
+        save_books(books)
+        print('Отмечено')
+    else:
+        print('Нет книги с таким номером')
+</code></pre>
+<p>Здесь сразу три приёма из курса: проверка номера двойным сравнением (занятие 7), пересчёт «номер → индекс» (13) и обращение к полю словаря внутри списка (19, 21).</p>
+<h4>Шаг 6. Статистика</h4>
+<pre><code class="language-python">def show_stats(books):
+    read = 0
+    for book in books:
+        if book['read']:
+            read += 1
+    print('Всего книг:', len(books))
+    print('Прочитано:', read)
+</code></pre>
+<p><code>if book['read']:</code> короче, чем <code>if book['read'] == True:</code>. Значение уже логическое, сравнивать его с <code>True</code> не нужно.</p>
+<p>Дополнительно: выведите процент прочитанного – <code>round(read / len(books) * 100, 1)</code>. Не забудьте про пустую библиотеку: делить на ноль нельзя, нужна проверка.</p>
+<h4>Шаг 7. Меню</h4>
+<pre><code class="language-python">books = load_books()
+
+while True:
+    print()
+    print('1 - Добавить книгу')
+    print('2 - Показать все')
+    print('3 - Найти книгу')
+    print('4 - Отметить прочитанной')
+    print('5 - Статистика')
+    print('0 - Выход')
+    choice = input('Выберите действие: ')
+
+    if choice == '1':
+        add_book(books)
+    elif choice == '2':
+        show_books(books)
+    elif choice == '3':
+        find_book(books)
+    elif choice == '4':
+        mark_read(books)
+    elif choice == '5':
+        show_stats(books)
+    elif choice == '0':
+        save_books(books)
+        print('До свидания!')
+        break
+    else:
+        print('Такого пункта нет')
+</code></pre>
+<p>Сравнение <code>choice == '1'</code> идёт со строкой, потому что <code>input</code> возвращает строку. Числа не нужны: пунктов немного, а строковое сравнение не требует <code>int()</code> и не падает, если ввели букву.</p>
+<p>Проверка работы:</p>
+<ol>
+<li>Запустите, добавьте две книги, выйдите через <code>0</code>.</li>
+<li>Запустите снова и выберите «2 – Показать все». Книги на месте – значит, сохранение работает.</li>
+<li>Отметьте одну прочитанной, перезапустите, проверьте, что метка <code>[x]</code> осталась.</li>
+</ol>
+<h4>Шаг 8. Доработки на выбор</h4>
+<ul>
+<li>Удаление книги по номеру (<code>pop</code>, занятие 12).</li>
+<li>Сортировка по автору или году перед показом (<code>sort</code>).</li>
+<li>Поиск по году: «книги, изданные после 2000».</li>
+<li>Поле «оценка» от 1 до 5 и вывод средней оценки прочитанных.</li>
+<li>Список «хочу прочитать» отдельно от прочитанных – второй файл JSON.</li>
+</ul>
+<h3>Разбор типичных ошибок</h3>
+<p>Собрали программу – самое время посмотреть, на чём обычно ломаются. Почти все эти ошибки встречались в домашках.</p>
+<ul>
+<li><strong>Забыл <code>int()</code> или <code>str()</code>.</strong> <code>input</code> даёт строку, <code>write</code> принимает только строку. <code>'5' + 1</code> – <code>TypeError</code>, <code>'5' + '1'</code> – <code>'51'</code>.</li>
+<li><strong><code>KeyError</code>.</strong> Обращение к несуществующему ключу словаря. Проверка <code>in</code> или <code>get()</code> решает проблему.</li>
+<li><strong><code>IndexError</code>.</strong> Индекс за границей списка: например, пользователь ввёл номер 7, а книг три. Нужна проверка <code>1 &lt;= number &lt;= len(books)</code>.</li>
+<li><strong><code>None</code> вместо результата.</strong> Функция считает, но забыли <code>return</code> – снаружи получаем <code>None</code> и непонятную ошибку где-то дальше.</li>
+<li><strong>Путаница номера и индекса.</strong> Пользователь считает с 1, список – с 0. Пересчёт <code>number - 1</code>.</li>
+<li><strong>Данные не сохранились.</strong> Изменили список, но не вызвали <code>save_books</code> – после перезапуска всё как было.</li>
+<li><strong>Стёрли файл режимом <code>'w'</code>.</strong> Перед записью полезно один раз прочитать, что там лежало.</li>
+<li><strong><code>JSONDecodeError</code>.</strong> В <code>library.json</code> сломанная разметка после ручной правки. Проще исправить в редакторе, чем в коде.</li>
+<li><strong><code>UnicodeDecodeError</code>.</strong> Забыли <code>encoding='utf-8'</code> при открытии файла.</li>
+<li><strong>Отступы.</strong> Python определяет блоки по отступам: лишний пробел перед <code>else</code> или строка не в том блоке – <code>IndentationError</code> или логика работает не так, как задумано.</li>
+<li><strong>Функция объявлена после вызова.</strong> Меню стоит выше <code>def</code> – <code>NameError</code>.</li>
+<li><strong>Бесконечный цикл.</strong> Забыли <code>break</code> в пункте выхода или условие <code>while</code> никогда не становится ложным.</li>
+</ul>
+<p>Отдельно про отладку: если программа ведёт себя странно, ставьте <code>print()</code> в подозрительном месте и смотрите, какие значения туда доходят. Это быстрее, чем читать код глазами.</p>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Вторая часть курса – про хранение сложных данных: вложенные списки, кортежи, множества, словари, файлы, CSV, JSON.</li>
+<li>Любое приложение с данными строится по схеме: загрузить → показать меню → выполнить действие → сохранить.</li>
+<li>Одна запись описывается словарём, набор записей – списком словарей, файл JSON хранит этот список как есть.</li>
+<li>В «Библиотеке» соединились все темы блока: проверка номера, пересчёт индекса, работа со словарём внутри списка, <code>while True</code> с меню, сохранение через <code>json.dump</code>.</li>
+<li>Типичные ошибки повторяются: забытые <code>int()</code>/<code>str()</code>, <code>KeyError</code>, <code>IndexError</code>, отсутствие <code>return</code>, неверные отступы, незакрытый файл, данные не сохранены.</li>
+<li>На следующем занятии начинается новая тема – API: программы будут брать данные не из своего файла, а у других сервисов в интернете.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>

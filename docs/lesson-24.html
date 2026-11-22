@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JSON файлы — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 24. JSON файлы</h1>
+<h2>Цель занятия</h2>
+<p>Познакомиться с форматом JSON и научиться сохранять в него сложные структуры данных – словари со списками внутри. Разобрать соответствие типов Python и JSON, методы <code>json.load</code> и <code>json.dump</code>. Оформить результаты прошлого занятия в отчёт JSON.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Зачем ещё один формат</h3>
+<p>На занятии 23 мы работали с CSV – плоской таблицей. Для оценок этого хватало: строка на ученика, столбцы на предметы. Но данные часто устроены глубже.</p>
+<p>У ученика несколько предметов, у каждого предмета несколько оценок с датами, у класса есть название и учебный год. При этом учеников в классе разное количество, а предметы у разных учеников могут отличаться. В плоскую таблицу такое не влезает: понадобятся пустые клетки, дополнительные файлы и договорённости.</p>
+<p><strong>JSON</strong> – <em>JavaScript Object Notation</em> – текстовый формат для данных с вложенностью. Главное удобство: он записывается почти так же, как выглядят словари и списки Python. То есть структуру, которую вы придумали в коде, можно сохранить в файл как есть и потом прочитать обратно.</p>
+<h3>Как выглядят данные в JSON</h3>
+<pre><code class="language-json">{
+  &quot;class&quot;: &quot;10 А&quot;,
+  &quot;students&quot;: [
+    {&quot;name&quot;: &quot;Аня&quot;, &quot;marks&quot;: {&quot;математика&quot;: 5, &quot;русский&quot;: 4}},
+    {&quot;name&quot;: &quot;Марк&quot;, &quot;marks&quot;: {&quot;математика&quot;: 4, &quot;русский&quot;: 4}}
+  ]
+}
+</code></pre>
+<p>Фигурные скобки – объект, квадратные – массив. Внутри объекта пары «ключ: значение», ключ всегда в двойных кавычках. Внутри массива – значения по порядку. Структуры вкладываются друг в друга на любую глубину.</p>
+<p>Соответствие типов:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Python</th>
+<th style="text-align: left;">JSON</th>
+<th style="text-align: left;">Пример</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>dict</code></td>
+<td style="text-align: left;">объект <code>{...}</code></td>
+<td style="text-align: left;"><code>{"name": "Аня"}</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>list</code></td>
+<td style="text-align: left;">массив <code>[...]</code></td>
+<td style="text-align: left;"><code>[1, 2, 3]</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>str</code></td>
+<td style="text-align: left;">строка <code>"..."</code></td>
+<td style="text-align: left;"><code>"привет"</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>int</code>, <code>float</code></td>
+<td style="text-align: left;">число</td>
+<td style="text-align: left;"><code>5</code>, <code>4.67</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>True</code> / <code>False</code></td>
+<td style="text-align: left;"><code>true</code> / <code>false</code></td>
+<td style="text-align: left;"><code>true</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>None</code></td>
+<td style="text-align: left;"><code>null</code></td>
+<td style="text-align: left;"><code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p>Проверить превращение можно без файлов – методами <code>dumps</code> и <code>loads</code> (буква <code>s</code> – от <em>string</em>, «строка»):</p>
+<pre><code class="language-python">import json
+
+print(json.dumps([True, False, None, 5]))
+# [true, false, null, 5]
+
+print(json.dumps('привет'))
+# &quot;\u043f\u0440\u0438\u0432\u0435\u0442&quot;
+</code></pre>
+<p>Вторая строка показывает важную деталь: по умолчанию русские буквы превращаются в коды <code>\u...</code>. Файл остаётся корректным, но читать его глазами невозможно. Лечится параметром <code>ensure_ascii=False</code>.</p>
+<pre><code class="language-python">import json
+
+print(json.dumps('привет', ensure_ascii=False))
+# &quot;привет&quot;
+</code></pre>
+<h3>Запись в файл: json.dump</h3>
+<pre><code class="language-python">import json
+
+phonebook = {'Аня': '+7 900 111-22-33', 'Марк': '+7 900 444-55-66'}
+
+with open('phonebook.json', 'w', encoding='utf-8') as f:
+    json.dump(phonebook, f, ensure_ascii=False, indent=2)
+</code></pre>
+<p>Файл открывается как обычный текстовый (занятие 22): режим <code>'w'</code>, кодировка <code>utf-8</code>. Только пишет в него не <code>f.write</code>, а <code>json.dump</code>.</p>
+<p>Параметры, которые стоит указывать всегда:</p>
+<ul>
+<li><code>ensure_ascii=False</code> – русские буквы остаются буквами.</li>
+<li><code>indent=2</code> – отступ в два пробела на каждый уровень вложенности. Без него файл запишется одной длинной строкой: программа прочитает, а человек – нет.</li>
+</ul>
+<p>Порядок аргументов: сначала что записываем, потом куда.</p>
+<h3>Чтение из файла: json.load</h3>
+<pre><code class="language-python">import json
+
+with open('phonebook.json', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+
+print(data)
+print(type(data))    # &lt;class 'dict'&gt;
+</code></pre>
+<p><code>json.load</code> возвращает готовую структуру Python: объект станет словарём, массив – списком, числа – числами. Никаких <code>int()</code> и ручного разбора, в отличие от CSV. Это главное удобство JSON.</p>
+<p>Если в файле массив верхнего уровня, получится список:</p>
+<pre><code class="language-python">with open('books.json', 'r', encoding='utf-8') as f:
+    books = json.load(f)      # список словарей
+</code></pre>
+<h3>Отличие от CSV и от текстового файла</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;"></th>
+<th style="text-align: left;">txt</th>
+<th style="text-align: left;">csv</th>
+<th style="text-align: left;">json</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Структура</td>
+<td style="text-align: left;">никакой, просто текст</td>
+<td style="text-align: left;">таблица</td>
+<td style="text-align: left;">любая вложенность</td>
+</tr>
+<tr>
+<td style="text-align: left;">Типы</td>
+<td style="text-align: left;">всё строки</td>
+<td style="text-align: left;">всё строки</td>
+<td style="text-align: left;">сохраняются</td>
+</tr>
+<tr>
+<td style="text-align: left;">Где применяют</td>
+<td style="text-align: left;">заметки, логи, отчёты</td>
+<td style="text-align: left;">таблицы, выгрузки</td>
+<td style="text-align: left;">конфиги, приложения, API</td>
+</tr>
+</tbody>
+</table>
+<p>Три ограничения JSON, о которые спотыкаются:</p>
+<ul>
+<li><strong>Ключи только строки.</strong> Числовые ключи при записи станут строками, и после чтения словарь будет с другими ключами.</li>
+<li><strong>Кортеж станет списком.</strong> <code>(3, 5)</code> запишется как <code>[3, 5]</code> и вернётся списком – JSON не знает неизменяемых последовательностей.</li>
+<li><strong>Комментариев нет.</strong> В JSON нельзя оставить пояснение в файле, как в коде.</li>
+</ul>
+<p>Плюс формат строгий: одинарные кавычки, лишняя запятая в конце или «умные» кавычки из Word ломают файл. Об этом – ошибка <code>JSONDecodeError</code>.</p>
+<h3>Где вы это увидите</h3>
+<ul>
+<li>Файлы настроек приложений и игр.</li>
+<li>Сохранения прогресса.</li>
+<li>Ответы серверов при работе с API – занятие 26. Тогда <code>json.loads</code> будет разбирать не файл, а строку с ответом.</li>
+</ul>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Дневник класса в JSON</h3>
+<p>Берём данные прошлого занятия (оценки класса) и оформляем их в JSON так, как это делают настоящие приложения: класс, дата, список учеников, у каждого – словарь оценок.</p>
+<h4>Шаг 1. Собрать структуру в Python</h4>
+<pre><code class="language-python">import json
+
+gradebook = {
+    'class': '10 А',
+    'date': '2026-12-21',
+    'students': [
+        {'name': 'Аня', 'marks': {'математика': 5, 'русский': 4, 'информатика': 5}},
+        {'name': 'Марк', 'marks': {'математика': 4, 'русский': 4, 'информатика': 3}},
+        {'name': 'Лиза', 'marks': {'математика': 5, 'русский': 5, 'информатика': 5}},
+    ],
+}
+</code></pre>
+<p>Разберитесь, что здесь во что вложено: словарь → список <code>students</code> → словари учеников → словарь <code>marks</code> → числа. Именно такую «матрёшку» плоская таблица не сохранит.</p>
+<p>Программа – <code>lesson24.py</code> в папке занятия.</p>
+<h4>Шаг 2. Записать в файл</h4>
+<pre><code class="language-python">with open('gradebook.json', 'w', encoding='utf-8') as f:
+    json.dump(gradebook, f, ensure_ascii=False, indent=2)
+
+print('Сохранено')
+</code></pre>
+<p>Откройте <code>gradebook.json</code> в VS Code. Должно быть читаемо: отступы, русские буквы, числа без кавычек. Если увидели <code>\u043f...</code> – забыли <code>ensure_ascii=False</code>. Если всё в одной строке – забыли <code>indent=2</code>.</p>
+<h4>Шаг 3. Прочитать обратно</h4>
+<pre><code class="language-python">with open('gradebook.json', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+
+print('Файл прочитан заново:', type(data))
+print('Класс:', data['class'])
+print('Первый ученик:', data['students'][0]['name'])
+print('Его математика:', data['students'][0]['marks']['математика'])
+</code></pre>
+<p>Смысл шага: убедиться, что из файла вернулась та же структура. <code>type(data)</code> покажет <code>dict</code>, а не строку. Доступ к глубокому значению – цепочка индексов, как в занятии 21.</p>
+<h4>Шаг 4. Посчитать и сохранить отчёт</h4>
+<pre><code class="language-python">report = {'class': data['class'], 'students': []}
+
+for student in data['students']:
+    total = 0
+    for mark in student['marks'].values():
+        total += mark
+    average = total / len(student['marks'])
+    report['students'].append({'name': student['name'], 'average': round(average, 2)})
+    print(student['name'], '-', round(average, 2))
+
+with open('gradebook_report.json', 'w', encoding='utf-8') as f:
+    json.dump(report, f, ensure_ascii=False, indent=2)
+</code></pre>
+<p><code>values()</code> здесь удобнее <code>items()</code>: нужны только оценки, а не названия предметов. Новый отчёт собираем с нуля – так структура получается чище, без лишних полей исходника.</p>
+<p>Результат:</p>
+<pre><code>Аня - 4.67
+Марк - 3.67
+Лиза - 5.0
+</code></pre>
+<p>А в <code>gradebook_report.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;class&quot;: &quot;10 А&quot;,
+  &quot;students&quot;: [
+    {&quot;name&quot;: &quot;Аня&quot;, &quot;average&quot;: 4.67},
+    {&quot;name&quot;: &quot;Марк&quot;, &quot;average&quot;: 3.67},
+    {&quot;name&quot;: &quot;Лиза&quot;, &quot;average&quot;: 5.0}
+  ]
+}
+</code></pre>
+<h4>Шаг 5. Доработки на выбор</h4>
+<ul>
+<li>Добавить в отчёт «лучший предмет» каждого ученика и средний балл по классу.</li>
+<li>Добавить поле <code>read</code> типа <code>True/False</code> (например, «четверть закрыта») и проверить, что в файле оно станет <code>true</code>.</li>
+<li>Сохранить в JSON сразу два класса: <code>{'classes': [ {...}, {...} ]}</code>.</li>
+<li>Сравнить размер <code>gradebook.json</code> и старого <code>marks_report.csv</code>. Сделать вывод, где хранить удобнее.</li>
+<li>Сломать файл руками (убрать запятую) и посмотреть на <code>JSONDecodeError</code> – чтобы узнать ошибку в лицо.</li>
+</ul>
+<h3>Частые ошибки</h3>
+<ul>
+<li><code>f.write(gradebook)</code> – <code>TypeError</code>. Словарь записывают через <code>json.dump</code>, а <code>write</code> принимает только строку.</li>
+<li><code>json.dump(gradebook, f)</code> без <code>ensure_ascii=False</code> – в файле <code>\u0430\u043d\u044f</code>.</li>
+<li>Без <code>indent=2</code> – весь JSON в одну строку, глазами не проверить.</li>
+<li><code>json.loads(f)</code> вместо <code>json.load(f)</code> – <code>loads</code> работает со строкой, а не с файлом; будет <code>TypeError</code>.</li>
+<li><code>JSONDecodeError: Expecting ',' delimiter</code> – в файле сломана разметка: пропущена запятая, одинарные кавычки, лишняя запятая перед закрывающей скобкой.</li>
+<li><code>KeyError</code> при <code>data['students']</code> – файл прочитался, но структура другая (например, верхний уровень – список).</li>
+<li>Числовые ключи словаря после сохранения и чтения стали строками: <code>{1: 'а'}</code> превратится в <code>{'1': 'а'}</code>.</li>
+<li>Открыли файл в режиме <code>'w'</code>, чтобы «посмотреть», – данные стёрлись. Для чтения только <code>'r'</code>.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>JSON – текстовый формат для данных с вложенностью. Объекты <code>{}</code> соответствуют словарям, массивы <code>[]</code> – спискам.</li>
+<li>Типы в JSON сохраняются: числа остаются числами, <code>true</code>/<code>false</code> – логическими значениями, <code>null</code> – это <code>None</code>. Преобразовывать ничего не нужно.</li>
+<li><code>json.dump(объект, f, ensure_ascii=False, indent=2)</code> записывает в файл, <code>json.load(f)</code> читает и возвращает словарь или список.</li>
+<li><code>dumps</code>/<code>loads</code> работают со строкой вместо файла – пригодятся, когда данные приходят от сервера.</li>
+<li>Русские буквы в файле появляются только с <code>ensure_ascii=False</code>, читаемая структура – с <code>indent=2</code>.</li>
+<li>Ограничения: ключи только строки, кортежи становятся списками, комментариев нет, формат строгий – одна лишняя запятая даёт <code>JSONDecodeError</code>.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>
