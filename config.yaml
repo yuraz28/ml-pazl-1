@@ -92,7 +92,9 @@ lessons:
   - n: 14
     opens: soon
   - n: 15
+    title: "История LLM и машинного обучения"
     opens: soon
+    docs: classes/15-lessons/15-text.md
   - n: 16
     title: "Промпт-инжиниринг"
     opens: soon
