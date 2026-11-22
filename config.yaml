@@ -90,7 +90,9 @@ lessons:
     docs: classes/13-lessons/13-text.md
 
   - n: 14
+    title: "Код-ревью"
     opens: 2026-12-07
+    presentation: classes/14-lessons/14-code-review.html
   - n: 15
     title: "История LLM и машинного обучения"
     opens: 2026-12-14
