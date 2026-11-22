@@ -94,25 +94,45 @@ lessons:
   - n: 15
     opens: soon
   - n: 16
+    title: "Промпт-инжиниринг"
     opens: soon
+    docs: classes/16-lessons/16-text.md
   - n: 17
+    title: "Применение нейросетей"
     opens: soon
+    docs: classes/17-lessons/17-text.md
   - n: 18
+    title: "Ретро"
     opens: soon
+    docs: classes/18-lessons/18-text.md
   - n: 19
+    title: "Вложенные списки"
     opens: soon
+    docs: classes/19-lessons/19-text.md
   - n: 20
+    title: "Кортежи и множества"
     opens: soon
+    docs: classes/20-lessons/20-text.md
   - n: 21
+    title: "Словари"
     opens: soon
+    docs: classes/21-lessons/21-text.md
   - n: 22
+    title: "Работа с файлами txt"
     opens: soon
+    docs: classes/22-lessons/22-text.md
   - n: 23
+    title: "Модуль csv"
     opens: soon
+    docs: classes/23-lessons/23-text.md
   - n: 24
+    title: "JSON файлы"
     opens: soon
+    docs: classes/24-lessons/24-text.md
   - n: 25
+    title: "Повторение Python"
     opens: soon
+    docs: classes/25-lessons/25-text.md
   - n: 26
     opens: soon
   - n: 27

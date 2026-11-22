@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Работа с файлами txt — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+    --tint:#E9F4FF; --ink:#101A26; --ink2:#38475A; --line:#E3EDF8;
+    --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  html{min-height:100%; background:radial-gradient(1300px 760px at 12% -12%,#12508F 0%,#0A3160 38%,var(--night) 62%,#061D38 100%) #061D38}
+  body{margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; color:var(--ink); -webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px; margin:0 auto; padding:40px 20px 72px}
+  .back{display:inline-flex; align-items:center; gap:8px; margin-bottom:20px; color:#BFE1FF; text-decoration:none; font-size:14px; font-weight:600}
+  .back:hover{color:#fff}
+  article{background:#fff; border-radius:22px; padding:clamp(24px,4vw,52px); box-shadow:0 18px 44px rgba(3,17,34,.34)}
+  article h1{font-size:clamp(26px,3.2vw,38px); line-height:1.15; letter-spacing:-.02em; margin:0 0 .6em}
+  article h2{font-size:clamp(20px,2.4vw,26px); margin:1.7em 0 .5em; letter-spacing:-.01em; padding-top:.2em; border-top:1px solid var(--line)}
+  article h2:first-of-type{border-top:0; padding-top:0}
+  article h3{font-size:18px; margin:1.5em 0 .4em; color:var(--blue-900)}
+  article p, article li{font-size:16px; line-height:1.72; color:var(--ink2)}
+  article a{color:var(--blue-700)}
+  article strong{color:var(--ink)}
+  article code{font-family:var(--mono); font-size:.92em; background:var(--tint); color:var(--blue-900); padding:.15em .45em; border-radius:6px}
+  article pre{background:#0B1E33; color:#DCEBFF; padding:16px 18px; border-radius:14px; overflow:auto}
+  article pre code{background:none; color:inherit; padding:0}
+  article ul, article ol{padding-left:1.3em; margin:.5em 0 1em}
+  article li{margin:.28em 0}
+  article blockquote{margin:1em 0; padding:.4em 1.1em; border-left:4px solid var(--blue); background:var(--tint); border-radius:0 12px 12px 0}
+  article blockquote p{margin:.4em 0}
+  article table{width:100%; border-collapse:collapse; margin:1em 0 1.4em; font-size:15px}
+  article th, article td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  article th{background:var(--tint); color:var(--blue-900); font-weight:700}
+  article tr:nth-child(even) td{background:#F7FBFF}
+  article img{max-width:100%; border-radius:12px}
+  article hr{border:0; border-top:1px solid var(--line); margin:2em 0}
+  @media (max-width:640px){ .wrap{padding:24px 14px 56px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; Все занятия</a>
+  <article>
+<h1>Занятие 22. Работа с файлами txt</h1>
+<h2>Цель занятия</h2>
+<p>Научиться сохранять данные между запусками программы: открывать файл, читать его и записывать в него результат. Разобрать конструкцию <code>with open(...)</code>, режимы работы и кодировку. Собрать программу, которая читает текст, считает статистику слов и сохраняет отчёт в отдельный файл.</p>
+<hr />
+<h2>Теория</h2>
+<h3>Зачем нужны файлы</h3>
+<p>До этого занятия все данные жили только в памяти: пока программа работала – они были, закрыли программу – исчезли. Список задач из занятия 13, телефонная книга из занятия 21 – после перезапуска пусто.</p>
+<p><strong>Файл</strong> – это данные на диске. Они никуда не деваются, и их можно открыть другой программой: в блокноте, в Excel, отправить в чат.</p>
+<p>Два направления работы:</p>
+<ul>
+<li><strong>Чтение</strong> – взяли текст из файла, обработали (посчитали, разобрали на слова, превратили в список), вывели результат.</li>
+<li><strong>Запись</strong> – взяли данные из программы и сохранили их, чтобы они жили дальше.</li>
+</ul>
+<h3>Открытие файла</h3>
+<p>Файл открывают функцией <code>open</code>. Она получает имя файла и режим, а возвращает объект файла – через него и идёт работа.</p>
+<pre><code class="language-python">f = open('text.txt', 'r', encoding='utf-8')
+text = f.read()
+f.close()
+</code></pre>
+<p>Три параметра, каждый важен:</p>
+<ul>
+<li><strong>Имя файла.</strong> <code>'text.txt'</code> – файл в той же папке, что и программа. Файл ищется относительно папки, из которой запущен Python: в VS Code – это папка открытого проекта. Если файл лежит не там, будет ошибка <code>FileNotFoundError</code>.</li>
+<li><strong>Режим.</strong> <code>'r'</code> – читать (read). Ещё будут <code>'w'</code> и <code>'a'</code>.</li>
+<li><strong>Кодировка.</strong> <code>encoding='utf-8'</code> – способ превращения байтов в буквы. Русский текст без него на части систем читается «кракозябрами» или выдаёт <code>UnicodeDecodeError</code>. Правило простое: <strong>всегда указывайте <code>encoding='utf-8'</code></strong>.</li>
+</ul>
+<p>Метод <code>close()</code> закрывает файл: сообщает системе «я закончил, можно сохранять». Забыли закрыть – данные могут не записаться.</p>
+<h3>Конструкция with open</h3>
+<p>Чтобы не забывать про <code>close</code>, используют <code>with</code>. Он закрывает файл автоматически – и когда всё прошло хорошо, и когда внутри случилась ошибка.</p>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
+
+print(text)
+</code></pre>
+<p>Читается так: «открой файл, пока мы внутри блока называй его <code>f</code>, когда блок закончится – закрой». Всё, что делаем с файлом, пишем с отступом. После блока переменная <code>f</code> уже закрыта.</p>
+<p>Дальше в курсе мы будем пользоваться только этой конструкцией.</p>
+<h3>Режимы работы</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Режим</th>
+<th style="text-align: left;">Что делает</th>
+<th style="text-align: left;">Если файла нет</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>'r'</code></td>
+<td style="text-align: left;">Читает</td>
+<td style="text-align: left;">Ошибка <code>FileNotFoundError</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>'w'</code></td>
+<td style="text-align: left;">Пишет, <strong>стирая старое содержимое</strong></td>
+<td style="text-align: left;">Файл создаётся</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>'a'</code></td>
+<td style="text-align: left;">Дописывает в конец</td>
+<td style="text-align: left;">Файл создаётся</td>
+</tr>
+</tbody>
+</table>
+<p>Главная ловушка – <code>'w'</code>. Он не «дописывает», а начинает файл заново. Открыли на запись файл с важными данными – данные стёрлись ещё до того, как вы что-то записали.</p>
+<p>Если нужно добавить строку в конец – режим <code>'a'</code>:</p>
+<pre><code class="language-python">with open('log.txt', 'a', encoding='utf-8') as f:
+    f.write('Программа запущена\n')
+</code></pre>
+<p>Каждый запуск добавляет одну строку. С <code>'w'</code> в файле всегда оставалась бы только последняя.</p>
+<h3>Чтение: три способа</h3>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    text = f.read()          # весь файл одной строкой
+</code></pre>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    lines = f.readlines()    # список строк
+</code></pre>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    for line in f:           # по одной строке, экономно по памяти
+        print(line)
+</code></pre>
+<p><code>readlines()</code> и перебор в цикле оставляют в конце каждой строки символ перевода строки <code>\n</code>. Убрать его можно методом <code>strip()</code> (занятие 11):</p>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    for line in f:
+        print(line.strip())
+</code></pre>
+<h3>Запись</h3>
+<p>Метод <code>write()</code> записывает строку. Символ перевода строки <code>\n</code> он <strong>не добавляет</strong> – это ваша забота:</p>
+<pre><code class="language-python">with open('report.txt', 'w', encoding='utf-8') as f:
+    f.write('Отчёт\n')
+    f.write('Строк: 3\n')
+</code></pre>
+<p>Без <code>\n</code> всё склеится в одну длинную строку. Внутри текста <code>\n</code> – это просто два символа-обозначения, которые Python превращает в перевод строки.</p>
+<p><code>write()</code> принимает только строку. Числа нужно превращать: <code>str(count)</code> (занятие 8).</p>
+<h3>Что делать с прочитанным</h3>
+<p>Файл отдаёт строку. Дальше работаем с ней обычными инструментами: <code>split()</code> разбивает на слова, словарь считает частоты (занятие 21), множество убирает повторы (занятие 20). Именно поэтому файлы идут после коллекций: без них читать нечего было бы обрабатывать.</p>
+<hr />
+<h2>Практика</h2>
+<h3>Задача. Статистика слов в тексте</h3>
+<p>Программа читает текстовый файл, считает, сколько раз встречается каждое слово, находит топ-5 и сохраняет отчёт в отдельный файл.</p>
+<h4>Шаг 1. Создать файл с текстом</h4>
+<p>В папке занятия создайте файл <code>text.txt</code> и вставьте:</p>
+<pre><code>Летом мы ездили на озеро. Озеро было тихое, вода тёплая.
+Вечером на озере ловили рыбу. Рыба клевала плохо, но мы не расстроились.
+Утром туман, тишина, только птицы. Летом на озере хорошо.
+</code></pre>
+<p>Программу пишем в <code>lesson22.py</code> в той же папке.</p>
+<h4>Шаг 2. Прочитать файл</h4>
+<pre><code class="language-python">with open('text.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
+
+print(text)
+print('Символов:', len(text))
+</code></pre>
+<p>Запустите и проверьте, что текст вывелся целиком, а не «кракозябрами». Если вместо букв мусор – проверьте <code>encoding</code>. Если <code>FileNotFoundError</code> – файл лежит в другой папке или в имени опечатка.</p>
+<h4>Шаг 3. Посчитать слова</h4>
+<p>Слово с большой буквы и с маленькой – для нас одно и то же, поэтому приводим к нижнему регистру. Знаки препинания по краям слова убираем методом <code>strip()</code>: он срезает указанные символы с начала и конца строки.</p>
+<pre><code class="language-python">WORDS_STRIP = '.,!?;:«»—&quot;()'
+
+words = {}
+unique = set()
+total = 0
+
+for raw in text.split():
+    word = raw.lower().strip(WORDS_STRIP)
+    if word == '':
+        continue
+    total += 1
+    unique.add(word)
+    words[word] = words.get(word, 0) + 1
+</code></pre>
+<p>За один проход мы получили три вещи: общее число слов, множество уникальных и словарь частот. Проверка <code>if word == ''</code> нужна на случай, когда слово состояло только из знаков препинания.</p>
+<h4>Шаг 4. Топ-5 слов</h4>
+<p>Нужно отсортировать словарь по частоте. Сортировать словарь напрямую нельзя, зато можно собрать список пар и отсортировать его.</p>
+<p>Здесь пригодятся кортежи (занятие 20): пары <code>(частота, слово)</code> сортируются сначала по частоте, а при равенстве – по слову. Метод <code>sort(reverse=True)</code> ставит большие значения вперёд (занятие 12).</p>
+<pre><code class="language-python">pairs = []
+for word, count in words.items():
+    pairs.append((count, word))
+
+pairs.sort(reverse=True)
+top = pairs[:5]
+
+print('Всего слов:', total)
+print('Уникальных:', len(unique))
+print('Топ-5:')
+for count, word in top:
+    print(' ', word, '-', count)
+</code></pre>
+<p>Порядок в кортеже <code>(count, word)</code> важен: сортировка смотрит сначала на первый элемент. Напишем <code>(word, count)</code> – список отсортируется по алфавиту, а не по частоте. Частая ошибка, проверяйте вывод.</p>
+<h4>Шаг 5. Сохранить отчёт в файл</h4>
+<pre><code class="language-python">with open('report.txt', 'w', encoding='utf-8') as f:
+    f.write('Отчёт по файлу text.txt\n')
+    f.write('Всего слов: ' + str(total) + '\n')
+    f.write('Уникальных слов: ' + str(len(unique)) + '\n')
+    f.write('Топ-5 слов:\n')
+    for count, word in top:
+        f.write(word + ' - ' + str(count) + '\n')
+
+print('Готово, отчёт в report.txt')
+</code></pre>
+<p>Обратите внимание на <code>str()</code>: <code>write</code> не умеет писать числа. И на <code>\n</code> в конце каждой строки – без него весь отчёт был бы одной строкой.</p>
+<h4>Шаг 6. Прочитать отчёт обратно</h4>
+<pre><code class="language-python">with open('report.txt', 'r', encoding='utf-8') as f:
+    print(f.read())
+</code></pre>
+<p>Программа прочитала свой же результат. Так проверяют, что запись прошла правильно, – глазами по файлу, а не по сообщению «Готово».</p>
+<p>Ожидаемый результат для текста из шага 1:</p>
+<pre><code>Отчёт по файлу text.txt
+Всего слов: 31
+Уникальных слов: 25
+Топ-5 слов:
+на - 3
+озеро - 2
+озере - 2
+мы - 2
+летом - 2
+</code></pre>
+<h4>Шаг 7. Доработки на выбор</h4>
+<ul>
+<li>Добавить в отчёт самое длинное слово файла.</li>
+<li>Исключить из подсчёта короткие слова (предлоги «на», «мы») – сравнение <code>len(word) &gt; 2</code>.</li>
+<li>Записывать в <code>log.txt</code> через режим <code>'a'</code> дату и время каждого запуска.</li>
+<li>Считать статистику сразу для двух файлов и сохранять два отчёта.</li>
+<li>Попробовать <code>readlines()</code> вместо <code>read()</code> и посчитать количество строк в файле.</li>
+</ul>
+<h3>Частые ошибки</h3>
+<ul>
+<li>Нет <code>encoding='utf-8'</code> – вместо русского текста мусор или <code>UnicodeDecodeError: 'charmap' codec can't decode...</code>.</li>
+<li><code>'w'</code> вместо <code>'a'</code> – файл стёрся и в нём осталась только последняя запись.</li>
+<li><code>FileNotFoundError</code> – файл лежит в другой папке, неверное имя или расширение (<code>text.txt.txt</code>, если Windows дописал его сам). Проверьте, что <code>text.txt</code> виден в панели файлов VS Code рядом с <code>lesson22.py</code>.</li>
+<li><code>print(f)</code> вместо <code>print(f.read())</code> – выводится служебная информация об объекте файла, а не текст.</li>
+<li>Забыли <code>\n</code> в <code>write</code> – все строки склеились в одну.</li>
+<li><code>f.write(count)</code> с числом – <code>TypeError: write() argument must be str</code>. Нужен <code>str(count)</code>.</li>
+<li>Работа с файлом после блока <code>with</code> – файл уже закрыт, будет <code>ValueError: I/O operation on closed file</code>.</li>
+<li>Читают файл в цикле несколько раз: после <code>read()</code> файл стоит в конце, повторный <code>read()</code> вернёт пустую строку.</li>
+</ul>
+<hr />
+<h2>Итоги</h2>
+<ul>
+<li>Файл хранит данные на диске, поэтому они не исчезают после закрытия программы.</li>
+<li><code>with open(имя, режим, encoding='utf-8') as f:</code> – основной способ работы: файл закроется сам, даже при ошибке.</li>
+<li>Режимы: <code>'r'</code> – читать, <code>'w'</code> – писать (стирает старое содержимое), <code>'a'</code> – дописывать в конец.</li>
+<li>Читать можно целиком (<code>read()</code>), списком строк (<code>readlines()</code>) или построчно в цикле <code>for</code>. Строки приходят с <code>\n</code>, его убирает <code>strip()</code>.</li>
+<li><code>write()</code> пишет только строки и не добавляет перевод строки – <code>\n</code> и <code>str()</code> на вашей ответственности.</li>
+<li>Прочитанный текст обрабатывают теми же инструментами, что и обычную строку: <code>split</code>, множество для уникальных, словарь для частот.</li>
+</ul>
+  </article>
+</div>
+</body>
+</html>
