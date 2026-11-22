@@ -180,6 +180,12 @@ svg text{font-family:'Inter',Arial,sans-serif}
 .run.sm .run-code{font-size:21px; line-height:1.34}
 .run.sm .run-code .ln{padding:1px 12px}
 .run.sm .run-console{font-size:21px; line-height:1.44}
+/* совсем длинное решение (меню целиком) — ещё компактнее */
+.run.xs{padding:12px 22px}
+.run.xs .run-top{margin-bottom:12px}
+.run.xs .run-code{font-size:19px; line-height:1.24}
+.run.xs .run-code .ln{padding:0 10px}
+.run.xs .run-console{font-size:19px; line-height:1.32}
 .blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
 .blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
 .blk h3{font-size:29px}
@@ -267,10 +273,10 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="fn-bd">
         <div class="fn-row">
           <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
-          <div class="seg var"><span class="tok">000</span><span class="lab">Номер занятия</span></div>
-          <div class="seg var"><span class="tok">Название</span><span class="lab">Тема занятия</span></div>
-          <div class="seg var"><span class="tok">05.10</span><span class="lab">Дата занятия</span></div>
-          <button class="copybtn" type="button" data-copy="1ПМ0 000 Название 05.10" title="Скопировать «1ПМ0 000 Название 05.10»">
+          <div class="seg var"><span class="tok">013</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Функции</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">23.11</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 013 Функции 23.11" title="Скопировать «1ПМ0 013 Функции 23.11»">
             <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
             <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
             <span class="cb-lbl">Скопировать шаблон</span>
@@ -310,7 +316,7 @@ svg text{font-family:'Inter',Arial,sans-serif}
       <div class="card r" style="--d:130"><h3>Понятнее</h3><p>По имени сразу видно, что делает эта часть программы.</p></div>
       <div class="card r" style="--d:190"><h3>Правки в одном месте</h3><p>Поменяли размер — обновилось везде, где функция вызывается.</p></div>
     </div>
-    <div class="acc-o r" style="--d:250">Готовыми функциями пользуемся с четвёртого занятия: print(), input(), int(), len(). Теперь пишем свои.</div>
+    <div class="acc-o r" style="--d:250">Готовыми функциями пользуемся давно: print() — с первых занятий, input() — с ввода данных, len() — со строк. Теперь пишем свои.</div>
   </div>
 </section>
 
@@ -664,7 +670,7 @@ print(numbers)        <span class="c"># [1, 2]</span></pre>
       <div class="card r" style="--d:150"><div class="num">задача 2</div><h3>Отметить и удалить</h3><p>Функции, которые меняют общий список: пометить выполненную и удалить задачу.</p></div>
       <div class="card r" style="--d:230"><div class="num">задача 3</div><h3>Меню программы</h3><p>Цикл while True спрашивает, что делать, и вызывает нужную функцию.</p></div>
     </div>
-    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson12.py</b>.</div>
+    <div class="note r" style="--d:310">Работаем в VS Code: файл <b>lesson13.py</b>.</div>
   </div>
 </section>
 
@@ -676,7 +682,7 @@ print(numbers)        <span class="c"># [1, 2]</span></pre>
   </header>
   <div class="body">
     <div style="display:flex; flex-direction:column; gap:16px">
-    <div class="io-row r" style="--d:70"><div class="k">Задание</div><p>Создадим программу для списка дел. Она умеет добавлять задачу, показывать все задачи, отмечать задачу выполненной и удалять её по номеру. Каждое действие оформим отдельной функцией, а выбирать действие будем через меню. Список задач будет храниться в переменной <b>tasks</b>.</p></div>
+    <div class="io-row r" style="--d:70"><div class="k">Задание</div><p>Программа для списка дел: добавлять задачу, показывать все, отмечать выполненной, удалять по номеру. Каждое действие — отдельная функция, выбор — через меню. Список хранится в <b>tasks</b>.</p></div>
     <div class="task">
       <div class="io">
         <div class="io-row r" style="--d:130"><div class="k">Что на вход</div><p>Список задач <b>tasks</b> — сначала он пустой, а задачи в него добавляет функция.</p></div>
@@ -748,7 +754,7 @@ def add_task(text):
     <h2>Задача 1: полное решение</h2>
   </header>
   <div class="body">
-    <div class="run r" data-run="step1" style="--d:120">
+    <div class="run sm r" data-run="step1" style="--d:120">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
         <div class="chips" data-role="variants">
@@ -863,20 +869,20 @@ def add_task(text):
     <h2>Задача 2: полное решение</h2>
   </header>
   <div class="body">
-    <div class="run r" data-run="remove" style="--d:120">
+    <div class="run sm r" data-run="remove" style="--d:120">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
         <div class="chips" data-role="variants">
-          <button class="chip on" type="button" data-val="1">remove_task(1)</button>
-          <button class="chip" type="button" data-val="5">remove_task(5)</button>
+          <button class="chip on" type="button" data-val="1">отметить и удалить</button>
+          <button class="chip" type="button" data-val="5">номер 5 — нет такой</button>
         </div>
       </div>
       <div class="run-grid">
-        <pre class="run-code"><span class="ln" data-no="1">tasks = ['Сделать уроки', 'Купить хлеб']</span><span class="ln" data-no="2">def remove_task(number):</span><span class="ln" data-no="3">    if 1 &lt;= number &lt;= len(tasks):</span><span class="ln" data-no="4">        tasks.pop(number - 1)</span><span class="ln" data-no="5">        print('Задача удалена')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Нет задачи с таким номером')</span><span class="ln" data-no="8">remove_task(1)</span><span class="ln" data-no="9">print(tasks)</span></pre>
+        <pre class="run-code"><span class="ln" data-no="1">tasks = ['Сделать уроки', 'Купить хлеб']</span><span class="ln" data-no="2">def complete_task(number):</span><span class="ln" data-no="3">    if 1 &lt;= number &lt;= len(tasks):</span><span class="ln" data-no="4">        tasks[number - 1] += ' (выполнено)'</span><span class="ln" data-no="5">        print('Задача отмечена')</span><span class="ln" data-no="6">    else:</span><span class="ln" data-no="7">        print('Нет задачи с таким номером')</span><span class="ln" data-no="8">def remove_task(number):</span><span class="ln" data-no="9">    if 1 &lt;= number &lt;= len(tasks):</span><span class="ln" data-no="10">        tasks.pop(number - 1)</span><span class="ln" data-no="11">        print('Задача удалена')</span><span class="ln" data-no="12">    else:</span><span class="ln" data-no="13">        print('Нет задачи с таким номером')</span><span class="ln" data-no="14">complete_task(1)</span><span class="ln" data-no="15">remove_task(2)</span><span class="ln" data-no="16">print(tasks)</span></pre>
         <div class="run-console" data-role="console" aria-live="polite"></div>
       </div>
     </div>
-    <div class="note r" style="--d:220">pop(индекс) убирает элемент из списка. Перепутаете номер и индекс — удалите не ту задачу.</div>
+    <div class="note r" style="--d:220">pop(индекс) убирает элемент по индексу: перепутаете номер и индекс — удалите не ту задачу.</div>
   </div>
 </section>
 
@@ -967,7 +973,7 @@ def add_task(text):
     <h2>Задача 3: полное решение</h2>
   </header>
   <div class="body">
-    <div class="run r" data-run="menu" style="--d:120">
+    <div class="run xs r" data-run="menu" style="--d:120">
       <div class="run-top">
         <button class="run-btn" data-role="run" type="button">▶ Запустить</button>
         <div class="chips" data-role="variants">
@@ -976,7 +982,7 @@ def add_task(text):
         </div>
       </div>
       <div class="run-grid">
-        <pre class="run-code"><span class="ln" data-no="1">while True:</span><span class="ln" data-no="2">    print()</span><span class="ln" data-no="3">    print('1 - Добавить задачу')</span><span class="ln" data-no="4">    print('2 - Показать задачи')</span><span class="ln" data-no="5">    print('3 - Отметить выполненной')</span><span class="ln" data-no="6">    print('4 - Удалить задачу')</span><span class="ln" data-no="7">    print('0 - Выход')</span><span class="ln" data-no="8">    choice = input('Выберите действие: ')</span><span class="ln" data-no="9">    if choice == '1':</span><span class="ln" data-no="10">        add_task(input('Введите задачу: '))</span><span class="ln" data-no="11">    elif choice == '0':</span><span class="ln" data-no="12">        print('До свидания!')</span><span class="ln" data-no="13">        break</span></pre>
+        <pre class="run-code"><span class="ln" data-no="1">while True:</span><span class="ln" data-no="2">    print()</span><span class="ln" data-no="3">    print('1 - Добавить задачу')</span><span class="ln" data-no="4">    print('2 - Показать задачи')</span><span class="ln" data-no="5">    print('3 - Отметить выполненной')</span><span class="ln" data-no="6">    print('4 - Удалить задачу')</span><span class="ln" data-no="7">    print('0 - Выход')</span><span class="ln" data-no="8">    choice = input('Выберите действие: ')</span><span class="ln" data-no="9">    if choice == '1':</span><span class="ln" data-no="10">        text = input('Введите задачу: ')</span><span class="ln" data-no="11">        add_task(text)</span><span class="ln" data-no="12">    elif choice == '2':</span><span class="ln" data-no="13">        show_tasks()</span><span class="ln" data-no="14">    elif choice == '3':</span><span class="ln" data-no="15">        number = int(input('Номер задачи: '))</span><span class="ln" data-no="16">        complete_task(number)</span><span class="ln" data-no="17">    elif choice == '4':</span><span class="ln" data-no="18">        number = int(input('Номер задачи: '))</span><span class="ln" data-no="19">        remove_task(number)</span><span class="ln" data-no="20">    elif choice == '0':</span><span class="ln" data-no="21">        print('До свидания!')</span><span class="ln" data-no="22">        break</span><span class="ln" data-no="23">    else:</span><span class="ln" data-no="24">        print('Такого пункта нет')</span></pre>
         <div class="run-console" data-role="console" aria-live="polite"></div>
       </div>
     </div>
@@ -1231,26 +1237,31 @@ def add_task(text):
 
     /* 9. Удалить задачу */
     'remove': [
-      { val:'1', label:'remove_task(1)', skip:[6,7], steps:[
+      { val:'1', label:'отметить и удалить', skip:[6,7,12,13], steps:[
         { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
-        { ln:2, out:{ t:'def remove_task(number): функция создана' } },
-        { ln:3, out:{ t:'1 &lt;= 1 &lt;= 2  →  True', kind:'true' }, badge:'Вызов remove_task(1) — строка 8: number = 1' },
-        { ln:4, out:{ t:'tasks.pop(0) — убрали первый элемент' } },
-        { ln:5, out:{ t:'Задача удалена', kind:'p' } },
-        { ln:9, out:{ t:"['Купить хлеб']", kind:'p' } }
+        { ln:2, out:{ t:'def complete_task(number): функция создана' } },
+        { ln:3, out:{ t:'1 &lt;= 1 &lt;= 2  →  True', kind:'true' }, badge:'Вызов complete_task(1) — строка 14: number = 1' },
+        { ln:4, out:{ t:"tasks[0] += ' (выполнено)'" } },
+        { ln:5, out:{ t:'Задача отмечена', kind:'p' } },
+        { ln:8, out:{ t:'def remove_task(number): функция создана' } },
+        { ln:9, out:{ t:'1 &lt;= 2 &lt;= 2  →  True', kind:'true' }, badge:'Вызов remove_task(2) — строка 15: number = 2' },
+        { ln:10, out:{ t:'tasks.pop(1) — убрали второй элемент' } },
+        { ln:11, out:{ t:'Задача удалена', kind:'p' } },
+        { ln:16, out:{ t:"['Сделать уроки (выполнено)']", kind:'p' } }
       ]},
-      { val:'5', label:'remove_task(5)', skip:[4,5], steps:[
+      { val:'5', label:'номер 5 — нет такой', skip:[3,4,5,6,7,10,11,12,14], steps:[
         { ln:1, out:{ t:"tasks = ['Сделать уроки', 'Купить хлеб']" } },
-        { ln:2, out:{ t:'def remove_task(number): функция создана' } },
-        { ln:3, out:{ t:'1 &lt;= 5 &lt;= 2  →  False', kind:'false' }, badge:'Вызов remove_task(5) — строка 8: number = 5' },
-        { ln:7, out:{ t:'Нет задачи с таким номером', kind:'p' } },
-        { ln:9, out:{ t:"['Сделать уроки', 'Купить хлеб']", kind:'p' } }
+        { ln:2, out:{ t:'def complete_task(number): функция создана' } },
+        { ln:8, out:{ t:'def remove_task(number): функция создана' } },
+        { ln:9, out:{ t:'1 &lt;= 5 &lt;= 2  →  False', kind:'false' }, badge:'Вызов remove_task(5) — строка 15: number = 5' },
+        { ln:13, out:{ t:'Нет задачи с таким номером', kind:'p' } },
+        { ln:16, out:{ t:"['Сделать уроки', 'Купить хлеб']", kind:'p' } }
       ]}
     ],
 
     /* 10. Меню */
     'menu': [
-      { val:'add', label:'пункт 1 — добавить', skip:[11,12,13], steps:[
+      { val:'add', label:'пункт 1 — добавить', skip:[12,13,14,15,16,17,18,19,20,21,22,23,24], steps:[
         { ln:1, out:{ t:'while True: после действия меню показывается заново' } },
         { ln:2, out:{ t:'&#160;', kind:'p' } },
         { ln:3, out:{ t:'1 - Добавить задачу', kind:'p' } },
@@ -1261,9 +1272,9 @@ def add_task(text):
         { ln:8, out:{ t:'выбрали 1' } },
         { ln:9, out:{ t:"'1' == '1'  →  True", kind:'true' } },
         { ln:10, out:{ t:'add_task() получает текст задачи' } },
-        { ln:10, out:{ t:'Задача добавлена', kind:'p' }, badge:'while True не закончился — меню вернётся к началу' }
+        { ln:11, out:{ t:'Задача добавлена', kind:'p' }, badge:'while True не закончился — меню вернётся к началу' }
       ]},
-      { val:'exit', label:'пункт 0 — выход', skip:[9,10], steps:[
+      { val:'exit', label:'пункт 0 — выход', skip:[9,10,11,12,13,14,15,16,17,18,19,23,24], steps:[
         { ln:1, out:{ t:'while True: спрашиваем, пока не выберут выход' } },
         { ln:2, out:{ t:'&#160;', kind:'p' } },
         { ln:3, out:{ t:'1 - Добавить задачу', kind:'p' } },
@@ -1272,9 +1283,9 @@ def add_task(text):
         { ln:6, out:{ t:'4 - Удалить задачу', kind:'p' } },
         { ln:7, out:{ t:'0 - Выход', kind:'p' } },
         { ln:8, out:{ t:'выбрали 0' } },
-        { ln:11, out:{ t:"'0' == '0'  →  True", kind:'true' } },
-        { ln:12, out:{ t:'До свидания!', kind:'p' } },
-        { ln:13, out:{ t:'break — выходим из цикла' }, badge:'Программа закончилась' }
+        { ln:20, out:{ t:"'0' == '0'  →  True", kind:'true' } },
+        { ln:21, out:{ t:'До свидания!', kind:'p' } },
+        { ln:22, out:{ t:'break — выходим из цикла' }, badge:'Программа закончилась' }
       ]}
     ]
   };
