@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 14. Код-ревью — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.topics{display:grid; grid-template-columns:1fr 1fr; gap:22px 26px}
+.slide.s-str .body{justify-content:center}
+.slide.s-str .blk{padding:34px 30px}
+.topic{display:flex; align-items:center; gap:22px; border:1px solid var(--line); border-radius:22px; padding:40px 34px; background:#fff}
+.topic .n{font-family:var(--mono); font-size:22px; font-weight:700; color:var(--blue); letter-spacing:.04em; flex:0 0 auto}
+.topic .t{font-size:33px; font-weight:600; color:var(--ink2); line-height:1.12}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+/* совсем длинное решение (меню целиком) — ещё компактнее */
+.run.xs{padding:12px 22px}
+.run.xs .run-top{margin-bottom:12px}
+.run.xs .run-code{font-size:19px; line-height:1.24}
+.run.xs .run-code .ln{padding:0 10px}
+.run.xs .run-console{font-size:19px; line-height:1.32}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px; flex:0 0 auto}
+.slide.rec .seg .lab{white-space:nowrap}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · Python</p>
+    <p class="lead">Занятие 14</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Код-ревью</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">014</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Код-ревью</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">30.11</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 014 Код-ревью 30.11" title="Скопировать «1ПМ0 014 Код-ревью 30.11»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide s-str" data-title="Структура занятия">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Как устроено занятие</h2>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Что мы прошли</h3><p>Пять минут на темы с начала года: без этого чужой код читать нечем.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Что такое код-ревью</h3><p>Зачем другой человек читает твой код и что он в нём ищет.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Ревью руками</h3><p>Открываем решение с прошлых занятий и разбираем его по чек-листу.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Что мы прошли">
+  <header class="sh r">
+    <p class="eyebrow">Повторение</p>
+    <h2>Что прошли в Python с начала года</h2>
+  </header>
+  <div class="body">
+    <div class="topics">
+      <div class="topic r" style="--d:70"><span class="n">01</span><span class="t">Первые шаги</span></div>
+      <div class="topic r" style="--d:100"><span class="n">02</span><span class="t">Ввод и вывод</span></div>
+      <div class="topic r" style="--d:130"><span class="n">03</span><span class="t">Числа</span></div>
+      <div class="topic r" style="--d:160"><span class="n">04</span><span class="t">Условия</span></div>
+      <div class="topic r" style="--d:190"><span class="n">05</span><span class="t">Типы данных</span></div>
+      <div class="topic r" style="--d:220"><span class="n">06</span><span class="t">Цикл for</span></div>
+      <div class="topic r" style="--d:250"><span class="n">07</span><span class="t">Цикл while</span></div>
+      <div class="topic r" style="--d:280"><span class="n">08</span><span class="t">Строки</span></div>
+      <div class="topic r" style="--d:310"><span class="n">09</span><span class="t">Списки</span></div>
+      <div class="topic r" style="--d:340"><span class="n">10</span><span class="t">Функции</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Проверь себя">
+  <header class="sh r">
+    <p class="eyebrow">Повторение · Разминка</p>
+    <h2>Проверь себя</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r quiz" style="--d:70"><div class="num">строка s = 'привет'</div><h3>s[0]</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">'п'</code></div>
+      <div class="card r quiz" style="--d:110"><div class="num">строка s = 'привет'</div><h3>s[1:4]</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">'рив'</code></div>
+      <div class="card r quiz" style="--d:150"><div class="num">список tasks — что вернёт</div><h3>tasks.append('хлеб')</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">None</code></div>
+      <div class="card r quiz" style="--d:190"><div class="num">def f(x): return x * 2</div><h3>f(5)</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">10</code></div>
+    </div>
+    <div class="note r" style="--d:250">Считаем в уме, потом жмём на карточку. Не сошлось — вот это и повторяем перед практикой.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Что такое код-ревью">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2 · Код-ревью</p>
+    <h2>Что такое код-ревью</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:60">Код-ревью — это когда твой код читает другой человек до того, как код попадёт в общий проект.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:120"><div class="num">Шаг 1</div><h3>Читает другой</h3><p>Не автор: он не знает, что ты имел в виду, и видит только то, что написано в коде.</p></div>
+      <div class="card r" style="--d:180"><div class="num">Шаг 2</div><h3>Пишет комментарии</h3><p>Что непонятно, где сломается, что можно короче — по конкретным строкам.</p></div>
+      <div class="card r" style="--d:240"><div class="num">Шаг 3</div><h3>Автор правит</h3><p>Код за тебя не переписывают: правки делает автор. Ревью — разговор, а не приговор.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Как это в работе">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2 · Код-ревью</p>
+    <h2>Как это выглядит в работе</h2>
+  </header>
+  <div class="body">
+    <div class="flow f5">
+      <div class="fnode r" style="--d:70"><div class="t">Ветка</div><div class="d">Своя копия проекта: main не трогаем</div></div>
+      <div class="fnode r" style="--d:130"><div class="t">Пул-реквест</div><div class="d">Просим посмотреть изменения</div></div>
+      <div class="fnode r" style="--d:190"><div class="t">Ревью</div><div class="d">Комментарии по строкам</div></div>
+      <div class="fnode r" style="--d:250"><div class="t">Правки</div><div class="d">Правим то, с чем согласны</div></div>
+      <div class="fnode r" style="--d:310"><div class="t">В main</div><div class="d">Вливает сам автор</div></div>
+    </div>
+    <div class="note r" style="--d:370">Так устроено во всех командах: код попадает в общий проект после того, как его прочитал кто-то ещё. Ревью — помощь, а не экзамен.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Зачем это нужно">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2 · Код-ревью</p>
+    <h2>Зачем это нужно</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><h3>Ловит ошибки</h3><p>Автор смотрел на код десять раз и уже не видит опечатку. Второй человек видит сразу.</p></div>
+      <div class="card r" style="--d:130"><h3>Код остаётся понятным</h3><p>Через месяц ты сам не вспомнишь, что такое t и x. А с этим кодом жить не только тебе.</p></div>
+      <div class="card r" style="--d:190"><h3>Учишься на чужом</h3><p>Читая чужой код, быстрее начинаешь замечать ошибки в своём.</p></div>
+      <div class="card r" style="--d:250"><h3>Не страшно двигаться</h3><p>Кто-то посмотрит до того, как сломанное разойдётся по всему проекту.</p></div>
+    </div>
+    <div class="acc-o r" style="--d:310">И ещё: на ревью видно, что одну задачу можно решить по-разному. Пять человек — пять решений.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Как говорить на ревью">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2 · Код-ревью</p>
+    <h2>Как говорить на ревью</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">Правило 1</div><h3>Про код, не про человека</h3><p>«Здесь список выйдет за границу» — вместо «ты не понял списки».</p></div>
+      <div class="card r" style="--d:130"><div class="num">Правило 2</div><h3>Спрашивай</h3><p>«Почему тут + 1?» — иногда автор знает про условие больше, чем кажется.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Правило 3</div><h3>Предлагай</h3><p>«Можно проще: for task in tasks» звучит лучше, чем «это плохо».</p></div>
+      <div class="card r" style="--d:250"><div class="num">Правило 4</div><h3>Замечай хорошее</h3><p>«Тут проверка на пустой список — класс». Человек должен слышать не только замечания.</p></div>
+    </div>
+    <div class="note r" style="--d:310">Ревью без единого «спасибо» превращается в список претензий. Такое ревью перестают читать и начинают бояться.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Сначала: работает ли">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Чек-лист</p>
+    <h2>Сначала: работает ли код</h2>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Пункт 1</div><h3>Запусти</h3><p>Скопировал, запустил, ошибок нет. Если код не запускается — остальное обсуждать рано.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Пункт 2</div><h3>Тесты из условия</h3><p>Все тесты из задания, а не только первый. Часто первый проходит, а третий — нет.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Пункт 3</div><h3>Граничные случаи</h3><p>Пустой список, один элемент, ноль, «не число» на входе, число больше длины списка.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Граничные случаи — главный источник падений. Обычный пример работает почти у всех, а пустой список ломает половину решений.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Потом: понятно ли написано">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Чек-лист</p>
+    <h2>Потом: понятно ли написано</h2>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Пункт 4</div><h3>Имена</h3><p>По названию видно, что происходит: tasks, add_task, show_tasks — а не t, x, f.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Пункт 5</div><h3>Без копий</h3><p>Три раза один и тот же цикл — это уже функция, а не три раза по одному.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Пункт 6</div><h3>Без лишнего</h3><p>Отладочные print, закомментированный код, куски «на будущее».</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Пункт 7</div><h3>Комментарии по делу</h3><p>Не «что делает код», а «почему так» — там, где это неочевидно.</p></div>
+    </div>
+    <div class="note r" style="--d:310">Это не придирки: код читают люди. Чем меньше времени уходит на «а что тут происходит», тем быстрее проект живёт.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Разбор: чужое решение">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Разбор</p>
+    <h2>Чужое решение: список задач</h2>
+  </header>
+  <div class="body">
+    <div class="run sm r" data-run="author" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="one">одна задача</button>
+          <button class="chip" type="button" data-val="empty">пустой список</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">tasks = []</span><span class="ln" data-no="2">def add(x):</span><span class="ln" data-no="3">    tasks.append(x)</span><span class="ln" data-no="4">def show():</span><span class="ln" data-no="5">    print('Задачи:')</span><span class="ln" data-no="6">    for i in range(len(tasks) + 1):</span><span class="ln" data-no="7">        print(i + 1, '-', tasks[i])</span><span class="ln" data-no="8">add('Сделать уроки')</span><span class="ln" data-no="9">show()</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Запускаем и идём по чек-листу с самого начала. Программа падает — значит, дальше обсуждать рано: сначала ошибка.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Разбор: после ревью">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Разбор</p>
+    <h2>Тот же код после ревью</h2>
+  </header>
+  <div class="body">
+    <div class="run sm r" data-run="fixed" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="one">одна задача</button>
+          <button class="chip" type="button" data-val="empty">пустой список</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">tasks = []</span><span class="ln" data-no="2">def add_task(text):</span><span class="ln" data-no="3">    tasks.append(text)</span><span class="ln" data-no="4">def show_tasks():</span><span class="ln" data-no="5">    if len(tasks) == 0:</span><span class="ln" data-no="6">        print('Список пуст')</span><span class="ln" data-no="7">        return</span><span class="ln" data-no="8">    for i in range(len(tasks)):</span><span class="ln" data-no="9">        print(i + 1, '-', tasks[i])</span><span class="ln" data-no="10">add_task('Сделать уроки')</span><span class="ln" data-no="11">show_tasks()</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:220">Три комментария, три правки: <b>range(len(tasks) + 1)</b> выходил за границу списка, имена t, add, show ничего не говорили, пустой список не был обработан. Код стал работать — и его стало проще читать.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задание">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Задание</p>
+    <h2>Ревью решения с прошлых занятий</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">Шаг 1</div><h3>Выбери решение</h3><p>Любое своё решение с занятий 12 или 13 — или домашки. Можно соседа по группе, если он согласен.</p></div>
+      <div class="card r" style="--d:130"><div class="num">Шаг 2</div><h3>Запусти и сломай</h3><p>Сначала тесты из условия, потом пустой список, один элемент, ноль, неверный ввод.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Шаг 3</div><h3>Оставь 3–5 комментариев</h3><p>По чек-листу: где сломается, что непонятно, что можно короче.</p></div>
+    </div>
+    <div class="note r" style="--d:250">Ревьюим не «код вообще», а конкретное решение: открыли файл, прошли по строкам, оставили комментарии. Потом автор их разбирает.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Как написать комментарий">
+  <header class="sh r">
+    <p class="eyebrow">Часть 3 · Практика · Задание</p>
+    <h2>Как написать комментарий</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">Так не надо</div><h3>Без пользы</h3><p>«Не работает», «переделай», «плохо», «тут бред». Автор не знает, что именно править, и начинает защищаться.</p></div>
+      <div class="card pick r" style="--d:140"><div class="num">Так надо</div><h3>Где · что · как</h3><p>«Строка 6: range(len(tasks) + 1) выйдет за границу — на втором элементе программа упадёт. Предлагаю range(len(tasks))».</p></div>
+    </div>
+    <div class="note r" style="--d:210">Три части: где — что не так — как предлагаешь. Такой комментарий можно сразу применить, не переспрашивая.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check">
+      <div>Код-ревью — это чтение чужого кода до того, как он попал в общий проект.</div>
+      <div>Сначала проверяем, что код запускается и проходит тесты, и только потом — насколько он понятен.</div>
+      <div>Граничные случаи — пустой список, один элемент, ноль — ломают код чаще всего.</div>
+      <div>Комментарий в ревью: где — что не так — как предлагаешь.</div>
+      <div>Ревью разбирает код, а не человека: спрашиваем, предлагаем, хвалим за хорошее.</div>
+      <div>В работе изменения приходят пул-реквестом: его читают, автор правит и вливает сам.</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">16</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    /* 1. Чужое решение: цикл на один шаг длиннее списка */
+    'author': [
+      { val:'one', label:'одна задача в списке', steps:[
+        { ln:1, out:{ t:'tasks = []' } },
+        { ln:2, out:{ t:'def add(x): функция создана' } },
+        { ln:4, out:{ t:'def show(): функция создана' } },
+        { ln:8, out:{ t:"вызов add('Сделать уроки')" } },
+        { ln:3, out:{ t:"tasks = ['Сделать уроки']" } },
+        { ln:9, out:{ t:'вызов show()' } },
+        { ln:5, out:{ t:'Задачи:', kind:'p' } },
+        { ln:6, out:{ t:'i = 0' }, badge:'len(tasks) + 1 = 2 — цикл пойдёт два раза, а задача одна' },
+        { ln:7, out:{ t:'1 - Сделать уроки', kind:'p' } },
+        { ln:6, out:{ t:'i = 1' } },
+        { ln:7, out:{ t:'IndexError: list index out of range', kind:'false' }, badge:'tasks[1] не существует — программа упала' }
+      ]},
+      { val:'empty', label:'пустой список', skip:[3,8], steps:[
+        { ln:1, out:{ t:'tasks = []' } },
+        { ln:2, out:{ t:'def add(x): функция создана' } },
+        { ln:4, out:{ t:'def show(): функция создана' } },
+        { ln:9, out:{ t:'вызов show()' } },
+        { ln:5, out:{ t:'Задачи:', kind:'p' } },
+        { ln:6, out:{ t:'i = 0' }, badge:'len(tasks) + 1 = 1, хотя задач нет ни одной' },
+        { ln:7, out:{ t:'IndexError: list index out of range', kind:'false' }, badge:'Пустой список — падение на первом же шаге' }
+      ]}
+    ],
+
+    /* 2. Тот же код после ревью */
+    'fixed': [
+      { val:'one', label:'одна задача в списке', steps:[
+        { ln:1, out:{ t:'tasks = []' } },
+        { ln:2, out:{ t:'def add_task(text): функция создана' } },
+        { ln:4, out:{ t:'def show_tasks(): функция создана' } },
+        { ln:10, out:{ t:"вызов add_task('Сделать уроки')" } },
+        { ln:3, out:{ t:"tasks = ['Сделать уроки']" } },
+        { ln:11, out:{ t:'вызов show_tasks()' } },
+        { ln:5, out:{ t:'len(tasks) == 0  →  False', kind:'false' } },
+        { ln:8, out:{ t:'range(len(tasks)) → [0]' } },
+        { ln:9, out:{ t:'1 - Сделать уроки', kind:'p' } }
+      ]},
+      { val:'empty', label:'пустой список', skip:[3,8,9,10], steps:[
+        { ln:1, out:{ t:'tasks = []' } },
+        { ln:2, out:{ t:'def add_task(text): функция создана' } },
+        { ln:4, out:{ t:'def show_tasks(): функция создана' } },
+        { ln:11, out:{ t:'вызов show_tasks()' } },
+        { ln:5, out:{ t:'len(tasks) == 0  →  True', kind:'true' } },
+        { ln:6, out:{ t:'Список пуст', kind:'p' } },
+        { ln:7, out:{ t:'return — выходим из функции' }, badge:'Ошибки нет: граничный случай обработан' }
+      ]}
+    ]
+  };
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+/* светофор: подсвечиваем лампу под выбранный сигнал (слайд «Светофор») */
+(function () {
+  var run = document.querySelector('.run[data-run="light"]');
+  var box = document.getElementById('traffic-light');
+  if (!run || !box) return;
+  var names = {'красный': 'red', 'жёлтый': 'yellow', 'зелёный': 'green'};
+  function paint(value) {
+    var lit = names[String(value).trim()];
+    ['red', 'yellow', 'green'].forEach(function (name) {
+      var lamp = box.querySelector('[data-lamp="' + name + '"]');
+      if (!lamp) return;
+      var on = (name === lit);
+      lamp.setAttribute('fill', on ? lamp.getAttribute('data-on') : '#FFFFFF');
+      lamp.setAttribute('stroke', on ? '#FFFFFF' : '#DEEAF7');
+    });
+  }
+  Array.prototype.forEach.call(run.querySelectorAll('.chip'), function (chip) {
+    chip.addEventListener('click', function () { paint(chip.getAttribute('data-val') || chip.textContent); });
+  });
+  var first = run.querySelector('.chip.on') || run.querySelector('.chip');
+  if (first) paint(first.getAttribute('data-val') || first.textContent);
+})();
+
+(function(){
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
+  });
+})();
+</script>
+</body>
+</html>
