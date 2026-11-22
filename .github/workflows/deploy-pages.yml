@@ -1,0 +1,70 @@
+# «Публикация сайта» — собирает _site из main и выкладывает на GitHub Pages.
+#
+# Зачем свой workflow вместо «Pages публикует ветку целиком»: в репозитории
+# лежит служебная страница metod/ (все занятия открыты) — на сайте её быть
+# не должно. Публикация из ветки отдаёт ВСЁ, что в ней есть, а исключить
+# отдельную папку GitHub Pages не умеет. Поэтому состав сайта задаётся здесь
+# явным списком исключений, и он же — единственное место, где это правится.
+#
+# Пути в исключениях не должны ломать содержимое: classes/ и docs/ уходят
+# целиком, index.html — корень сайта.
+name: Публикация сайта
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Собрать _site (без служебного)
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.venv/' \
+            --exclude '.gitignore' \
+            --exclude '.nojekyll' \
+            --exclude '.python-version' \
+            --exclude '.DS_Store' \
+            --exclude 'metod/' \
+            --exclude 'scripts/' \
+            --exclude 'build/' \
+            --exclude 'config.yaml' \
+            --exclude 'README.md' \
+            --exclude 'pyproject.toml' \
+            --exclude 'uv.lock' \
+            ./ _site/
+          echo "--- что уходит на сайт ---"
+          ls -A _site
+          echo "--- страховка: metod не должен просочиться ---"
+          if [ -e _site/metod ]; then echo "ОШИБКА: metod попал в _site"; exit 1; fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
