@@ -1,4 +1,4 @@
-# Пересобирает оглавление index.html (и служебную metod/index.html) из config.yaml.
+# Пересобирает оглавление index.html из config.yaml.
 #
 # Файлы материалов могут лежать где угодно — структура репозитория сборке безразлична,
 # поэтому триггер ловит любой html/md, кроме самих генерируемых страниц.
@@ -14,7 +14,6 @@ on:
       - "**.html"
       - "**.md"
       - "!index.html"
-      - "!metod/**"
       - "config.yaml"
       - "scripts/build_lesson_index.py"
   workflow_dispatch:
@@ -45,7 +44,7 @@ jobs:
       - name: Закоммитить, если что-то изменилось
         continue-on-error: true
         run: |
-          if [ -z "$(git status --porcelain index.html docs metod 2>/dev/null)" ]; then
+          if [ -z "$(git status --porcelain index.html docs 2>/dev/null)" ]; then
             echo "Оглавление уже актуально — коммит не нужен"
             exit 0
           fi
@@ -53,6 +52,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           if [ -d docs ]; then git add docs; fi
-          if [ -d metod ]; then git add metod; fi
           git commit -m "chore: обновить оглавление занятий [skip ci]"
           git push
