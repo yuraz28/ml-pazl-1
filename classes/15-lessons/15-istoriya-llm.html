@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 15. История LLM и машинного обучения — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+/* совсем длинное решение (меню целиком) — ещё компактнее */
+.run.xs{padding:12px 22px}
+.run.xs .run-top{margin-bottom:12px}
+.run.xs .run-code{font-size:19px; line-height:1.24}
+.run.xs .run-code .ln{padding:0 10px}
+.run.xs .run-console{font-size:19px; line-height:1.32}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+/* ---------- добавочные блоки занятия 15 ---------- */
+.flow.f2{grid-template-columns:repeat(2,1fr)}
+.steps.g3{grid-template-columns:repeat(3,1fr)}
+.steps.g3 .step h3{font-size:25px}
+.steps.g3 .step p{font-size:20px}
+.myths{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.myth{border:1px solid var(--line); border-radius:22px; padding:20px 28px; background:#fff}
+.myth .q{font-size:23px; line-height:1.3; font-weight:700; color:var(--ink)}
+.myth .q::before{content:'миф · '; color:var(--orange); text-transform:uppercase; font-size:18px; letter-spacing:.06em}
+.myth p{font-size:21px; line-height:1.38; color:var(--muted); margin-top:8px}
+.myth p b{color:var(--ink2)}
+.myth.wide{grid-column:1 / -1}
+.cards.traps h3{font-size:25px; line-height:1.28}
+.cards.traps .num{margin-bottom:8px}
+.cards.traps p{font-size:21px}
+.cards.traps p b{color:var(--ink2)}
+.tlist.w .trow{font-size:18px}
+.tlist.w .trow .in{flex:0 0 400px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · ML</p>
+    <p class="lead">Занятие 15</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">История LLM<br>и машинного обучения</h1>
+  </div>
+</section>
+
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">015</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">LLM</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">07.12</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 015 LLM 07.12" title="Скопировать «1ПМ0 015 LLM 07.12»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Правила против примеров</h3><p>Почему «есть усы и хвост» не работает и что придумали вместо правил.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Что такое LLM</h3><p>Модель выбирает следующий кусочек текста по вероятностям — и так шаг за шагом.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Как её обучают</h3><p>Миллиарды раз «угадай пропущенное слово». Потом воспитание людьми. Потом работа.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>История: две дороги</h3><p>Правила (ELIZA, Deep Blue) и обучение (AlexNet, AlphaGo, GPT). С 2010-х верх берёт второе.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Заблуждения</h3><p>Что про LLM говорят неверно — и как на самом деле.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Где на фото кошка">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Где на фото кошка</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Задача: программа говорит, есть ли на фото кошка. Какие правила запишем?</p>
+        <p class="note r" style="--d:130">Первое, что приходит в голову: <b>треугольные уши</b>, <b>усы</b>, <b>хвост</b>.</p>
+        <p class="note r" style="--d:190">Проверим на пяти картинках. Правила ломаются почти на каждой.</p>
+        <div class="acc r" style="--d:250">Кошку вы узнаёте мгновенно. А объяснить словами, как именно, — не можете.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 560" role="img" aria-label="Пять фото с кошками и собакой, на каждом правила дают ошибку">
+        <rect x="8" y="8" width="684" height="544" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="34" y="60" font-size="22" fill="#6E7E92">пять фото — и на каждом правило врёт</text>
+        <rect x="34" y="84" width="120" height="136" rx="16" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <ellipse cx="94" cy="158" rx="36" ry="29" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <path d="M124 164 q26 6 20 26" fill="none" stroke="#1E7EE8" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="136" cy="102" r="12" fill="#FF8E00"/>
+        <text x="136" y="108" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">&#215;</text>
+        <text x="94" y="250" font-size="21" font-weight="700" fill="#38475A" text-anchor="middle">клубок</text>
+        <rect x="162" y="84" width="120" height="136" rx="16" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <polygon points="196,142 210,118 218,144" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <polygon points="248,142 234,118 226,144" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="222" cy="160" r="30" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="211" cy="156" r="5" fill="#1E7EE8"/><circle cx="233" cy="156" r="5" fill="#1E7EE8"/>
+        <path d="M222 168 q6 6 0 12" fill="none" stroke="#1E7EE8" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M214 172 h-18 M230 172 h18 M214 180 h-18 M230 180 h18" stroke="#1E7EE8" stroke-width="2" stroke-linecap="round" fill="none"/>
+        <circle cx="264" cy="102" r="12" fill="#FF8E00"/>
+        <text x="264" y="108" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">&#215;</text>
+        <text x="222" y="250" font-size="21" font-weight="700" fill="#38475A" text-anchor="middle">мультик</text>
+        <rect x="290" y="84" width="120" height="136" rx="16" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <polygon points="324,132 334,118 342,132" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <polygon points="376,132 366,118 358,132" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <rect x="320" y="132" width="60" height="66" rx="22" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="392" cy="102" r="12" fill="#FF8E00"/>
+        <text x="392" y="108" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">&#215;</text>
+        <text x="350" y="250" font-size="21" font-weight="700" fill="#38475A" text-anchor="middle">со спины</text>
+        <rect x="418" y="84" width="120" height="136" rx="16" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <polygon points="450,146 464,114 474,142" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <polygon points="506,146 492,114 482,142" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="478" cy="162" r="28" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="2"/>
+        <line x1="464" y1="114" x2="460" y2="106" stroke="#1E7EE8" stroke-width="3"/>
+        <line x1="492" y1="114" x2="496" y2="106" stroke="#1E7EE8" stroke-width="3"/>
+        <circle cx="520" cy="102" r="12" fill="#FF8E00"/>
+        <text x="520" y="108" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">&#215;</text>
+        <text x="478" y="250" font-size="21" font-weight="700" fill="#38475A" text-anchor="middle">рысь</text>
+        <rect x="546" y="84" width="120" height="136" rx="16" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <ellipse cx="576" cy="160" rx="11" ry="26" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <ellipse cx="636" cy="160" rx="11" ry="26" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="606" cy="164" r="26" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="606" cy="176" r="7" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <circle cx="648" cy="102" r="12" fill="#FF8E00"/>
+        <text x="648" y="108" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">&#215;</text>
+        <text x="606" y="250" font-size="21" font-weight="700" fill="#38475A" text-anchor="middle">собака</text>
+        <rect x="34" y="282" width="632" height="250" rx="20" fill="#E9F4FF"/>
+        <text x="58" y="318" font-size="21" font-weight="700" fill="#0B3E7A">что вышло с правилами</text>
+        <circle cx="66" cy="352" r="5" fill="#FF8E00"/><text x="84" y="359" font-size="20" fill="#0B3E7A">уши: у клубка и у кошки со спины их не видно</text>
+        <circle cx="66" cy="392" r="5" fill="#FF8E00"/><text x="84" y="399" font-size="20" fill="#0B3E7A">усы: у мультяшного кота не нарисованы</text>
+        <circle cx="66" cy="432" r="5" fill="#FF8E00"/><text x="84" y="439" font-size="20" fill="#0B3E7A">хвост: у рыси он короткий, у собаки тоже есть</text>
+        <text x="58" y="492" font-size="21" font-weight="700" fill="#1E7EE8">а кошку вы всё равно узнали — все пять</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Обычная программа и машинное обучение">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Обычная программа и машинное обучение</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">обычная программа</div>
+        <h3>Правила пишет человек</h3>
+        <div class="io" style="margin-top:20px">
+          <div class="io-row"><div class="k">что даём</div><p>правила + данные</p></div>
+          <div class="io-row"><div class="k">что получаем</div><p>ответ</p></div>
+        </div>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">машинное обучение</div>
+        <h3>Правила находит модель</h3>
+        <div class="io" style="margin-top:20px">
+          <div class="io-row"><div class="k">что даём</div><p>данные + правильные ответы</p></div>
+          <div class="io-row"><div class="k">что получаем</div><p>правило</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="acc r" style="--d:230">Модель — это правило, найденное по примерам. Обучение — процесс, в котором модель это правило ищет.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Что такое LLM">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Что такое LLM</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Допишите по одному слову:</p>
+        <div class="chips r" style="--d:110">
+          <span class="chip">Тише едешь — …</span>
+          <span class="chip">Хлеб с …</span>
+          <span class="chip">Раз, два, три, четыре, …</span>
+          <span class="chip">Мама мыла …</span>
+        </div>
+        <p class="note r" style="--d:170">Скорее всего, слова у всех совпали. Фразы вы слышали много раз, поэтому берёте <b>самое вероятное продолжение</b>.</p>
+        <div class="acc r" style="--d:230">LLM — large language model, «большая языковая модель». Она считает, какой кусок текста вероятнее следующим.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 520" role="img" aria-label="Вероятности продолжения фразы «Мама мыла»: раму 90 процентов, посуду 5, окно 3, слона почти ноль">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="34" y="62" font-size="28" font-weight="700" fill="#0B3E7A">Мама мыла …</text>
+        <text x="34" y="146" font-size="23" fill="#38475A">раму</text>
+        <rect x="190" y="116" width="342" height="42" rx="13" fill="#1E7EE8"/>
+        <text x="548" y="145" font-size="22" font-weight="700" fill="#0B3E7A">90%</text>
+        <text x="34" y="216" font-size="23" fill="#38475A">посуду</text>
+        <rect x="190" y="186" width="19" height="42" rx="13" fill="#CDE5FF"/>
+        <text x="225" y="215" font-size="22" font-weight="700" fill="#6E7E92">5%</text>
+        <text x="34" y="286" font-size="23" fill="#38475A">окно</text>
+        <rect x="190" y="256" width="11" height="42" rx="13" fill="#CDE5FF"/>
+        <text x="217" y="285" font-size="22" font-weight="700" fill="#6E7E92">3%</text>
+        <text x="34" y="356" font-size="23" fill="#38475A">слона</text>
+        <rect x="190" y="326" width="4" height="42" rx="13" fill="#CDE5FF"/>
+        <text x="210" y="355" font-size="22" font-weight="700" fill="#6E7E92">0,0001%</text>
+        <text x="34" y="424" font-size="20" fill="#6E7E92">цифры условные — важно не точное число, а порядок</text>
+        <rect x="34" y="448" width="632" height="46" rx="16" fill="#E9F4FF"/>
+        <text x="58" y="478" font-size="21" font-weight="700" fill="#0B3E7A">самый вероятный вариант и уходит в ответ</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Как LLM пишет ответ">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Как LLM пишет ответ</h2>
+  </header>
+  <div class="body">
+    <div class="flow f4">
+      <div class="fnode r" style="--d:70"><div class="t">Вы написали:</div><div class="d">«Столица Франции —»<br>модель видит весь текст</div></div>
+      <div class="fnode r" style="--d:130"><div class="t">Считает вероятности</div><div class="d">«Париж» — 97%, «город» — 1%, остальное — доли процента</div></div>
+      <div class="fnode r" style="--d:190"><div class="t">Берёт «Париж»</div><div class="d">и дописывает его в конец</div></div>
+      <div class="fnode r" style="--d:250"><div class="t">Снова считает</div><div class="d">уже для «Столица Франции — Париж»</div></div>
+    </div>
+    <div class="acc-o r" style="--d:320">Ответ в чате — не один прыжок, а десятки и сотни таких шагов подряд.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Токен, связность и случайность">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Токен, связность и случайность</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <div class="num">токен</div>
+        <h3>Кусочек текста</h3>
+        <p>То, что модель выбирает за один шаг: слово, часть слова или знак препинания. Русское слово часто делится на 2–3 токена.</p>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">связность</div>
+        <h3>Всё зависит от текста до</h3>
+        <p>После «Он открыл ноутбук и запустил …» ждём «программу», а после «Он открыл холодильник и достал …» — «сыр».</p>
+      </div>
+      <div class="card r" style="--d:230">
+        <div class="num">разные ответы</div>
+        <h3>Не всегда самый вероятный</h3>
+        <p>Модель иногда берёт вариант чуть менее вероятный. Поэтому на один и тот же вопрос ответы отличаются.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:310">Модель не «думает над смыслом»: она много раз подряд считает, какое слово поставить следующим.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Параметры">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Параметры</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Внутри модели миллиарды чисел. Они и задают, как считаются вероятности.</p>
+        <p class="note r" style="--d:130">Это как ручки настройки. Только их миллиарды, и никто не крутит их руками: значения подбирает обучение.</p>
+        <div class="acc r" style="--d:190">У GPT-3 (2020) — 175 миллиардов параметров. Считать по одному в секунду — 5,5 тысяч лет.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 520" role="img" aria-label="Сетка чисел-параметров, несколько выделенных; 175 миллиардов параметров у GPT-3">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="34" y="62" font-size="22" fill="#6E7E92">каждое число — ручка настройки (тут их 180, в модели — миллиарды)</text>
+        <circle cx="60" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="96" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="130" r="7" fill="#1E7EE8"/>
+        <circle cx="264" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="130" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="164" r="7" fill="#1E7EE8"/>
+        <circle cx="536" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="164" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="198" r="7" fill="#1E7EE8"/>
+        <circle cx="162" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="198" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="232" r="7" fill="#1E7EE8"/>
+        <circle cx="434" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="232" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="266" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="300" r="7" fill="#1E7EE8"/>
+        <circle cx="230" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="300" r="7" fill="#1E7EE8"/>
+        <circle cx="332" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="300" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="334" r="7" fill="#1E7EE8"/>
+        <circle cx="604" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="334" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="368" r="7" fill="#1E7EE8"/>
+        <circle cx="366" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="368" r="7" fill="#CDE5FF"/>
+        <circle cx="60" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="94" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="128" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="162" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="196" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="230" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="264" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="298" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="332" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="366" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="400" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="434" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="468" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="502" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="536" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="570" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="604" cy="402" r="7" fill="#CDE5FF"/>
+        <circle cx="638" cy="402" r="7" fill="#CDE5FF"/>
+        <text x="34" y="446" font-size="26" font-weight="700" fill="#0B3E7A">GPT-3, 2020: 175 миллиардов</text>
+        <text x="34" y="482" font-size="21" fill="#1E7EE8">у современных моделей точное число обычно не раскрывают</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Не энциклопедия">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Не энциклопедия</h2>
+  </header>
+  <div class="body">
+    <div class="acc-o r" style="--d:70">Модель не хранит факты списком. И сама в интернет не ходит.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:150">
+        <h3>Где тогда знания</h3>
+        <p>Растворены в параметрах и работают как привычка продолжать текст.</p>
+      </div>
+      <div class="card r" style="--d:210">
+        <h3>А если подключить поиск</h3>
+        <p>Тогда она найдёт страницу и перескажет. Но это отдельная программа, а не память модели.</p>
+      </div>
+      <div class="card r" style="--d:270">
+        <h3>Что это значит</h3>
+        <p>Спросили про событие после даты обучения — получите «не знаю» или уверенную выдумку.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Один шаг обучения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Один шаг обучения</h2>
+  </header>
+  <div class="body">
+    <div class="steps g3">
+      <div class="step r" style="--d:70"><div class="no">1</div><h3>Берём настоящий текст</h3><p>Фраза из книги: «Кошка сидит на подоконнике».</p></div>
+      <div class="step r" style="--d:110"><div class="no">2</div><h3>Прячем последнее слово</h3><p>Модель видит: «Кошка сидит на …».</p></div>
+      <div class="step r" style="--d:150"><div class="no">3</div><h3>Она угадывает</h3><p>«столе» — 40%, «диване» — 30%, «подоконнике» — 5%.</p></div>
+      <div class="step r" style="--d:190"><div class="no">4</div><h3>Сверяем с оригиналом</h3><p>Нужно «подоконнике», а ему дали 5%. Ошибка большая.</p></div>
+      <div class="step r" style="--d:230"><div class="no">5</div><h3>Правим числа</h3><p>Параметры сдвигаются: «подоконнике» вверх, остальным — вниз.</p></div>
+      <div class="step r" style="--d:270"><div class="no">6</div><h3>Берём следующий текст</h3><p>И повторяем. Миллиарды раз на разных текстах.</p></div>
+    </div>
+    <div class="note r" style="--d:330">Один шаг почти ничего не меняет. После миллиардов шагов модель улавливает закономерности языка: после «сидит на» идут места, после вопроса — ответ.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Три этапа жизни модели">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Три этапа жизни модели</h2>
+  </header>
+  <div class="body">
+    <div class="cols">
+      <div class="col r" style="--d:70">
+        <h3>1. Предобучение</h3>
+        <ul>
+          <li>модель учится угадывать слова на книгах, статьях, сайтах и коде</li>
+          <li>недели или месяцы на тысячах специальных процессоров</li>
+          <li>стоит очень дорого</li>
+          <li><b>аналогия:</b> ученик, который миллиарды раз решает тесты с пропущенными словами</li>
+        </ul>
+      </div>
+      <div class="col r" style="--d:150">
+        <h3>2. Дообучение</h3>
+        <ul>
+          <li>люди показывают образцы хороших ответов</li>
+          <li>люди оценивают ответы: какой полезнее, вежливее, безопаснее</li>
+          <li>из «продолжателя текстов» получается ассистент</li>
+          <li><b>аналогия:</b> тренер, который говорит «вот так лучше»</li>
+        </ul>
+      </div>
+      <div class="col r" style="--d:230">
+        <h3>3. Использование</h3>
+        <ul>
+          <li>вы пишете запрос, модель дописывает ответ</li>
+          <li>параметры уже не меняются</li>
+          <li>в вашем диалоге она не учится заново</li>
+          <li><b>аналогия:</b> выпускник, который сдал экзамен и вышел на работу</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Данные и их последствия">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Данные и их последствия</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <h3>Знания из прошлого</h3>
+        <p>Что модель знает — ограничено датой, когда собрали обучающие тексты. Если не подключён поиск.</p>
+      </div>
+      <div class="card r" style="--d:130">
+        <h3>Галлюцинация</h3>
+        <p>Модель может уверенно сочинить неправду: ей важно, чтобы текст был правдоподобным, а не проверенным.</p>
+      </div>
+      <div class="card r" style="--d:190">
+        <h3>Где нужна точность</h3>
+        <p>Считать, сверять, считать до копейки — это лучше делает обычная программа. Проверим в задании 2.</p>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:260">Что поступило на вход, то и получилось: ошибки, устаревшие сведения и предрассудки из текстов модель тоже «прочитала».</div>
+  </div>
+</section>
+
+<section class="slide" data-title="История: две дороги">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>История: две дороги</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70"><b>Правила:</b> человек объясняет компьютеру, что делать, шаг за шагом.</p>
+        <p class="note r" style="--d:130"><b>Обучение:</b> компьютер сам находит закономерности в примерах.</p>
+        <p class="note r" style="--d:190">Долго побеждали правила: так проще, понятнее и предсказуемее.</p>
+        <div class="acc r" style="--d:250">С 2010-х верх берёт обучение. Причина простая: примеров стало слишком много, чтобы описывать их правилами вручную.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 560" role="img" aria-label="Лента времени: 1950 Тьюринг, 1966 ELIZA, 1997 Deep Blue, 2012 AlexNet, 2016 AlphaGo, 2017 Transformer, 2020 GPT-3, 2022 ChatGPT">
+        <rect x="8" y="8" width="684" height="544" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <line x1="196" y1="88" x2="196" y2="490" stroke="#DEEAF7" stroke-width="3"/>
+        <text x="156" y="112" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">1950</text>
+        <circle cx="196" cy="104" r="9" fill="#1E7EE8"/>
+        <text x="222" y="112" font-size="22" fill="#38475A">Тьюринг: «может ли машина думать?»</text>
+        <text x="156" y="166" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">1966</text>
+        <circle cx="196" cy="158" r="9" fill="#1E7EE8"/>
+        <text x="222" y="166" font-size="22" fill="#38475A">ELIZA: первый собеседник</text>
+        <text x="156" y="220" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">1997</text>
+        <circle cx="196" cy="212" r="9" fill="#1E7EE8"/>
+        <text x="222" y="220" font-size="22" fill="#38475A">Deep Blue бьёт Каспарова</text>
+        <text x="156" y="274" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">2012</text>
+        <circle cx="196" cy="266" r="9" fill="#FF8E00"/>
+        <text x="222" y="274" font-size="22" fill="#38475A">AlexNet учится видеть кошек</text>
+        <text x="156" y="328" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">2016</text>
+        <circle cx="196" cy="320" r="9" fill="#FF8E00"/>
+        <text x="222" y="328" font-size="22" fill="#38475A">AlphaGo бьёт Ли Седоля</text>
+        <text x="156" y="382" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">2017</text>
+        <circle cx="196" cy="374" r="9" fill="#FF8E00"/>
+        <text x="222" y="382" font-size="22" fill="#38475A">Transformer: механизм внимания</text>
+        <text x="156" y="436" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">2020</text>
+        <circle cx="196" cy="428" r="9" fill="#FF8E00"/>
+        <text x="222" y="436" font-size="22" fill="#38475A">GPT-3: 175 млрд параметров</text>
+        <text x="156" y="490" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="end">2022</text>
+        <circle cx="196" cy="482" r="9" fill="#FF8E00"/>
+        <text x="222" y="490" font-size="22" fill="#38475A">ChatGPT: ИИ в обычном чате</text>
+        <circle cx="42" cy="524" r="9" fill="#1E7EE8"/>
+        <text x="62" y="532" font-size="20" fill="#6E7E92">правила</text>
+        <circle cx="212" cy="524" r="9" fill="#FF8E00"/>
+        <text x="232" y="532" font-size="20" fill="#6E7E92">обучение</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="1950–1997: правила">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>1950–1997: правила</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70">
+        <div class="num">1950</div>
+        <h3>Тьюринг</h3>
+        <p>Статья «Может ли машина мыслить?». Тест: если в переписке не отличить машину от человека — считаем, что думает. Проверяем поведение, а не устройство.</p>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">1966</div>
+        <h3>ELIZA</h3>
+        <p>Программа-«психотерапевт». Ищет знакомые слова и отвечает по шаблонам: на «Мне грустно» — «Почему вам грустно?». Люди начинали говорить с ней как с живой.</p>
+      </div>
+      <div class="card r" style="--d:230">
+        <div class="num">1997</div>
+        <h3>Deep Blue</h3>
+        <p>Перебирает ходы и оценивает позиции по правилам от людей. Победил Каспарова в матче. Машинного обучения тут нет — только скорость и правила.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:300">Все три — про правила, которые придумал человек. Компьютер ничего не «понимал» и ни на чём не учился.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="2012–2016: обучение">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>2012–2016: обучение</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70">
+        <div class="num">2012</div>
+        <h3>AlexNet</h3>
+        <p>Нейросеть учили на огромном наборе фото с подписями. Она сама нашла признаки и стала уверенно отличать кошек от собак. Признаки больше не прописывали руками — их нашла модель.</p>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">2016</div>
+        <h3>AlphaGo</h3>
+        <p>Сначала смотрела партии людей, потом играла сама с собой миллионы раз. Побила Ли Седоля и придумывала ходы, которые удивляли профессионалов. Правил ей никто не писал.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:230">Вот и разница: Deep Blue перебирал то, что заложили люди. AlexNet и AlphaGo нашли свои правила на примерах — и обогнали людей там, где правил не счесть.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="2017–2020: Transformer и GPT-3">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>2017–2020: Transformer и GPT-3</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70">
+        <div class="num">2017</div>
+        <h3>Transformer</h3>
+        <p>Архитектура с механизмом внимания: модель учитывает связи между словами в разных частях текста. Чтобы понять, к чему относится местоимение, нужен весь контекст, а не соседние два слова. На этом построены почти все современные LLM.</p>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">2020</div>
+        <h3>GPT-3</h3>
+        <p>175 миллиардов параметров. Писала тексты, отвечала на вопросы, переводила, писала код — часто без отдельного обучения под задачу: достаточно было инструкции в запросе.</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:230">Одна большая модель вместо сотни узких. Дальше оставалось сделать её удобной для обычного человека.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="2022: ChatGPT">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>2022: ChatGPT</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">30 ноября 2022 года ChatGPT открылся обычным чатом: без настроек, без специальных знаний, бесплатно попробовать.</div>
+    <div class="note r" style="--d:150">До этого такие модели жили в исследовательских статьях и в закрытых продуктах. Тут — просто окно, куда пишешь вопрос.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:210"><h3>Миллион за 5 дней</h3><p>Быстрее, чем любое приложение до него.</p></div>
+      <div class="card r" style="--d:250"><h3>Гонка началась</h3><p>Google, Meta, Anthropic и другие срочно выпустили свои модели.</p></div>
+      <div class="card r" style="--d:290"><h3>ИИ в быту</h3><p>Сейчас он в поиске, в почте, в редакторах и в ваших телефонах.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Частые заблуждения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Частые заблуждения</h2>
+  </header>
+  <div class="body">
+    <div class="myths">
+      <div class="myth r" style="--d:70"><div class="q">LLM понимает текст как человек</div><p>Нет. Она считает вероятности слов. Поэтому и выдаёт правдоподобную ерунду — звучит гладко, а проверить нечем.</p></div>
+      <div class="myth r" style="--d:120"><div class="q">LLM достаёт ответ из базы фактов</div><p>Нет. Никакой базы внутри нет: ответ собирается шаг за шагом, слово за словом.</p></div>
+      <div class="myth r" style="--d:170"><div class="q">Deep Blue научился играть, изучив миллионы партий</div><p>Нет. Люди заложили правила и оценку позиций, а он перебирал ходы. Это обычное программирование.</p></div>
+      <div class="myth r" style="--d:220"><div class="q">Пишет уверенно — значит права</div><p>Нет. Уверенный тон — свойство текста, а не проверка фактов. Важное проверяем сами.</p></div>
+      <div class="myth wide r" style="--d:270"><div class="q">Чем больше примеров, тем точнее</div><p>Только если примеры правильные. На кривых данных модель найдёт кривое правило — и будет выдавать его уверенно.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70"><div class="num">задача 1</div><h3>Машина-угадайка</h3><p>Ведущий загадывает правило для чисел, вы называете число и записываете ответ. Угадываете правило по примерам — как модель.</p></div>
+      <div class="card r" style="--d:150"><div class="num">задача 2</div><h3>Тональность отзыва</h3><p>Обычная программа со списками слов против LLM. Смотрим, где каждая ломается.</p></div>
+    </div>
+    <div class="note r" style="--d:230">Задача 1 — играем вживую, без кода. Задача 2 — VS Code: файл lesson15.py.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Правила игры</div><p>Ведущий загадывает правило для чисел. Вы называете число, он говорит результат. Пишем пары в столбик: назвали — получили.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Когда угадываем</div><p>После четырёх-пяти пар. Побеждает тот, кто первым назовёт правило словами.</p></div>
+        <div class="card r quiz" style="--d:190"><div class="num">проверка</div><h3>2 &#8594; 5, 3 &#8594; 7, 10 &#8594; 21. Какое правило?</h3><button class="ans-btn" type="button">Показать ответ</button><code class="ans">умножить на 2 и прибавить 1</code></div>
+      </div>
+      <svg class="ill r" style="--d:160" viewBox="0 0 700 520" role="img" aria-label="Три пары чисел на доске: 2 даёт 5, 3 даёт 7, 10 даёт 21">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="96" y="106" font-size="19" font-weight="700" fill="#6E7E92">НАЗВАЛИ</text>
+        <text x="290" y="106" font-size="19" font-weight="700" fill="#6E7E92">ОТВЕТ</text>
+        <rect x="34" y="126" width="632" height="64" rx="18" fill="#E9F4FF"/>
+        <text x="150" y="170" font-size="34" font-weight="700" fill="#0B3E7A" text-anchor="middle">2</text>
+        <text x="240" y="168" font-size="30" fill="#6E7E92">&#8594;</text>
+        <text x="320" y="170" font-size="34" font-weight="700" fill="#1E7EE8" text-anchor="middle">5</text>
+        <rect x="34" y="210" width="632" height="64" rx="18" fill="#E9F4FF"/>
+        <text x="150" y="254" font-size="34" font-weight="700" fill="#0B3E7A" text-anchor="middle">3</text>
+        <text x="240" y="252" font-size="30" fill="#6E7E92">&#8594;</text>
+        <text x="320" y="254" font-size="34" font-weight="700" fill="#1E7EE8" text-anchor="middle">7</text>
+        <rect x="34" y="294" width="632" height="64" rx="18" fill="#E9F4FF"/>
+        <text x="150" y="338" font-size="34" font-weight="700" fill="#0B3E7A" text-anchor="middle">10</text>
+        <text x="240" y="336" font-size="30" fill="#6E7E92">&#8594;</text>
+        <text x="320" y="338" font-size="34" font-weight="700" fill="#1E7EE8" text-anchor="middle">21</text>
+        <text x="34" y="440" font-size="21" fill="#6E7E92">угадывать начинаем после четвёртой-пятой пары</text>
+        <text x="34" y="484" font-size="22" font-weight="700" fill="#0B3E7A">у ведущего правило одно для всех пар</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 1: разбор">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Задача 1: разбор</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Вы только что были моделью: примеры с ответами → найденное правило. Больше ничего не понадобилось.</p>
+        <p class="note r" style="--d:130">А теперь шум. В одном ответе ведущего ошибка: <b>7 &#8594; 8</b>.</p>
+        <p class="note r" style="--d:190">Правило всё равно нашлось: оно подходит пяти парам из шести. Один ответ считаем ошибкой в данных.</p>
+        <div class="acc r" style="--d:250">Модель ищет правило, которое подходит большинству примеров. Редкие выбросы она «перешагивает» — примерно так же, как вы сейчас.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 520" role="img" aria-label="Шесть пар, одна помечена как шум, правило 2x+1 подходит пяти">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="110" y="58" font-size="21" fill="#6E7E92">пары с доски</text>
+        <rect x="110" y="74" width="400" height="52" rx="16" fill="#E9F4FF"/>
+        <text x="310" y="110" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">2 &#8594; 5</text>
+        <rect x="110" y="136" width="400" height="52" rx="16" fill="#E9F4FF"/>
+        <text x="310" y="172" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">3 &#8594; 7</text>
+        <rect x="110" y="198" width="400" height="52" rx="16" fill="#E9F4FF"/>
+        <text x="310" y="234" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">4 &#8594; 9</text>
+        <rect x="110" y="260" width="400" height="52" rx="16" fill="#E9F4FF"/>
+        <text x="310" y="296" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">6 &#8594; 13</text>
+        <rect x="110" y="322" width="400" height="52" rx="16" fill="#FFF4E5" stroke="#FF8E00" stroke-width="2"/>
+        <text x="310" y="358" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">7 &#8594; 8</text>
+        <line x1="238" y1="348" x2="382" y2="348" stroke="#FF8E00" stroke-width="3"/>
+        <text x="536" y="357" font-size="21" font-weight="700" fill="#FF8E00">шум</text>
+        <rect x="110" y="384" width="400" height="52" rx="16" fill="#E9F4FF"/>
+        <text x="310" y="420" font-size="27" font-weight="700" fill="#0B3E7A" text-anchor="middle">10 &#8594; 21</text>
+        <text x="110" y="490" font-size="21" fill="#6E7E92">правило «2x + 1» подходит пяти парам из шести</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Условие задания</h2>
+  </header>
+  <div class="body">
+    <div class="task">
+      <div class="io">
+        <div class="io-row r" style="--d:70"><div class="k">Задание</div><p>Сказать, позитивный отзыв или негативный. Сначала обычной программой: два списка слов, за хорошее слово +1, за плохое &#8722;1. Потом тот же отзыв — в LLM.</p></div>
+        <div class="io-row r" style="--d:130"><div class="k">Что на выход</div><p>Одно из трёх: <code>позитивный</code>, <code>негативный</code>, <code>не понял</code>.</p></div>
+        <div class="tlist w r" style="--d:190">
+          <span class="lbl">Тесты</span>
+          <div class="trow"><span class="in">&#171;Отлично! Лучшая пицца&#187;</span><span class="ar">&#8594;</span><span class="out">позитивный</span></div>
+          <div class="trow"><span class="in">&#171;Ужасно, холодная пицца&#187;</span><span class="ar">&#8594;</span><span class="out">негативный</span></div>
+          <div class="trow"><span class="in">&#171;Пицца — бомба&#187;</span><span class="ar">&#8594;</span><span class="out">не понял</span></div>
+        </div>
+      </div>
+      <svg class="ill r" style="--d:160" viewBox="0 0 700 520" role="img" aria-label="Сравнение: программа ищет отдельные слова, LLM читает фразу целиком">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <rect x="32" y="32" width="636" height="210" rx="22" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="56" y="76" font-size="23" font-weight="700" fill="#0B3E7A">программа: смотрит на слова</text>
+        <text x="56" y="120" font-size="21" fill="#6E7E92">«Не плохо» &#8594; нашла «плохо» &#8594; негативный</text>
+        <text x="56" y="158" font-size="21" fill="#6E7E92">«супер-сервис, курьер два часа» &#8594; позитивный</text>
+        <text x="56" y="204" font-size="21" font-weight="700" fill="#FF8E00">отрицание и интонацию не видит</text>
+        <rect x="32" y="262" width="636" height="210" rx="22" fill="#E9F4FF"/>
+        <text x="56" y="306" font-size="23" font-weight="700" fill="#0B3E7A">LLM: читает фразу целиком</text>
+        <text x="56" y="350" font-size="21" fill="#0B3E7A">«Не плохо» понимает как «в целом нормально»</text>
+        <text x="56" y="388" font-size="21" fill="#0B3E7A">сарказм в «супер-сервисе» обычно ловит</text>
+        <text x="56" y="434" font-size="21" font-weight="700" fill="#1E7EE8">«Пицца — бомба» читает как «очень вкусно»</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 2: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: шаг 1</h2>
+  </header>
+  <div class="body">
+    <div class="run sm r" data-run="score" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Отлично! Лучшая пицца</button>
+          <button class="chip" type="button" data-val="b">Ужасно, холодная пицца</button>
+          <button class="chip" type="button" data-val="c">Пицца — бомба</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">text = input().lower()</span><span class="ln" data-no="2">good = ['отлично', 'супер', 'класс', 'круто']</span><span class="ln" data-no="3">bad = ['ужасно', 'плохо', 'кошмар', 'ужас']</span><span class="ln" data-no="4">score = 0</span><span class="ln" data-no="5">for word in good:</span><span class="ln" data-no="6">    if word in text:</span><span class="ln" data-no="7">        score += 1</span><span class="ln" data-no="8">for word in bad:</span><span class="ln" data-no="9">    if word in text:</span><span class="ln" data-no="10">        score -= 1</span><span class="ln" data-no="11">print(score)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:230">Пока только считаем балл: за хорошее слово плюс, за плохое минус. Решение по баллу — на следующем шаге.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 2: шаг 2">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: шаг 2</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="sign" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="1">балл 1</button>
+          <button class="chip" type="button" data-val="-2">балл −2</button>
+          <button class="chip" type="button" data-val="0">балл 0</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">score = 1</span><span class="ln" data-no="2">if score &gt; 0:</span><span class="ln" data-no="3">    print('позитивный')</span><span class="ln" data-no="4">elif score &lt; 0:</span><span class="ln" data-no="5">    print('негативный')</span><span class="ln" data-no="6">else:</span><span class="ln" data-no="7">    print('не понял')</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="note r" style="--d:230">В настоящей программе балл приходит с шага 1. Здесь он задан в первой строке, чтобы прокликать три случая.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 2: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: полное решение</h2>
+  </header>
+  <div class="body">
+    <div class="run xs r" data-run="tone" style="--d:120">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        <div class="chips" data-role="variants">
+          <button class="chip on" type="button" data-val="a">Отлично! Лучшая пицца</button>
+          <button class="chip" type="button" data-val="b">Ужасно, холодная пицца</button>
+          <button class="chip" type="button" data-val="c">Пицца — бомба</button>
+        </div>
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def review_tone(text):</span><span class="ln" data-no="2">    text = text.lower()</span><span class="ln" data-no="3">    good = ['отлично', 'супер', 'класс', 'круто']</span><span class="ln" data-no="4">    bad = ['ужасно', 'плохо', 'кошмар', 'ужас']</span><span class="ln" data-no="5">    score = 0</span><span class="ln" data-no="6">    for word in good:</span><span class="ln" data-no="7">        if word in text:</span><span class="ln" data-no="8">            score += 1</span><span class="ln" data-no="9">    for word in bad:</span><span class="ln" data-no="10">        if word in text:</span><span class="ln" data-no="11">            score -= 1</span><span class="ln" data-no="12">    if score &gt; 0:</span><span class="ln" data-no="13">        return 'позитивный'</span><span class="ln" data-no="14">    elif score &lt; 0:</span><span class="ln" data-no="15">        return 'негативный'</span><span class="ln" data-no="16">    else:</span><span class="ln" data-no="17">        return 'не понял'</span><span class="ln" data-no="18">&#160;</span><span class="ln" data-no="19">review = input()</span><span class="ln" data-no="20">print(review_tone(review))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Задача 2: ловушки">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Задача 2: ловушки</h2>
+  </header>
+  <div class="body">
+    <div class="note r" style="--d:70">Каждый отзыв проверяем двумя способами и заполняем таблицу. Где программа ошиблась?</div>
+    <div class="cards c3 traps">
+      <div class="card r" style="--d:130">
+        <div class="num">отзыв 1</div>
+        <h3>&#171;Не плохо&#187;</h3>
+        <p><b>программа:</b> негативный — нашла «плохо»</p>
+        <p><b>LLM:</b> обычно понимает как «в целом нормально»</p>
+      </div>
+      <div class="card r" style="--d:190">
+        <div class="num">отзыв 2</div>
+        <h3>&#171;Ну да, конечно, супер-сервис, курьер ехал два часа&#187;</h3>
+        <p><b>программа:</b> позитивный — увидела «супер»</p>
+        <p><b>LLM:</b> сарказм обычно ловит</p>
+      </div>
+      <div class="card r" style="--d:250">
+        <div class="num">отзыв 3</div>
+        <h3>&#171;Пицца — бомба&#187;</h3>
+        <p><b>программа:</b> «не понял» — балл 0</p>
+        <p><b>LLM:</b> читает как «очень вкусно»</p>
+      </div>
+    </div>
+    <div class="note r" style="--d:320">Ответы LLM могут отличаться от запуска к запуску: она отвечает с долей случайности. Это не баг.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Где применяют LLM">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Обсуждение</p>
+    <h2>Где применяют LLM</h2>
+  </header>
+  <div class="body">
+    <div class="chips r" style="--d:70">
+      <span class="chip">чат-боты поддержки</span>
+      <span class="chip">помощники программиста</span>
+      <span class="chip">перевод и проверка текста</span>
+      <span class="chip">пересказ документов и поиск ответа в них</span>
+      <span class="chip">учебные объяснения и тренажёры</span>
+    </div>
+    <div class="acc r" style="--d:150">Во всех случаях работа одна: на вход текст — на выход текст. Меняется только обвязка вокруг.</div>
+    <div class="note r" style="--d:230">Вопрос в чат: где LLM уже помогала или подводила вас? И где вы бы ей доверили решение, а где нет?</div>
+  </div>
+</section>
+
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check">
+      <div class="r" style="--d:70"><b>Два подхода.</b> В обычной программе правила пишет человек, в машинном обучении модель находит их сама по примерам.</div>
+      <div class="r" style="--d:110"><b>Модель и обучение.</b> Модель — это найденное правило, обучение — процесс, в котором оно ищется.</div>
+      <div class="r" style="--d:150"><b>LLM.</b> Шаг за шагом выбирает следующий токен по вероятностям; вероятности считаются миллиардами параметров.</div>
+      <div class="r" style="--d:190"><b>Три этапа.</b> Предобучение на текстах, дообучение с людьми, работа в чате.</div>
+      <div class="r" style="--d:230"><b>История.</b> Правила (ELIZA, Deep Blue), обучение (AlexNet, AlphaGo, GPT), с 2010-х верх берёт обучение.</div>
+      <div class="r" style="--d:270"><b>Что выбрать.</b> Точные цифры — обычной программе, живой язык — LLM. Ответы LLM проверяем.</div>
+    </div>
+  </div>
+</section>
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">29</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+  "score": [
+    {
+      "val": "a",
+      "label": "Отлично! Лучшая пицца",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "&#9654; ввели: Отлично! Лучшая пицца"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 1,
+          "out": {
+            "t": "text = отлично! лучшая пицца"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "берём слова из good по одному"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "score = 1"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 8,
+          "out": {
+            "t": "теперь слова из bad"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 11,
+          "out": {
+            "t": "1",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "b",
+      "label": "Ужасно, холодная пицца",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "&#9654; ввели: Ужасно, холодная пицца"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 1,
+          "out": {
+            "t": "text = ужасно, холодная пицца"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "берём слова из good по одному"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 8,
+          "out": {
+            "t": "теперь слова из bad"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "score = -1"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "score = -2"
+          }
+        },
+        {
+          "ln": 11,
+          "out": {
+            "t": "-2",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "c",
+      "label": "Пицца — бомба",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "&#9654; ввели: Пицца — бомба"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 1,
+          "out": {
+            "t": "text = пицца — бомба"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "берём слова из good по одному"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 8,
+          "out": {
+            "t": "теперь слова из bad"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 11,
+          "out": {
+            "t": "0",
+            "kind": "p"
+          }
+        }
+      ]
+    }
+  ],
+  "sign": [
+    {
+      "val": "1",
+      "label": "балл 1",
+      "skip": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "score = 1"
+          },
+          "badge": "значение пришло с шага 1"
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "score &gt; 0 &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "позитивный",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "-2",
+      "label": "балл -2",
+      "skip": [
+        3,
+        6,
+        7
+      ],
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "score = -2"
+          },
+          "badge": "значение пришло с шага 1"
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "score &gt; 0 &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "score &lt; 0 &#8594; True",
+            "kind": "true"
+          },
+          "wait": 340
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "негативный",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "0",
+      "label": "балл 0",
+      "skip": [
+        3,
+        5
+      ],
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "score = 0"
+          },
+          "badge": "значение пришло с шага 1"
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "score &gt; 0 &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "score &lt; 0 &#8594; False",
+            "kind": "false"
+          },
+          "wait": 340
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "оба условия ложные"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "не понял",
+            "kind": "p"
+          }
+        }
+      ]
+    }
+  ],
+  "tone": [
+    {
+      "val": "a",
+      "label": "Отлично! Лучшая пицца",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "def review_tone(text): функция создана"
+          },
+          "badge": "тело выполнится только при вызове"
+        },
+        {
+          "ln": 19,
+          "out": {
+            "t": "&#9654; ввели: Отлично! Лучшая пицца"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "вызов review_tone(review) &#8594; text = весь отзыв"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "text = отлично! лучшая пицца"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "проходим по словам из good"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 8,
+          "out": {
+            "t": "score = 1"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "проходим по словам из bad"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 12,
+          "out": {
+            "t": "score &gt; 0 &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 13,
+          "out": {
+            "t": "return 'позитивный'"
+          }
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "позитивный",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "b",
+      "label": "Ужасно, холодная пицца",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "def review_tone(text): функция создана"
+          },
+          "badge": "тело выполнится только при вызове"
+        },
+        {
+          "ln": 19,
+          "out": {
+            "t": "&#9654; ввели: Ужасно, холодная пицца"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "вызов review_tone(review) &#8594; text = весь отзыв"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "text = ужасно, холодная пицца"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "проходим по словам из good"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "проходим по словам из bad"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 11,
+          "out": {
+            "t": "score = -1"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; True",
+            "kind": "true"
+          }
+        },
+        {
+          "ln": 11,
+          "out": {
+            "t": "score = -2"
+          }
+        },
+        {
+          "ln": 12,
+          "out": {
+            "t": "score &gt; 0 &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 14,
+          "out": {
+            "t": "score &lt; 0 &#8594; True",
+            "kind": "true"
+          },
+          "wait": 340
+        },
+        {
+          "ln": 15,
+          "out": {
+            "t": "return 'негативный'"
+          }
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "негативный",
+            "kind": "p"
+          }
+        }
+      ]
+    },
+    {
+      "val": "c",
+      "label": "Пицца — бомба",
+      "steps": [
+        {
+          "ln": 1,
+          "out": {
+            "t": "def review_tone(text): функция создана"
+          },
+          "badge": "тело выполнится только при вызове"
+        },
+        {
+          "ln": 19,
+          "out": {
+            "t": "&#9654; ввели: Пицца — бомба"
+          },
+          "wait": 420
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "вызов review_tone(review) &#8594; text = весь отзыв"
+          }
+        },
+        {
+          "ln": 2,
+          "out": {
+            "t": "text = пицца — бомба"
+          }
+        },
+        {
+          "ln": 3,
+          "out": {
+            "t": "good = ['отлично', 'супер', 'класс', 'круто']"
+          }
+        },
+        {
+          "ln": 4,
+          "out": {
+            "t": "bad = ['ужасно', 'плохо', 'кошмар', 'ужас']"
+          }
+        },
+        {
+          "ln": 5,
+          "out": {
+            "t": "score = 0"
+          }
+        },
+        {
+          "ln": 6,
+          "out": {
+            "t": "проходим по словам из good"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;отлично&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;супер&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;класс&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 7,
+          "out": {
+            "t": "&#171;круто&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 9,
+          "out": {
+            "t": "проходим по словам из bad"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужасно&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;плохо&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;кошмар&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 10,
+          "out": {
+            "t": "&#171;ужас&#187; в тексте &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 12,
+          "out": {
+            "t": "score &gt; 0 &#8594; False",
+            "kind": "false"
+          }
+        },
+        {
+          "ln": 14,
+          "out": {
+            "t": "score &lt; 0 &#8594; False",
+            "kind": "false"
+          },
+          "wait": 340
+        },
+        {
+          "ln": 16,
+          "out": {
+            "t": "оба условия ложные &#8594; else"
+          },
+          "wait": 340
+        },
+        {
+          "ln": 17,
+          "out": {
+            "t": "return 'не понял'"
+          }
+        },
+        {
+          "ln": 20,
+          "out": {
+            "t": "не понял",
+            "kind": "p"
+          }
+        }
+      ]
+    }
+  ]
+};
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+(function(){
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
+  });
+})();
+</script>
+</body>
+</html>
