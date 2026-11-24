@@ -104,6 +104,7 @@ lessons:
   - n: 17
     title: "Применение нейросетей"
     opens: 2026-12-21
+    presentation: classes/17-lessons/17-primenenie-neyrosetey.html
     docs: classes/17-lessons/17-text.md
   - n: 18
     title: "Ретро"
