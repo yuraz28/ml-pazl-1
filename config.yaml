@@ -96,6 +96,7 @@ lessons:
   - n: 15
     title: "История LLM и машинного обучения"
     opens: 2026-12-14
+    presentation: classes/15-lessons/15-istoriya-llm.html
     docs: classes/15-lessons/15-text.md
   - n: 16
     title: "Промпт-инжиниринг"
