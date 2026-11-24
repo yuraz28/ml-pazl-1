@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 17. Применение нейросетей — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+
+/* ---------- таблица и открытые ответы занятия 17 ---------- */
+.tbl{width:100%; border-collapse:separate; border-spacing:0}
+.tbl th{font-size:18px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; text-align:center; padding:0 8px 14px; line-height:1.2}
+.tbl th:first-child{text-align:left; width:210px}
+.tbl td{border-top:1px solid var(--line); padding:13px 8px; text-align:center; font-size:23px; color:#C9D8E8}
+.tbl td:first-child{text-align:left; font-weight:700; color:var(--ink); font-size:24px}
+.tbl td.y{color:var(--blue); font-weight:800; font-size:26px}
+.card .ans{display:none}
+.quiz.shown .ans{display:block; animation:rpop .22s ease both; font-size:21px; line-height:1.42; color:var(--ink2); margin-top:14px; padding-top:12px; border-top:1px dashed var(--soft)}
+.quiz.shown .ans b{color:var(--blue-700)}
+.verdict{display:inline-block; font-size:19px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#fff; border-radius:999px; padding:5px 16px; margin-right:10px; vertical-align:2px}
+.v-no{background:var(--orange)} .v-yes{background:var(--blue)} .v-dep{background:#7A8FA6}
+/* слайд-раздел «Практика» — крупнее, чтобы не пустовал */
+.slide[data-title="Раздел: Практика"] .blk{padding:30px 38px}
+.slide[data-title="Раздел: Практика"] .blk h3{font-size:37px}
+.slide[data-title="Раздел: Практика"] .blk p{font-size:24px}
+.slide[data-title="Раздел: Практика"] .blk .num{font-size:21px}
+.slide[data-title="Раздел: Практика"] .blocks{gap:22px}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+/* совсем длинное решение (меню целиком) — ещё компактнее */
+.run.xs{padding:12px 22px}
+.run.xs .run-top{margin-bottom:12px}
+.run.xs .run-code{font-size:19px; line-height:1.24}
+.run.xs .run-code .ln{padding:0 10px}
+.run.xs .run-console{font-size:19px; line-height:1.32}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+/* ---------- добавочные блоки занятия 17 ---------- */
+.flow.f2{grid-template-columns:repeat(2,1fr)}
+.steps.g3{grid-template-columns:repeat(3,1fr)}
+.steps.g3 .step h3{font-size:25px}
+.steps.g3 .step p{font-size:20px}
+.myths{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.myth{border:1px solid var(--line); border-radius:22px; padding:20px 28px; background:#fff}
+.myth .q{font-size:23px; line-height:1.3; font-weight:700; color:var(--ink)}
+.myth .q::before{content:'миф · '; color:var(--orange); text-transform:uppercase; font-size:18px; letter-spacing:.06em}
+.myth p{font-size:21px; line-height:1.38; color:var(--muted); margin-top:8px}
+.myth p b{color:var(--ink2)}
+.myth.wide{grid-column:1 / -1}
+.cards.traps h3{font-size:25px; line-height:1.28}
+.cards.traps .num{margin-bottom:8px}
+.cards.traps p{font-size:21px}
+.cards.traps p b{color:var(--ink2)}
+.tlist.w .trow{font-size:18px}
+.tlist.w .trow .in{flex:0 0 400px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · ML</p>
+    <p class="lead">Занятие 17</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Применение<br>нейросетей</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row" style="gap:22px">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">017</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Нейросети</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">21.12</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 017 Нейросети 21.12" title="Скопировать «1ПМ0 017 Нейросети 21.12»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Разные данные — одна идея</h3><p>Картинки, звук и ваши действия — это тоже таблицы чисел.</p></div>
+      <div class="blk r" style="--d:125"><div class="num">Блок 2</div><h3>Картинки</h3><p>Две разные задачи: узнать, что на фото, и нарисовать по описанию.</p></div>
+      <div class="blk r" style="--d:180"><div class="num">Блок 3</div><h3>Звук</h3><p>Речь в текст, текст в голос, музыка и шумодав — четыре задачи.</p></div>
+      <div class="blk r" style="--d:235"><div class="num">Блок 4</div><h3>Рекомендации</h3><p>Система смотрит не на видео, а на поведение похожих людей.</p></div>
+      <div class="blk r" style="--d:290"><div class="num">Блок 5</div><h3>Где ошибаются</h3><p>Плохие данные, слабое обобщение и уверенный тон без правоты.</p></div>
+      <div class="blk r" style="--d:345"><div class="num">Блок 6</div><h3>Споры</h3><p>Дипфейки, авторские права, работа, учёба и пометки.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Три вопроса к любому сервису">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Три вопроса к любому сервису</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">Нейросети сегодня везде. Про любой сервис можно спросить три вещи — и сразу понять, как он устроен.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:140"><div class="num">Вопрос 1</div><h3>Что подаём на вход?</h3><p>Текст, фотографию, звук или ваши действия. Если данные собраны криво, дальше всё поедет.</p></div>
+      <div class="card r" style="--d:200"><div class="num">Вопрос 2</div><h3>Что получаем на выходе?</h3><p>Класс, число, картинку, ответ в чате. Проверяем, что это правда то, что нам нужно.</p></div>
+      <div class="card pick r" style="--d:260"><div class="num">Вопрос 3</div><h3>Где он ошибается?</h3><p>У каждого сервиса есть слабое место. Хороший вопрос: на ком и на чём он врёт?</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Разные данные — одна таблица чисел">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Разные данные — одна таблица чисел</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">Текст</div><h3>Слова</h3><p>Каждому слову — номер из словаря. Получается последовательность чисел.</p></div>
+      <div class="card r" style="--d:120"><div class="num">Картинка</div><h3>Пиксели</h3><p>У каждой точки три числа: красный, зелёный, синий. Фото — миллионы таких чисел.</p></div>
+      <div class="card r" style="--d:170"><div class="num">Звук</div><h3>Громкость</h3><p>Тысячи замеров громкости в секунду. Дорожка превращается в столбик чисел.</p></div>
+      <div class="card r" style="--d:220"><div class="num">Действия</div><h3>Поведение</h3><p>Что посмотрели, что лайкнули, что пролистнули — каждая строчка в таблице.</p></div>
+    </div>
+    <div class="acc r" style="--d:280">Компьютер не видит картинку и не слышит голос. Он получает числа — и ищет в них закономерности.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Задание 1: как компьютер видит букву">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Задание 1. Как компьютер видит букву</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Возьмём картинку 5 на 5 клеток. Каждая клетка — <b>1</b>, если она тёмная, и <b>0</b>, если светлая.</p>
+        <p class="note r" style="--d:120">Слева так записана буква «Т»: сверху полоска, посередине ножка.</p>
+        <div class="card quiz r" style="--d:180">
+          <div class="num">Ваш ход</div>
+          <h3>Какая буква записана в правой таблице?</h3>
+          <button class="ans-btn" type="button">Показать ответ</button>
+          <div class="ans"><b>Н.</b> Две вертикальные палочки и перекладина посередине. Мы видим букву, а компьютер видит 25 чисел — и всё.</div>
+        </div>
+        <p class="note r" style="--d:240">Любая фотография в телефоне устроена так же, только клеток миллионы.</p>
+      </div>
+
+<svg class="ill r" style="--d:170" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg">
+  <text x="0" y="26" font-size="21" font-weight="600" fill="#5C7896">1 — тёмная клетка, 0 — светлая</text>
+  <text x="130" y="78" text-anchor="middle" font-size="22" font-weight="700" fill="#5C7896">так выглядит «Т»</text>
+  <text x="540" y="78" text-anchor="middle" font-size="22" font-weight="700" fill="#5C7896">а это какая буква?</text>
+  <g transform="translate(20,96)">
+<rect x="0" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="64.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="88" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="152.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="176" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="0" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="20.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="44" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="44" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="196.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="0" y="88" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="20.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="44" y="88" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="88" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="88" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="196.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="0" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="20.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="44" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="132" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="196.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="0" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="20.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="44" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="176" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="196.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+</g>
+  <g transform="translate(430,96)">
+<rect x="0" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="0" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="0" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="108.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="132" y="0" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="0" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="27.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="0" y="44" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="108.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="132" y="44" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="44" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="71.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="0" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="64.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="88" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="108.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="132" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="152.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="176" y="88" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="115.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="0" y="132" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="108.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="132" y="132" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="132" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="159.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="0" y="176" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="20.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+<rect x="44" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="64.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="88" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="108.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="132" y="176" width="41" height="41" rx="7" fill="#F1F6FC" stroke="#DCE7F3" stroke-width="1.6"/>
+<text x="152.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#8FA6BF">0</text>
+<rect x="176" y="176" width="41" height="41" rx="7" fill="#0F6BFF" stroke="#0F6BFF" stroke-width="1.6"/>
+<text x="196.5" y="203.5" text-anchor="middle" font-size="19" font-weight="700" fill="#FFFFFF">1</text>
+</g>
+  <rect x="0" y="330" width="700" height="96" rx="22" fill="#EEF4FD" stroke="#DCE7F3" stroke-width="2"/>
+  <text x="350" y="372" text-anchor="middle" font-size="23" font-weight="700" fill="#0B2545">Для компьютера картинка — это таблица чисел</text>
+  <text x="350" y="404" text-anchor="middle" font-size="21" fill="#5C7896">и ничего больше</text>
+  <rect x="60" y="442" width="580" height="50" rx="16" fill="#FFF4E8"/>
+  <text x="350" y="474" text-anchor="middle" font-size="21" font-weight="600" fill="#95622C">Мы видим букву. Модель видит 25 чисел.</text>
+</svg>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Как из фото получается ответ">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Как из фото получается ответ</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Фотография тысяча на тысячу — это <b>миллион клеток</b> и три миллиона чисел.</p>
+        <p class="note r" style="--d:120">Нейросетью её называют потому, что она устроена как сеть из связанных чисел. Числа эти <b>подбираются на примерах</b>, а не пишутся руками.</p>
+        <p class="note r" style="--d:170">В 2012 году модель AlexNet на соревновании ImageNet ошиблась <b>вдвое реже</b> остальных. Стало понятно, что побеждают данные, а не правила.</p>
+        <p class="note r" style="--d:220">Дальше это разошлось по всему: разблокировка по лицу, поиск фото с собакой, камеры на дорогах, царапины на заводе, снимки врачам.</p>
+      </div>
+
+<svg class="ill r" style="--d:170" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg">
+  <rect x="6" y="70" width="186" height="186" rx="20" fill="#EEF4FD" stroke="#DCE7F3" stroke-width="2"/>
+  <path d="M58 132 L66 90 L102 120 Z" fill="#9FBEDF"/>
+  <path d="M140 132 L132 90 L96 120 Z" fill="#9FBEDF"/>
+  <ellipse cx="99" cy="152" rx="44" ry="38" fill="#9FBEDF"/>
+  <ellipse cx="84" cy="146" rx="4.5" ry="7" fill="#EEF4FD"/><ellipse cx="114" cy="146" rx="4.5" ry="7" fill="#EEF4FD"/>
+  <path d="M94 160 L104 160 L99 168 Z" fill="#EEF4FD"/>
+  <path d="M82 166 l-16 -4 M82 174 l-16 4 M116 166 l16 -4 M116 174 l16 4" stroke="#EEF4FD" stroke-width="3" stroke-linecap="round"/>
+  <text x="99" y="290" text-anchor="middle" font-size="21" font-weight="700" fill="#5C7896">фото</text>
+  <path d="M212 163 h30" stroke="#9FBEDF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M236 156 l8 7 -8 7" stroke="#9FBEDF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(262,84)">
+<rect x="0" y="0" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="16.0" text-anchor="middle" font-size="10" fill="#5C7896">228</text>
+<rect x="27" y="0" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="16.0" text-anchor="middle" font-size="10" fill="#A8BCD2">41</text>
+<rect x="54" y="0" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="16.0" text-anchor="middle" font-size="10" fill="#5C7896">190</text>
+<rect x="81" y="0" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="16.0" text-anchor="middle" font-size="10" fill="#5C7896">204</text>
+<rect x="108" y="0" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="16.0" text-anchor="middle" font-size="10" fill="#5C7896">233</text>
+<rect x="135" y="0" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="16.0" text-anchor="middle" font-size="10" fill="#A8BCD2">110</text>
+<rect x="0" y="27" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="43.0" text-anchor="middle" font-size="10" fill="#A8BCD2">21</text>
+<rect x="27" y="27" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="43.0" text-anchor="middle" font-size="10" fill="#A8BCD2">55</text>
+<rect x="54" y="27" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="43.0" text-anchor="middle" font-size="10" fill="#5C7896">178</text>
+<rect x="81" y="27" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="43.0" text-anchor="middle" font-size="10" fill="#5C7896">240</text>
+<rect x="108" y="27" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="43.0" text-anchor="middle" font-size="10" fill="#5C7896">199</text>
+<rect x="135" y="27" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="43.0" text-anchor="middle" font-size="10" fill="#A8BCD2">63</text>
+<rect x="0" y="54" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="70.0" text-anchor="middle" font-size="10" fill="#A8BCD2">30</text>
+<rect x="27" y="54" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="70.0" text-anchor="middle" font-size="10" fill="#5C7896">190</text>
+<rect x="54" y="54" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="70.0" text-anchor="middle" font-size="10" fill="#5C7896">232</text>
+<rect x="81" y="54" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="70.0" text-anchor="middle" font-size="10" fill="#5C7896">210</text>
+<rect x="108" y="54" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="70.0" text-anchor="middle" font-size="10" fill="#A8BCD2">96</text>
+<rect x="135" y="54" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="70.0" text-anchor="middle" font-size="10" fill="#A8BCD2">44</text>
+<rect x="0" y="81" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="97.0" text-anchor="middle" font-size="10" fill="#A8BCD2">95</text>
+<rect x="27" y="81" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="97.0" text-anchor="middle" font-size="10" fill="#5C7896">214</text>
+<rect x="54" y="81" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="97.0" text-anchor="middle" font-size="10" fill="#5C7896">235</text>
+<rect x="81" y="81" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="97.0" text-anchor="middle" font-size="10" fill="#5C7896">225</text>
+<rect x="108" y="81" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="97.0" text-anchor="middle" font-size="10" fill="#5C7896">168</text>
+<rect x="135" y="81" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="97.0" text-anchor="middle" font-size="10" fill="#A8BCD2">52</text>
+<rect x="0" y="108" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="124.0" text-anchor="middle" font-size="10" fill="#5C7896">212</text>
+<rect x="27" y="108" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="124.0" text-anchor="middle" font-size="10" fill="#A8BCD2">40</text>
+<rect x="54" y="108" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="124.0" text-anchor="middle" font-size="10" fill="#5C7896">176</text>
+<rect x="81" y="108" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="124.0" text-anchor="middle" font-size="10" fill="#5C7896">233</text>
+<rect x="108" y="108" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="124.0" text-anchor="middle" font-size="10" fill="#5C7896">229</text>
+<rect x="135" y="108" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="124.0" text-anchor="middle" font-size="10" fill="#A8BCD2">87</text>
+<rect x="0" y="135" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="12.5" y="151.0" text-anchor="middle" font-size="10" fill="#A8BCD2">61</text>
+<rect x="27" y="135" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="39.5" y="151.0" text-anchor="middle" font-size="10" fill="#5C7896">188</text>
+<rect x="54" y="135" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="66.5" y="151.0" text-anchor="middle" font-size="10" fill="#5C7896">205</text>
+<rect x="81" y="135" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="93.5" y="151.0" text-anchor="middle" font-size="10" fill="#5C7896">231</text>
+<rect x="108" y="135" width="25" height="25" rx="4" fill="#DBE8F8" stroke="#DCE7F3" stroke-width="1"/>
+<text x="120.5" y="151.0" text-anchor="middle" font-size="10" fill="#5C7896">214</text>
+<rect x="135" y="135" width="25" height="25" rx="4" fill="#F7FAFE" stroke="#DCE7F3" stroke-width="1"/>
+<text x="147.5" y="151.0" text-anchor="middle" font-size="10" fill="#A8BCD2">33</text>
+</g>
+  <text x="337" y="290" text-anchor="middle" font-size="21" font-weight="700" fill="#5C7896">1 000 000 клеток</text>
+  <path d="M450 163 h26" stroke="#9FBEDF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M470 156 l8 7 -8 7" stroke="#9FBEDF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="486" y="96" width="208" height="132" rx="22" fill="#0F6BFF"/>
+  <text x="590" y="148" text-anchor="middle" font-size="26" font-weight="700" fill="#FFFFFF">кошка</text>
+  <text x="590" y="188" text-anchor="middle" font-size="24" font-weight="700" fill="#CFE3FF">0.94</text>
+  <text x="590" y="290" text-anchor="middle" font-size="21" font-weight="700" fill="#5C7896">ответ модели</text>
+  <rect x="6" y="336" width="688" height="98" rx="22" fill="#EEF4FD" stroke="#DCE7F3" stroke-width="2"/>
+  <text x="350" y="378" text-anchor="middle" font-size="23" font-weight="700" fill="#0B2545">Модель не ищет усы и хвост —</text>
+  <text x="350" y="410" text-anchor="middle" font-size="21" fill="#5C7896">она находит закономерности в числах</text>
+  <rect x="120" y="452" width="460" height="46" rx="14" fill="#FFF4E8"/>
+  <text x="350" y="482" text-anchor="middle" font-size="21" font-weight="600" fill="#95622C">отсюда и берутся её промахи</text>
+</svg>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Узнать и нарисовать — разные задачи">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>«Узнать» и «нарисовать» — разные задачи</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">Картинка на входе</div><h3>Понять, что на ней</h3><p>Лицо в телефоне, поиск фото с собакой, камера на дороге, царапина на детали, опухоль на снимке. Модель отвечает: что это и насколько уверена.</p></div>
+      <div class="card pick r" style="--d:130"><div class="num">Картинка на выходе</div><h3>Нарисовать по описанию</h3><p>Kandinsky, Midjourney, Stable Diffusion. Вы пишете текст — получаете картинку. Модель ничего не «понимает», она подбирает то, что похоже на примеры с такой подписью.</p></div>
+    </div>
+    <div class="acc r" style="--d:200">Это два разных навыка. Первый спрашивает «что здесь?», второй — «нарисуй, как я сказал».</div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Как рисует по описанию">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Как модель рисует по описанию</h2>
+  </header>
+  <div class="body">
+    <div class="steps">
+      <div class="step r" style="--d:70"><div class="no">1</div><h3>Случайный шум</h3><p>Модель начинает с серых точек, в которых нет никакого смысла.</p></div>
+      <div class="step r" style="--d:130"><div class="no">2</div><h3>Запрос</h3><p>Ваш текст превращается в числа и задаёт направление.</p></div>
+      <div class="step r" style="--d:190"><div class="no">3</div><h3>Шаги</h3><p>Десятки раз модель убирает лишнее и добавляет нужное.</p></div>
+      <div class="step r" style="--d:250"><div class="no">4</div><h3>Картинка</h3><p>Из шума постепенно получается то, что просили.</p></div>
+    </div>
+    <div class="acc r" style="--d:320">Она не рисует с нуля. Она много раз чистит случайный шум по вашему описанию — и на каждом шаге картинка чуть больше похожа на просимое.</div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Звук: четыре задачи">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Звук: четыре задачи</h2>
+  </header>
+  <div class="body">
+    <div class="cards c4">
+      <div class="card r" style="--d:70"><div class="num">Задача 1</div><h3>Речь в текст</h3><p>Субтитры, расшифровка звонков, голосовые сообщения в текст.</p></div>
+      <div class="card r" style="--d:120"><div class="num">Задача 2</div><h3>Текст в голос</h3><p>Синтез речи: озвучка, навигатор, аудиокниги. Голоса уже почти не отличить.</p></div>
+      <div class="card r" style="--d:170"><div class="num">Задача 3</div><h3>Музыка</h3><p>Генерация треков и звуков по описанию — от фона под видео до целой песни.</p></div>
+      <div class="card r" style="--d:220"><div class="num">Задача 4</div><h3>Шумодав</h3><p>Убрать гул, ветер и чужие голоса, оставить только нужный.</p></div>
+    </div>
+    <div class="acc r" style="--d:280">Звук оцифровывают: тысячи замеров громкости в секунду. Для модели это такая же таблица чисел, как пиксели.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Рекомендации: система смотрит на людей">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Рекомендации: система смотрит на людей</h2>
+  </header>
+  <div class="body">
+    <div class="flow f4">
+      <div class="fnode r" style="--d:70"><div class="t">Ваши действия</div><div class="d">Что смотрели, до чего досмотрели, что пролистнули за секунду</div></div>
+      <div class="fnode r" style="--d:120"><div class="t">Похожие люди</div><div class="d">Те, чья история поведения похожа на вашу</div></div>
+      <div class="fnode r" style="--d:170"><div class="t">Их интересы</div><div class="d">Что им понравилось, а вам ещё не показывали</div></div>
+      <div class="fnode r" style="--d:220"><div class="t">Совет</div><div class="d">Вот это и попадает в ленту</div></div>
+    </div>
+    <div class="acc r" style="--d:280">Системе не нужно понимать, о чём видео. Ей достаточно видеть, что люди, похожие на вас, досматривают этот ролик.</div>
+    <p class="note r" style="--d:330">Данные здесь — не тексты и не картинки, а <b>ваши действия</b>. Отсюда и название: рекомендации по поведению.</p>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Задание 2: что порекомендует система">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Задание 2. Что порекомендует система</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:60">Кто что смотрел на сервисе видео. Новому человеку, Диме, надо что-то предложить — и система ищет тех, кто смотрит похожее.</p>
+    <table class="tbl r" style="--d:110">
+      <thead>
+        <tr><th>Человек</th><th>Футбол</th><th>Космос</th><th>Майнкрафт</th><th>Готовка</th><th>Роботы</th><th>Рисование</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Аня</td><td class="y">✓</td><td>·</td><td class="y">✓</td><td>·</td><td class="y">✓</td><td>·</td></tr>
+        <tr><td>Борис</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td>·</td><td>·</td><td>·</td></tr>
+        <tr><td>Вика</td><td>·</td><td>·</td><td>·</td><td class="y">✓</td><td>·</td><td class="y">✓</td></tr>
+        <tr><td>Глеб</td><td>·</td><td class="y">✓</td><td>·</td><td>·</td><td class="y">✓</td><td>·</td></tr>
+      </tbody>
+    </table>
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:180">
+        <h3>Дима смотрел майнкрафт и роботов. Что ему предложат?</h3>
+        <button class="ans-btn" type="button">Показать ответ</button>
+        <div class="ans"><b>Футбол.</b> Ближе всех Аня: у неё два общих интереса — майнкрафт и роботы. А ещё она смотрит футбол, а Дима — нет. Вот это и предложат.</div>
+      </div>
+      <div class="card quiz r" style="--d:230">
+        <h3>А если Дима смотрел футбол и космос?</h3>
+        <button class="ans-btn" type="button">Показать ответ</button>
+        <div class="ans"><b>Майнкрафт.</b> Ближе всех Борис: футбол и космос, плюс майнкрафт, которого у Димы ещё не было.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Почему лента зацикливается">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Почему лента зацикливается</h2>
+  </header>
+  <div class="body">
+    <div class="acc-o r" style="--d:70">Если вы один раз случайно открыли видео про ремонт — неделю вам будут показывать плитку.</div>
+    <div class="cards c2">
+      <div class="card r" style="--d:140"><div class="num">Что происходит</div><h3>Система видит сигнал, а не смысл</h3><p>Один просмотр — уже данные. Случайный клик для неё такой же честный интерес, как настоящий.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Чем это плохо</div><h3>Новое показывают реже</h3><p>Похожее предсказуемо нравится — значит, его и подсовывают. Так лента сужается до «пузыря» из одного и того же.</p></div>
+    </div>
+    <p class="note r" style="--d:250">Полезная привычка: иногда специально искать то, чего в ленте нет. Иначе выбор за вас делает алгоритм.</p>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Где ещё используют нейросети">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Где ещё используют нейросети</h2>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><h3>Транспорт</h3><p>Камеры читают номера и следят за полосой, беспилотные машины разбирают, что вокруг.</p></div>
+      <div class="card r" style="--d:110"><h3>Заводы</h3><p>Камера ищет царапины и брак на деталях быстрее, чем человек успевает посмотреть.</p></div>
+      <div class="card r" style="--d:150"><h3>Наука</h3><p>AlphaFold в 2020-м предсказала форму белков — задачу, над которой бились десятилетиями.</p></div>
+      <div class="card r" style="--d:190"><h3>Города</h3><p>Пробки прогнозируют заранее, а утечки на теплотрассе находят по данным датчиков.</p></div>
+      <div class="card r" style="--d:230"><h3>Банки</h3><p>Подозрительный платёж замечают по поведению: не как обычно — значит, проверяем.</p></div>
+      <div class="card pick r" style="--d:270"><h3>А ещё?</h3><p>Везде, где есть много примеров и нужно быстро решать однотипную задачу.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Где нейросети ошибаются">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Где нейросети ошибаются</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2 traps">
+      <div class="card r" style="--d:70"><div class="num">Проблема 1</div><h3>Мелкие детали</h3><p>На картинке шесть пальцев, лишняя рука, буквы без смысла. Модель не считает пальцы — она делает «похоже».</p></div>
+      <div class="card r" style="--d:120"><div class="num">Проблема 2</div><h3>Придумывает лишнее</h3><p>Просили собаку — появился поводок, которого не было. Модель дорисовывает то, что часто встречается рядом.</p></div>
+      <div class="card r" style="--d:170"><div class="num">Проблема 3</div><h3>Не переносит на новое</h3><p>Училась на кошках при дневном свете — в темноте не узнаёт. В примерах этого не было, значит, и навыка нет.</p></div>
+      <div class="card pick r" style="--d:220"><div class="num">Проблема 4</div><h3>Уверенный тон</h3><p>Ответ «кошка, 0.94» звучит убедительно и тогда, когда модель несёт полную чушь. Уверенность модели — не доказательство правоты.</p></div>
+    </div>
+    <p class="note r" style="--d:280">Хороший вопрос к любому ответу модели: <b>на каких примерах её учили</b> и что с ними было не так?</p>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Модель учится на том, что дали">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Модель учится на том, что дали</h2>
+  </header>
+  <div class="body">
+    <div class="acc-o r" style="--d:70">Если в примерах почти не было похожих на вас людей, модель будет ошибаться именно на вас.</div>
+    <div class="cards c2">
+      <div class="card r" style="--d:140"><div class="num">2018, распознавание лиц</div><h3>Gender Shades</h3><p>Системы узнавали светлые лица мужчин почти без ошибок, а тёмные лица женщин — заметно хуже. В обучающих наборах первых было гораздо больше.</p></div>
+      <div class="card r" style="--d:190"><div class="num">2018, подбор персонала</div><h3>Amazon</h3><p>Модель отбирала резюме по прошлым решениям компании, а там было больше мужчин. Она занижала оценки женским резюме — и проект закрыли.</p></div>
+    </div>
+    <p class="note r" style="--d:250">Дело не в злой модели. Она честно выучила то, что лежало в данных. Поэтому данные проверяют так же внимательно, как код.</p>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Споры: дипфейки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 6</p>
+    <h2>Споры: дипфейки</h2>
+  </header>
+  <div class="body">
+    <div class="acc-o r" style="--d:70">Можно сделать видео, где человек говорит то, чего он никогда не говорил. И голос, который звучит как его.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:140"><div class="num">Шутка</div><h3>Своё лицо и своё согласие</h3><p>Подшутить над собой, сделать смешной ролик с друзьями — если все согласны.</p></div>
+      <div class="card pick r" style="--d:190"><div class="num">Обман</div><h3>Чужое лицо и голос</h3><p>Подделать голос одноклассника и отправить от его имени — это уже не смешно, особенно без разрешения.</p></div>
+      <div class="card r" style="--d:240"><div class="num">Травля</div><h3>Когда это делают про тебя</h3><p>За такие вещи отвечают — вплоть до суда. И пострадавшему нужна поддержка, а не «сам виноват».</p></div>
+    </div>
+    <p class="note r" style="--d:300">Правило простое: <b>своё — можно, чужое — только с согласия</b>. И если видео слишком удобно совпадает с тем, что вы хотите услышать, — проверьте.</p>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Авторские права и работа">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 6</p>
+    <h2>Авторские права и работа</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">Права</div><h3>На чьих работах учились</h3><p>Модели обучали на чужих текстах, фото и рисунках. Кому принадлежит сделанная картинка и можно ли её продавать — спорят до сих пор, идут суды.</p></div>
+      <div class="card r" style="--d:130"><div class="num">Работа</div><h3>Кто и что потерял</h3><p>Часть задач подешевела: черновые иллюстрации, обработка фото, шаблонные тексты. Кто-то из-за этого потерял заказы, кто-то стал брать больше проектов.</p></div>
+    </div>
+    <div class="acc r" style="--d:190">Нейросеть убрала не профессию, а рутину внутри неё. Ценится тот, кто ставит задачу, проверяет результат и отвечает за него.</div>
+    <p class="note r" style="--d:240">Именно поэтому мы учим не «нажимать кнопки», а понимать, как это работает и где врёт.</p>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Учёба и пометки">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 6</p>
+    <h2>Учёба и пометки</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card r" style="--d:70"><div class="num">Учёба</div><h3>Помогает или заменяет</h3><p>Попросить объяснить тему, придумать задачи, найти ошибку в своём решении — нормально. Сдать сочинение, написанное моделью, — обман: проверяют ваши знания, не её.</p></div>
+      <div class="card pick r" style="--d:130"><div class="num">Пометки</div><h3>Говорить, что это ИИ</h3><p>Многие платформы требуют отмечать сгенерированные тексты, картинки и голос. Если скрыть — рано или поздно выяснится, и будет хуже.</p></div>
+    </div>
+    <div class="acc r" style="--d:190">Ответ модели — это черновик. За него отвечаете вы, поэтому читать и понимать его всё равно придётся.</div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Частые заблуждения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 6</p>
+    <h2>Частые заблуждения</h2>
+  </header>
+  <div class="body">
+    <div class="myths">
+      <div class="myth r" style="--d:70"><div class="q">Нейросеть — это чат-бот</div><p>Только один из способов, и не главный. Она в камере телефона, в навигаторе, в музыке, в магазине, на заводе — <b>там, где окна для переписки нет</b>.</p></div>
+      <div class="myth r" style="--d:110"><div class="q">Рекомендации показывают, что мне полезно</div><p>Система подбирает похожее на то, на что вы нажимаете. У платформы своя цель — чтобы вы дольше оставались. <b>Полезное и залипательное — разное</b>.</p></div>
+      <div class="myth r" style="--d:150"><div class="q">Нейросеть понимает, что на картинке</div><p>Она ищет закономерности в числах, а не смотрит глазами. Кошку на обычном фото узнает, а кошку в темноте или наполовину скрытую — <b>не всегда</b>.</p></div>
+      <div class="myth r" style="--d:190"><div class="q">Картинку сделала нейросеть — делай что хочешь</div><p>Чужое лицо, голос и узнаваемый стиль никуда не делись. А выдать генерацию за настоящее фото или за работу конкретного автора — <b>обман</b>.</p></div>
+      <div class="myth wide r" style="--d:230"><div class="q">Если результат красивый и аккуратный, он верный</div><p>Бывает убедительный текст с выдуманными фактами, реалистичная картинка несуществующего события, код с ошибкой. <b>Внешний вид не показывает достоверность</b> — проверяем факты, источники и работу программы.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Задача 1</div><h3>Можно ли так использовать нейросеть?</h3><p>Двенадцать ситуаций. Три варианта ответа: можно, нельзя, зависит от обстоятельств.</p></div>
+      <div class="blk r" style="--d:140"><div class="num">Задача 2</div><h3>Разберите сбой нейросети</h3><p>Четыре случая из жизни сервисов. Что не так, почему и что менять.</p></div>
+      <div class="blk r" style="--d:210"><div class="num">Формат</div><h3>Отвечаем в чате</h3><p>Обе задачи — разговорные: спорим и объясняем <b>почему</b>, а не только «да» или «нет».</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Практика 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Можно ли так использовать нейросеть?</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:60">Дальше будет двенадцать ситуаций. Для каждой выбираем один из трёх ответов и объясняем выбор.</p>
+    <div class="cards c3">
+      <div class="card r" style="--d:120"><h3><span class="verdict v-yes">можно</span></h3><p>Никого не обманываем, чужого не берём, ответственность на себе.</p></div>
+      <div class="card r" style="--d:170"><h3><span class="verdict v-no">нельзя</span></h3><p>Нарушаем чужое право, закон или доверие людей.</p></div>
+      <div class="card r" style="--d:220"><h3><span class="verdict v-dep">зависит</span></h3><p>Само по себе нормально, но всё решают детали: согласие, данные, проверка.</p></div>
+    </div>
+    <div class="acc-o r" style="--d:280">«Зависит» — не отговорка. Если выбрали этот вариант, назовите, от чего именно зависит.</div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Практика 1: ситуации 1–4">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Ситуации 1–4</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:130">
+        <div class="num">Ситуация 1</div>
+        <h3>Попросил нейросеть написать сочинение, слегка поменял слова и сдал как своё.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Оценивают ваши знания, а не модели. Это обман, и его обычно видно по стилю и по тому, что вы не можете объяснить написанное.</div>
+      </div>
+      <div class="card quiz r" style="--d:190">
+        <div class="num">Ситуация 2</div>
+        <h3>Сделал аватар с лицом одноклассницы «для смеха» и поставил в общий чат.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Чужое лицо без согласия — это уже не шутка, а вмешательство в личное. Плюс это может быть травлей, даже если вам смешно.</div>
+      </div>
+      <div class="card quiz r" style="--d:250">
+        <div class="num">Ситуация 3</div>
+        <h3>Сгенерировал аудиокнигу голосом известного актёра и выложил в открытый доступ.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Голос — часть личности, на запись и использование нужно разрешение. Да и сама книга чья-то: у неё есть автор и права.</div>
+      </div>
+      <div class="card quiz r" style="--d:70">
+        <div class="num">Ситуация 4</div>
+        <h3>Попросил модель написать кусок кода, прочитал, проверил и добавил в свой проект.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-yes">можно</span>Инструмент как инструмент. Условие одно: вы понимаете, что там написано, и отвечаете за результат.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Практика 1: ситуации 5–8">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Ситуации 5–8</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:130">
+        <div class="num">Ситуация 5</div>
+        <h3>Загрузил в чат с моделью рабочий код, в котором были пароли и данные клиентов.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Это утечка чужих данных. Правила компаний и закон о персональных данных тут одинаковы: нельзя.</div>
+      </div>
+      <div class="card quiz r" style="--d:190">
+        <div class="num">Ситуация 6</div>
+        <h3>Компания отбирает резюме моделью и автоматически отклоняет часть кандидатов.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-dep">зависит</span>Само по себе допустимо, но нужны проверка на смещения и человек в финальном решении. Иначе получается история Amazon.</div>
+      </div>
+      <div class="card quiz r" style="--d:250">
+        <div class="num">Ситуация 7</div>
+        <h3>Хакер просит модель подбирать пароли к чужим аккаунтам.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Взлом — преступление. То, что вы делаете это с помощью ИИ, ничего не меняет, только добавляет статей.</div>
+      </div>
+      <div class="card quiz r" style="--d:70">
+        <div class="num">Ситуация 8</div>
+        <h3>Заметил в коде от модели ошибку, но оставил: «работает же».</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-dep">зависит</span>Зависит от ошибки, но правило такое: непонятное и кривое в проект не идёт. «Работает сейчас» не значит «сработает потом».</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Практика 1: ситуации 9–12">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Ситуации 9–12</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:130">
+        <div class="num">Ситуация 9</div>
+        <h3>Художник сделал иллюстрацию «в стиле» известного автора и продаёт как свою.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-dep">зависит</span>Стиль сам по себе не запрещён. Плохо, если работа почти повторяет чужую или покупателю говорят, что это тот самый автор.</div>
+      </div>
+      <div class="card quiz r" style="--d:190">
+        <div class="num">Ситуация 10</div>
+        <h3>Чат-бот поддержки отвечает клиентам, но нигде не сказано, что это не человек.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Люди должны понимать, с кем говорят. В ряде стран это прямо требуется, и по-человечески так честнее.</div>
+      </div>
+      <div class="card quiz r" style="--d:250">
+        <div class="num">Ситуация 11</div>
+        <h3>Магазин распознаёт лица посетителей, чтобы считать посещаемость, никого не предупредив.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-no">нельзя</span>Лицо — биометрия, а это особые персональные данные. Без согласия и предупреждения так нельзя.</div>
+      </div>
+      <div class="card quiz r" style="--d:70">
+        <div class="num">Ситуация 12</div>
+        <h3>Перед запуском своей программы попросил модель поискать в ней уязвимости.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><span class="verdict v-yes">можно</span>Своя система, своя защита. Так и надо делать — только найденное ещё предстоит проверить и починить.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Правило из трёх слов">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Правило из трёх слов</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">Согласие. Честность. Проверка.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:140"><div class="num">Согласие</div><h3>Чужое — спроси</h3><p>Лицо, голос, переписка, фото, данные клиентов. Нет согласия — нет использования.</p></div>
+      <div class="card r" style="--d:190"><div class="num">Честность</div><h3>Скажи, что помогал ИИ</h3><p>Там, где это важно — учёба, работа, публикация. Скрывать дороже, чем признаться.</p></div>
+      <div class="card r" style="--d:240"><div class="num">Проверка</div><h3>Ответ — это черновик</h3><p>Смотрим на факты, на код, на цифры. Отвечаете за результат вы, а не модель.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Практика 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Разберите сбой нейросети</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:60">Вы тестируете ИИ-сервис перед запуском. Вам принесли четыре жалобы. Каждую разбираем по одной схеме.</p>
+    <div class="cards c4">
+      <div class="card r" style="--d:120"><div class="num">Вопрос 1</div><h3>Что не так?</h3><p>В чём именно проблема: путает, врёт, не замечает, обижает?</p></div>
+      <div class="card r" style="--d:170"><div class="num">Вопрос 2</div><h3>Почему?</h3><p>Каких данных не хватило или что в них было не так.</p></div>
+      <div class="card r" style="--d:220"><div class="num">Вопрос 3</div><h3>Как это измерить?</h3><p>На каких примерах проверять и по какому числу сравнивать.</p></div>
+      <div class="card r" style="--d:270"><div class="num">Вопрос 4</div><h3>Что менять?</h3><p>Данные, порог, подсказку человеку или вообще убрать автоматику.</p></div>
+    </div>
+    <div class="chips r" style="--d:320">
+      <span class="chip">А · Касса самообслуживания</span>
+      <span class="chip">Б · Помощник программиста</span>
+      <span class="chip">В · Лента про здоровье</span>
+      <span class="chip">Г · Распознавание речи</span>
+    </div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Разбор: касса и помощник">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Разбор: касса и помощник</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:70">
+        <div class="num">Случай А · Касса</div>
+        <h3>Касса путает соки в одинаковых бутылках и просит подтверждение почти всегда.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><b>Что не так:</b> ошибок много, а подсказок ещё больше — людям неудобно.<br><b>Почему:</b> учили на бутылках с разных ракурсов, а в зале свет и ракурс другие; классы визуально почти одинаковые.<br><b>Как измерить:</b> доля верных ответов по каждому товару и доля просьб о помощи.<br><b>Что менять:</b> добавить снимки из этого зала, разделить похожие товары по штрихкоду, оставить человеку быстрый выбор.</div>
+      </div>
+      <div class="card quiz r" style="--d:130">
+        <div class="num">Случай Б · Помощник</div>
+        <h3>Помощник программиста: на тестовых данных код работает, а после запуска приложение иногда удаляет не те файлы.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><b>Что не так:</b> код проходит тесты, но на живых данных делает не то. Действие необратимое — файлы уже удалены.<br><b>Почему:</b> в тестах не было случая, когда файлы выбирает человек; модель не видит последствий своего кода.<br><b>Как измерить:</b> доля запусков, где удалено лишнее, — должно быть ноль.<br><b>Что менять:</b> подтверждение перед удалением, корзина вместо удаления, эти случаи — в тесты.</div>
+      </div>
+    </div>
+    <p class="note r" style="--d:200">Общее у двух случаев: модель делает то, что <b>можно понять по-разному</b>, а цена ошибки высокая. Значит, нужен шаг подтверждения.</p>
+  </div>
+</section>
+
+<!-- 29 -->
+<section class="slide" data-title="Разбор: лента и расшифровка">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Разбор: лента и расшифровка</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2">
+      <div class="card quiz r" style="--d:70">
+        <div class="num">Случай В · Лента</div>
+        <h3>Подросток посмотрел видео о болезнях для школьного доклада — и лента теперь предлагает только симптомы и лечение.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><b>Что не так:</b> лента сузилась и усиливает тревогу.<br><b>Почему:</b> сигнал «досмотрел» сработал как интерес; проверки на содержание нет; похожие люди тоже смотрели похожее.<br><b>Как измерить:</b> сколько разных тем в ленте за сессию и сколько роликов про одно и то же подряд.<br><b>Что менять:</b> разбавление разнообразием, ограничение повторов, аккуратнее с чувствительными темами и подсказка «нужна помощь?».</div>
+      </div>
+      <div class="card quiz r" style="--d:130">
+        <div class="num">Случай Г · Расшифровка</div>
+        <h3>Сервис расшифровки путает имена и профессиональные термины, хотя обычную речь понимает хорошо.</h3>
+        <button class="ans-btn" type="button">Показать разбор</button>
+        <div class="ans"><b>Что не так:</b> модель ошибается не на всех одинаково — на части людей чаще.<br><b>Почему:</b> в обучающих записях таких имён и терминов почти не было. Это та же история, что Gender Shades.<br><b>Как измерить:</b> доля ошибок по группам слов, а не только «средняя точность».<br><b>Что менять:</b> добрать записи, добавить словарь имён, дать человеку исправить текст.</div>
+      </div>
+    </div>
+    <p class="note r" style="--d:200">Средняя точность 95 % ничего не говорит, если на части людей модель ошибается в половине случаев. <b>Смотреть надо по группам.</b></p>
+  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide" data-title="Чек-лист тестировщика">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Чек-лист тестировщика</h2>
+  </header>
+  <div class="body">
+    <div class="steps plain">
+      <div class="step r" style="--d:70"><div class="no">1</div><h3>Вход</h3><p>Какие данные, откуда и на кого их хватило.</p></div>
+      <div class="step r" style="--d:130"><div class="no">2</div><h3>Слабые места</h3><p>Где ошибается и кому от этого хуже всех.</p></div>
+      <div class="step r" style="--d:190"><div class="no">3</div><h3>Замер</h3><p>Число, по которому видно: стало лучше или нет.</p></div>
+      <div class="step r" style="--d:250"><div class="no">4</div><h3>Действие</h3><p>Данные, порог, подтверждение или человек в решении.</p></div>
+    </div>
+    <div class="acc r" style="--d:320">Такую схему применяют к любому сервису с нейросетью — от кассы в магазине до ленты в телефоне. Хорошая формулировка проблемы — половина её решения.</div>
+  </div>
+</section>
+
+<!-- 31 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check r" style="--d:70">
+      <div>Любые данные — текст, фото, звук, поступки — превращают в таблицу чисел.</div>
+      <div>С картинками решают две разные задачи: узнать, что на ней, или нарисовать по описанию.</div>
+      <div>Рекомендации работают на ваших действиях и на поведении похожих людей, а не на смысле видео.</div>
+      <div>Модель учится на том, что дали. Плохие данные — уверенные и несправедливые ошибки.</div>
+      <div>Дипфейки, права и пометки — не мелочи, а часть работы с ИИ.</div>
+      <div>Ответ модели — черновик: проверяем, понимаем и отвечаем за результат сами.</div>
+    </div>
+    <div class="acc r" style="--d:200">Любой сервис разбирается по трём вопросам: что у него на входе, что на выходе и где он ошибается.</div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">31</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {};
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+(function(){
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
+  });
+})();
+</script>
+</body>
+</html>
