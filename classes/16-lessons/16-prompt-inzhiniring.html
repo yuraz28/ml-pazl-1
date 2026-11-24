@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Занятие 16. Промпт-инжиниринг — Код и пазл</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#1E7EE8; --blue-700:#1168CC; --blue-900:#0B3E7A; --night:#082A52;
+  --tint:#E9F4FF; --soft:#CDE5FF; --orange:#FF8E00; --orange-900:#8A4A00; --orange-t:#FFF3E2;
+  --ink:#101A26; --ink2:#38475A; --muted:#6E7E92; --line:#DEEAF7;
+  --mono:'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  background:var(--night); color:var(--ink); overflow:hidden;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.stage{position:fixed; left:0; right:0; top:0; bottom:58px; overflow:hidden}
+.deck{
+  position:absolute; left:50%; top:50%; width:1920px; height:1080px;
+  background:#fff; overflow:hidden; box-shadow:0 26px 80px rgba(4,20,40,.45);
+  transform:translate(-50%,-50%) scale(1); transform-origin:center center;
+}
+.slide{
+  position:absolute; inset:0; padding:76px 108px 88px;
+  display:flex; flex-direction:column; background:#fff;
+  opacity:0; pointer-events:none; transition:opacity .3s ease;
+}
+.slide.active{opacity:1; pointer-events:auto}
+h1,h2,h3,p,ul,ol,li,figure,figcaption{margin:0}
+h1{font-size:106px; line-height:1.0; font-weight:800; letter-spacing:-.025em}
+h2{font-size:78px; line-height:1.03; font-weight:800; letter-spacing:-.02em}
+h3{font-size:31px; line-height:1.16; font-weight:700}
+
+/* ОДНА анимация на всю деку: мягкое проявление */
+.slide.active .r{animation:rise .46s cubic-bezier(.2,.7,.3,1) both; animation-delay:calc(var(--d,0) * 1ms)}
+@keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+.sh{padding-bottom:24px; margin-bottom:34px; border-bottom:1px solid var(--line)}
+.sh .eyebrow{font-size:21px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--blue); margin-bottom:14px}
+.sh .lead{font-size:30px; line-height:1.36; color:var(--muted); margin-top:16px; max-width:1450px}
+.sh.panel{border-bottom:none; background:var(--tint); border-radius:26px; padding:32px 40px 34px; margin-bottom:38px}
+
+.body{flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; min-height:0}
+
+.acc{background:var(--blue); color:#fff; border-radius:26px; padding:34px 42px; font-size:38px; line-height:1.26; font-weight:700; max-width:1520px}
+.acc-o{background:var(--orange); color:#fff; border-radius:26px; padding:32px 40px; font-size:34px; line-height:1.28; font-weight:700; max-width:1520px}
+.note{font-size:25px; line-height:1.45; color:var(--muted); max-width:1360px}
+.note b{color:var(--ink2); font-weight:600}
+
+.hud{position:fixed; left:0; right:0; bottom:0; height:58px; display:flex; align-items:center; gap:18px; padding:0 26px}
+.bar{position:relative; flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden}
+.bar i{position:absolute; left:0; top:0; bottom:0; width:4%; border-radius:4px; background:var(--blue); transition:width .3s ease}
+.cnt{font-size:19px; font-weight:600; color:rgba(255,255,255,.72); letter-spacing:.06em}
+
+@media (prefers-reduced-motion: reduce){
+  .slide.active .r{animation:none}
+  .run-code .ln.on, .pop{animation:none}
+  .slide{transition:none}
+}
+@media print{
+  body{overflow:visible; background:#fff}
+  .stage{position:static; inset:auto; overflow:visible}
+  .deck{position:static; transform:none !important; width:auto; height:auto; box-shadow:none}
+  .slide{position:relative; inset:auto; opacity:1; pointer-events:auto; break-after:page; page-break-after:always; height:1080px}
+  .hud{display:none}
+  .slide .r{animation:none !important}
+}
+</style>
+<style>
+/* ---------- блоки слайдов ---------- */
+.cards{display:grid; gap:20px} .c2{grid-template-columns:repeat(2,1fr)} .c3{grid-template-columns:repeat(3,1fr)} .c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line); border-radius:24px; padding:28px 30px; background:#fff}
+.card h3{margin-bottom:12px} .card p{font-size:23px; line-height:1.42; color:var(--muted)}
+.card .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em; margin-bottom:12px}
+.card code{font-family:var(--mono); font-size:21px; color:var(--blue-700); display:block; margin-top:14px; line-height:1.5}
+.card.pick{background:var(--orange-t); border:2px solid var(--orange)} .card.pick h3{color:var(--orange-900)} .card.pick p{color:#95622C}
+.chips{display:flex; flex-wrap:wrap; gap:12px}
+.chip{border:1px solid var(--line); border-radius:999px; padding:11px 24px; font-size:23px; color:var(--ink2); background:#fff}
+.steps{display:grid; grid-template-columns:repeat(4,1fr); gap:18px}
+.step{background:var(--tint); border:2px solid var(--soft); border-radius:24px; padding:26px 24px}
+.step .no{width:52px; height:52px; border-radius:16px; background:var(--blue); color:#fff; font-size:25px; font-weight:800; display:grid; place-items:center; margin-bottom:16px}
+.step h3{font-size:27px; margin-bottom:10px} .step p{font-size:21px; line-height:1.4; color:var(--muted)}
+.steps.plain .step{background:#fff; border:1px solid var(--line)} .steps.plain .step .no{background:var(--tint); color:var(--blue-700)}
+.flow{display:grid; gap:14px; align-items:stretch} .flow.f4{grid-template-columns:repeat(4,1fr)} .flow.f5{grid-template-columns:repeat(5,1fr)}
+.fnode{background:var(--tint); border:2px solid var(--soft); border-radius:22px; padding:26px 18px; text-align:center; display:flex; flex-direction:column; justify-content:center; gap:10px}
+.fnode .t{font-size:26px; font-weight:700; color:var(--blue-900); line-height:1.15} .fnode .d{font-size:20px; line-height:1.36; color:var(--muted)}
+.cols{display:grid; grid-template-columns:repeat(3,1fr); gap:22px; align-items:start}
+.col{border:1px solid var(--line); border-radius:24px; padding:28px 30px}
+.col h3{margin-bottom:16px} .col ul{margin:0; padding:0; list-style:none}
+.col li{font-size:23px; line-height:1.42; color:var(--muted); padding-left:24px; position:relative; margin-bottom:10px}
+.col li::before{content:''; position:absolute; left:0; top:13px; width:9px; height:9px; border-radius:3px; background:var(--soft)}
+.col.pick{background:var(--orange-t); border:2px solid var(--orange)} .col.pick h3{color:var(--orange-900)} .col.pick li{color:#95622C} .col.pick li::before{background:var(--orange)}
+.check{border:2px solid var(--soft); background:var(--tint); border-radius:26px; padding:36px 42px; display:grid; grid-template-columns:1fr 1fr; gap:20px 48px}
+.check div{font-size:25px; line-height:1.38; color:var(--blue-900); padding-left:44px; position:relative}
+.check div::before{content:'\2713'; position:absolute; left:0; top:-2px; font-size:28px; font-weight:800; color:var(--blue)}
+.split{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:56px; align-items:center}
+.ill{display:block; width:100%; height:auto}
+.pic{width:88px; height:88px; border-radius:24px; background:var(--tint); border:2px solid var(--soft); display:grid; place-items:center; margin-bottom:20px} .pic svg{width:54px; height:54px; display:block}
+.dia{display:grid; grid-template-columns:700px 1fr; gap:64px; align-items:center} .dia svg{display:block; height:620px; width:620px}
+svg text{font-family:'Inter',Arial,sans-serif}
+
+/* сниппет кода без запуска */
+.snip{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:20px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); white-space:pre; overflow:auto}
+.snip .c{color:var(--muted)}
+.snip .k{color:var(--blue-700); font-weight:700}
+.notes{display:flex; flex-direction:column; gap:18px}
+
+/* таблицы истинности */
+.tt{display:grid; gap:12px 40px}
+.tt.c1{grid-template-columns:1fr}
+.tt.c2{grid-template-columns:1fr 1fr}
+.tt .row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:18px; border-bottom:1px solid var(--line); padding:9px 2px; font-family:var(--mono); font-size:23px; color:var(--ink2)}
+.tt .row b{font-family:inherit; font-size:23px; font-weight:700}
+.tt .row .t{color:var(--blue)} .tt .row .f{color:var(--orange)}
+
+/* ---------- плеер запуска кода ---------- */
+.run{border:1px solid var(--line); border-radius:26px; padding:26px 30px; background:#fff}
+.run-top{display:flex; align-items:center; gap:22px; margin-bottom:22px}
+.run-btn{display:inline-flex; align-items:center; gap:10px; border:none; border-radius:999px; background:var(--blue); color:#fff; font:inherit; font-size:23px; font-weight:700; padding:14px 30px; cursor:pointer}
+.run-btn:disabled{background:var(--soft); cursor:default}
+.run .chip{cursor:pointer}
+.run .chip.on{background:var(--blue); border-color:var(--blue); color:#fff}
+.run .chip:disabled{cursor:default; opacity:.5}
+.run .chip.on:disabled{opacity:1}
+.run-grid{display:grid; grid-template-columns:minmax(0,1fr) 620px; gap:26px; align-items:stretch}
+.run-code{margin:0; background:var(--tint); border:1px solid var(--soft); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:23px; line-height:1.52; color:var(--ink2); overflow:auto}
+.run-code .ln{display:block; padding:4px 14px; border-radius:10px; white-space:pre; transition:background .18s ease}
+.run-code .ln.on{background:#fff; animation:rpulse 1s ease-in-out infinite}
+.run-code .ln.done{background:transparent}
+.run-code .ln.skip{opacity:.34; text-decoration:line-through}
+.run-console{overflow:auto; min-height:100%; border:1px solid var(--line); border-radius:20px; padding:22px 24px; font-family:var(--mono); font-size:22px; line-height:1.5; background:#fff}
+.cout{display:block}
+.cout-io{display:block; color:var(--muted)}
+.cout-true{color:var(--blue); font-weight:700}
+.cout-false{color:var(--orange); font-weight:700}
+.cout-p{color:var(--ink)}
+.cout-badge{display:inline-block; margin-top:8px; padding:6px 16px; border-radius:999px; background:var(--orange-t); color:var(--orange-900); font-size:20px; font-weight:700}
+.pop{animation:rpop .22s ease both}
+@keyframes rpulse{0%,100%{box-shadow:inset 0 0 0 2px var(--soft)} 50%{box-shadow:inset 0 0 0 2px var(--blue)}}
+@keyframes rpop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+/* блоки практики, титула и викторины — из эталонных дек 06 и 07 */
+/* ---------- титул: сверху шапка слева, название по центру ---------- */
+.slide.ttl .sh{border-bottom:none; padding-bottom:0; margin-bottom:0}
+.slide.ttl .body{align-items:center; text-align:center}
+.slide.ttl .body h1{max-width:1620px}
+/* ---------- блоки теории: сверху вниз ---------- */
+.blocks{display:flex; flex-direction:column; gap:16px}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+/* ---------- слайд условия задачи ---------- */
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 250px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+/* ---------- плеер: длинное решение — компактнее ---------- */
+.run.sm{padding:20px 26px}
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+.run-code .ln.on, .pop, .quiz.shown code.ans{animation:none}
+/* --- общие блоки серии (взято из 05) --- */
+.run.sm .run-top{margin-bottom:16px}
+.run.sm .run-code{font-size:21px; line-height:1.34}
+.run.sm .run-code .ln{padding:1px 12px}
+.run.sm .run-console{font-size:21px; line-height:1.44}
+/* совсем длинное решение (меню целиком) — ещё компактнее */
+.run.xs{padding:12px 22px}
+.run.xs .run-top{margin-bottom:12px}
+.run.xs .run-code{font-size:19px; line-height:1.24}
+.run.xs .run-code .ln{padding:0 10px}
+.run.xs .run-console{font-size:19px; line-height:1.32}
+.blk{display:grid; grid-template-columns:180px 330px minmax(0,1fr); align-items:center; gap:26px; border:1px solid var(--line); border-radius:22px; padding:22px 30px; background:#fff}
+.blk .num{font-size:20px; font-weight:700; color:var(--blue); letter-spacing:.06em}
+.blk h3{font-size:29px}
+.blk p{font-size:22px; line-height:1.38; color:var(--muted)}
+.io{display:flex; flex-direction:column; gap:16px}
+.io-row{border:1px solid var(--line); border-radius:20px; padding:20px 26px}
+.io-row .k{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px}
+.io-row p{font-size:23px; line-height:1.4; color:var(--ink2)}
+.io-row code{font-family:var(--mono); font-size:21px; color:var(--blue-700)}
+.tlist{border:1px solid var(--soft); border-radius:20px; padding:18px 24px; background:var(--tint); display:flex; flex-direction:column; gap:10px}
+.trow{display:flex; gap:14px; font-family:var(--mono); font-size:20px; line-height:1.34; color:var(--ink2)}
+.trow .in{flex:0 0 96px; font-weight:700; color:var(--blue-900)}
+.trow .ar{color:var(--muted)}
+.blocks{display:flex; flex-direction:column; gap:16px}
+.task{display:grid; grid-template-columns:minmax(0,1fr) 700px; gap:52px; align-items:center}
+.tlist .lbl{font-size:19px; font-weight:700; color:var(--blue); letter-spacing:.08em; text-transform:uppercase}
+/* ответы в задачах: спрятаны по умолчанию, открываются нажатием на карточку */
+.quiz{cursor:pointer}
+.quiz .ans-btn{margin-top:14px; border:1px dashed var(--soft); border-radius:14px; background:var(--tint); color:var(--blue-700); font:inherit; font-size:20px; font-weight:700; padding:9px 22px; cursor:pointer}
+.quiz .ans-btn:hover{border-style:solid; border-color:var(--blue)}
+.card code.ans{display:none}
+.quiz.shown{background:var(--tint); border-color:var(--soft)}
+.quiz.shown .ans-btn{display:none}
+.quiz.shown code.ans{display:block; animation:rpop .22s ease both}
+</style>
+<style>
+/* ---------- напоминание о записи занятия: слайд «Напоминалка» ---------- */
+.slide.rec .body{gap:40px}
+.slide.rec .recbar{display:flex; align-items:center; gap:36px; border:1px solid var(--line); border-left:8px solid var(--orange); border-radius:26px; padding:36px 44px; background:linear-gradient(90deg,#FFF6EA 0%,#FFFFFF 62%)}
+.slide.rec .recbar .dot{position:relative; flex:0 0 auto; width:26px; height:26px; border-radius:50%; background:var(--orange)}
+.slide.rec .recbar .dot::after{content:''; position:absolute; inset:0; border-radius:50%; background:var(--orange); animation:kprecpulse 1.7s ease-out infinite}
+@keyframes kprecpulse{from{transform:scale(1); opacity:.6} to{transform:scale(2.8); opacity:0}}
+.slide.rec .recbar .txt{min-width:0}
+.slide.rec .recbar h3{font-size:54px; line-height:1.08; color:var(--blue-900)}
+.slide.rec .recbar .pill{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:16px; background:var(--orange); color:#fff; font-size:26px; font-weight:800; letter-spacing:.16em; padding:20px 34px; border-radius:999px}
+.slide.rec .recbar .pill i{width:16px; height:16px; border-radius:50%; background:#fff; display:block}
+.slide.rec .fncard{border:1px solid var(--line); border-radius:26px; overflow:hidden; background:#fff}
+.slide.rec .fncard .fn-hd{display:flex; align-items:center; gap:14px; padding:22px 36px; background:var(--tint); border-bottom:1px solid var(--soft)}
+.slide.rec .fncard .fn-hd .b{width:14px; height:14px; border-radius:50%; background:var(--soft); display:block}
+.slide.rec .fncard .fn-hd .ttl{margin-left:14px; font-size:22px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue)}
+.slide.rec .fncard .fn-bd{padding:46px 46px 44px}
+.slide.rec .fn-row{display:flex; align-items:center; gap:28px}
+.slide.rec .seg{display:flex; flex-direction:column; gap:15px}
+.slide.rec .seg .tok{font-family:var(--mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); font-size:76px; line-height:1; padding:17px 24px 21px; border-radius:20px; border:2px solid var(--soft); background:var(--tint); color:var(--blue-900); white-space:nowrap}
+.slide.rec .seg.var .tok{border-color:var(--orange); background:var(--orange-t); color:var(--orange-900)}
+.slide.rec .seg .lab{font-size:24px; line-height:1.2; font-weight:600; color:var(--muted); padding-left:8px}
+.slide.rec .copybtn{margin-left:auto; flex:0 0 auto; display:inline-flex; align-items:center; gap:14px; border:2px solid var(--soft); background:var(--tint); color:var(--blue); font-family:inherit; font-size:22px; font-weight:700; white-space:nowrap; padding:20px 30px; border-radius:999px; cursor:pointer; transition:background .18s, border-color .18s, color .18s, transform .1s}
+.slide.rec .copybtn svg{flex:0 0 auto; width:26px; height:26px; display:block}
+.slide.rec .copybtn:hover{border-color:var(--blue); background:#fff}
+.slide.rec .copybtn:active{transform:scale(.975)}
+.slide.rec .copybtn .ic-check{display:none}
+.slide.rec .copybtn.ok{border-color:var(--blue); background:var(--blue); color:#fff}
+.slide.rec .copybtn.ok .ic-copy{display:none}
+.slide.rec .copybtn.ok .ic-check{display:block}
+@media print{ .slide.rec .copybtn{display:none} }
+/* ---------- добавочные блоки занятия 15 ---------- */
+.flow.f2{grid-template-columns:repeat(2,1fr)}
+.steps.g3{grid-template-columns:repeat(3,1fr)}
+.steps.g3 .step h3{font-size:25px}
+.steps.g3 .step p{font-size:20px}
+.myths{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.myth{border:1px solid var(--line); border-radius:22px; padding:20px 28px; background:#fff}
+.myth .q{font-size:23px; line-height:1.3; font-weight:700; color:var(--ink)}
+.myth .q::before{content:'миф · '; color:var(--orange); text-transform:uppercase; font-size:18px; letter-spacing:.06em}
+.myth p{font-size:21px; line-height:1.38; color:var(--muted); margin-top:8px}
+.myth p b{color:var(--ink2)}
+.myth.wide{grid-column:1 / -1}
+.cards.traps h3{font-size:25px; line-height:1.28}
+.cards.traps .num{margin-bottom:8px}
+.cards.traps p{font-size:21px}
+.cards.traps p b{color:var(--ink2)}
+.tlist.w .trow{font-size:18px}
+.tlist.w .trow .in{flex:0 0 400px}
+</style>
+<style>
+/* ---------- блоки занятия 16 ---------- */
+.prompt{border:1px solid var(--line); border-left:6px solid var(--blue); border-radius:18px; padding:18px 24px; background:#F8FCFF; font-size:22px; line-height:1.4; color:var(--ink2)}
+.prompt .lbl{display:block; font-size:17px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--blue); margin-bottom:9px}
+.prompt.mut{border-left-color:var(--soft); background:#fff}
+.prompt.mut .lbl{color:var(--muted)}
+.prompt.fix{border-left-color:var(--orange); background:#FFF9F1}
+.prompt.fix .lbl{color:var(--orange-900)}
+.prompt b{color:var(--blue-900)}
+.fixrows{border:1px solid var(--line); border-radius:24px; overflow:hidden}
+.fr{display:grid; grid-template-columns:1fr 46px 1fr; align-items:center; gap:14px; padding:14px 26px; border-bottom:1px solid var(--line); font-size:23px; line-height:1.3; color:var(--ink2)}
+.fr:last-child{border-bottom:none}
+.fr.h{background:var(--tint); font-size:17px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--blue); padding:11px 26px}
+.fr .a{color:var(--muted)}
+.fr .b{font-weight:600; color:var(--ink)}
+.fr .ar{color:var(--blue); text-align:center; font-size:26px; font-weight:700}
+.fr.h .ar{color:var(--blue)}
+
+/* ---------- плотность: слайды 16 насыщеннее деки 15 ---------- */
+.slide .body{gap:26px}
+.card{padding:24px 30px}
+.note{font-size:24px}
+.acc{padding:30px 42px; font-size:36px}
+.split .ill{max-height:470px; width:auto; max-width:100%}
+.check{padding:30px 40px}
+.check div{font-size:24px}
+
+/* плееры: панели кода и консоли фиксированной высоты, лишнее — внутри со скроллом */
+.run-grid{align-items:start}
+.run-code{max-height:430px; padding:19px 22px}
+.run-console{min-height:0; max-height:430px}
+.split{align-items:center; height:100%}
+
+/* подсказка в пустой консоли плеера */
+.run-console:empty::before{content:'Здесь появится вывод — нажми «▶ Запустить»'; color:var(--muted); opacity:.55; font-style:italic}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="deck" id="deck">
+<!-- 1 -->
+<section class="slide active ttl" data-title="Титул">
+  <header class="sh r">
+    <p class="eyebrow">Код и пазл · ML</p>
+    <p class="lead">Занятие 16</p>
+  </header>
+  <div class="body">
+    <h1 class="r" style="--d:120">Промпт-инжиниринг<br>как разговаривать с моделью</h1>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide rec" data-title="Напоминалка">
+  <header class="sh r">
+    <p class="eyebrow">Организация</p>
+    <h2>Напоминалка</h2>
+  </header>
+  <div class="body">
+    <div class="recbar r" style="--d:70">
+      <span class="dot"></span>
+      <div class="txt"><h3>Поставить урок на запись</h3></div>
+      <span class="pill"><i></i>REC</span>
+    </div>
+    <div class="fncard r" style="--d:130">
+      <div class="fn-hd"><span class="b"></span><span class="b"></span><span class="b"></span><span class="ttl">Шаблон названия записи</span></div>
+      <div class="fn-bd">
+        <div class="fn-row">
+          <div class="seg"><span class="tok">1ПМ0</span><span class="lab">Группа</span></div>
+          <div class="seg var"><span class="tok">016</span><span class="lab">Номер занятия</span></div>
+          <div class="seg var"><span class="tok">Промпты</span><span class="lab">Тема занятия</span></div>
+          <div class="seg var"><span class="tok">07.12</span><span class="lab">Дата занятия</span></div>
+          <button class="copybtn" type="button" data-copy="1ПМ0 016 Промпты 07.12" title="Скопировать «1ПМ0 016 Промпты 07.12»">
+            <svg class="ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15h-.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"/></svg>
+            <svg class="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg>
+            <span class="cb-lbl">Скопировать шаблон</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Раздел: Теория">
+  <header class="sh r">
+    <p class="eyebrow">Часть 1</p>
+    <h1>Теория</h1>
+  </header>
+  <div class="body">
+    <div class="blocks">
+      <div class="blk r" style="--d:70"><div class="num">Блок 1</div><h3>Что такое промпт</h3><p>Текст, который видит модель. Чего в нём нет — того для неё не существует.</p></div>
+      <div class="blk r" style="--d:130"><div class="num">Блок 2</div><h3>Из чего состоит запрос</h3><p>Задача, контекст, формат. Плюс два усилителя: роль и пример.</p></div>
+      <div class="blk r" style="--d:190"><div class="num">Блок 3</div><h3>Материал и проверка</h3><p>Даём текст и ограничиваем ответ. Первый ответ — черновик, его улучшают по шагам.</p></div>
+      <div class="blk r" style="--d:250"><div class="num">Блок 4</div><h3>Что не отправлять</h3><p>Личные данные и чужие фотографии — не наше дело. И почему не просить готовое задание.</p></div>
+      <div class="blk r" style="--d:310"><div class="num">Блок 5</div><h3>Заблуждения</h3><p>Длинный запрос, волшебные фразы и «модель виновата» — как на самом деле.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Что такое промпт">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Что такое промпт</h2>
+  </header>
+  <div class="body">
+    <div class="acc r" style="--d:70">Промпт — это текст, который вы отправили модели. Всё, что она знает о вашей ситуации, написано в этом тексте.</div>
+    <div class="cards c3">
+      <div class="card r" style="--d:130"><div class="num">промпт</div><h3>Текст запроса</h3><p>Вопрос, задание или материал для работы. От англ. prompt — «подсказка».</p></div>
+      <div class="card r" style="--d:190"><div class="num">промпт-инжиниринг</div><h3>Умение писать запросы</h3><p>Чтобы модель выдала то, что нужно вам, а не средний вариант.</p></div>
+      <div class="card r" style="--d:250"><div class="num">чего не видно</div><h3>Вас и ваш класс</h3><p>Класс, пройденные темы, зачем вам ответ — модель узнает только из текста.</p></div>
+    </div>
+    <p class="note r" style="--d:310">Она не помнит, что вы проходили на прошлом занятии, и не знает, сколько текста вам нужно. Не написали — для неё этого нет.</p>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Записка «купи молока»">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Записка «купи молока»</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Друг с запиской «купи молока» принесёт обычную пачку. Не потому что глупый — про остальное вы не написали.</p>
+        <p class="note r" style="--d:130">Нужно было безлактозное в зелёной упаковке — это и надо было сказать.</p>
+        <div class="acc-o r" style="--d:200">Любой пропуск в запросе модель заполняет самым привычным вариантом.</div>
+      </div>
+      <svg class="ill r" style="--d:160" viewBox="0 0 700 520" role="img" aria-label="Записка «купи молока» и принесённая обычная пачка молока">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <rect x="42" y="52" width="300" height="180" rx="16" fill="#FFFFFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="72" y="112" font-size="30" font-weight="700" fill="#0B3E7A">купи молока</text>
+        <text x="72" y="158" font-size="21" fill="#6E7E92">(всё, что было в записке)</text>
+        <path d="M366 142 h84" stroke="#1E7EE8" stroke-width="4" stroke-linecap="round"/>
+        <path d="M440 128 l20 14 -20 14" fill="none" stroke="#1E7EE8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="492" y="76" width="160" height="150" rx="14" fill="#E9F4FF" stroke="#1E7EE8" stroke-width="2"/>
+        <path d="M492 110 l80 -30 80 30" fill="#CDE5FF" stroke="#1E7EE8" stroke-width="2"/>
+        <text x="572" y="172" font-size="24" font-weight="700" fill="#0B3E7A" text-anchor="middle">молоко</text>
+        <text x="572" y="204" font-size="19" fill="#6E7E92" text-anchor="middle">обычное</text>
+        <text x="42" y="292" font-size="22" font-weight="700" fill="#0B3E7A">а нужно было:</text>
+        <text x="42" y="332" font-size="21" fill="#6E7E92">безлактозное · зелёная упаковка · 1 литр</text>
+        <rect x="42" y="372" width="618" height="98" rx="18" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+        <text x="70" y="412" font-size="21" fill="#8A4A00">тот же закон, что и в прошлом задании</text>
+        <text x="70" y="448" font-size="22" font-weight="700" fill="#8A4A00">модель достраивает недостающее по вероятностям</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Почему размытый запрос даёт средний ответ">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 1</p>
+    <h2>Почему размытый запрос даёт средний ответ</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <p class="note r" style="--d:70">Запрос «Придумай имя собаке». Вариантов тысячи, но частые клички встречались в текстах чаще — у них выше вероятность.</p>
+        <p class="note r" style="--d:130">Поэтому у разных людей получается примерно одно и то же.</p>
+        <div class="acc r" style="--d:200">Размытый запрос попадает в самый частый ответ. Не в лучший — в средний.</div>
+      </div>
+      <svg class="ill r" style="--d:160" viewBox="0 0 700 520" role="img" aria-label="Частота кличек в текстах: Бобик и Шарик встречаются чаще, необычные почти нет">
+        <rect x="8" y="8" width="684" height="504" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="36" y="58" font-size="24" font-weight="700" fill="#0B3E7A">Придумай имя собаке</text>
+        <text x="36" y="92" font-size="20" fill="#6E7E92">как часто кличка встречалась в текстах</text>
+        <text x="36" y="150" font-size="21" fill="#38475A">Бобик</text>
+        <rect x="150" y="128" width="380" height="30" rx="10" fill="#1E7EE8"/>
+        <text x="36" y="206" font-size="21" fill="#38475A">Шарик</text>
+        <rect x="150" y="184" width="330" height="30" rx="10" fill="#1E7EE8"/>
+        <text x="36" y="262" font-size="21" fill="#38475A">Рекс</text>
+        <rect x="150" y="240" width="190" height="30" rx="10" fill="#A8D3FF"/>
+        <text x="36" y="318" font-size="21" fill="#38475A">Квазар</text>
+        <rect x="150" y="296" width="26" height="30" rx="10" fill="#A8D3FF"/>
+        <text x="36" y="374" font-size="21" fill="#38475A">Мятный Пряник</text>
+        <rect x="230" y="352" width="8" height="30" rx="4" fill="#A8D3FF"/>
+        <text x="36" y="440" font-size="20" fill="#6E7E92">длина полосы — примерно то, как часто кличка</text>
+        <text x="36" y="468" font-size="20" fill="#6E7E92">встречалась в текстах, на которых училась модель</text>
+        <text x="36" y="496" font-size="20" font-weight="700" fill="#FF8E00">необычное имя модель сама почти не предложит</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Три части и два усилителя">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Три части и два усилителя</h2>
+  </header>
+  <div class="body">
+    <div class="flow f5">
+      <div class="fnode r" style="--d:70"><div class="t">Задача</div><div class="d">основа · что сделать: «объясни», «составь», «найди ошибки»</div></div>
+      <div class="fnode r" style="--d:130"><div class="t">Контекст</div><div class="d">основа · для кого, зачем, что уже знаете</div></div>
+      <div class="fnode r" style="--d:190"><div class="t">Формат</div><div class="d">основа · как выглядит ответ: таблица, 5 пунктов, 40 слов</div></div>
+      <div class="fnode r" style="--d:250"><div class="t">Роль</div><div class="d">усилитель · кем быть модели: тренер, преподаватель</div></div>
+      <div class="fnode r" style="--d:310"><div class="t">Пример</div><div class="d">усилитель · образец, на который смотреть</div></div>
+    </div>
+    <div class="acc r" style="--d:380">Универсального рецепта нет. Но в почти каждом удачном запросе эти пять вещей можно найти.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Задача: глагол вместо «помоги»">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Задача: глагол вместо «помоги»</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:70">Слово «помоги» почти ничего не сообщает: помочь можно по-разному. Лучше сразу глагол — что именно сделать.</p>
+    <div class="fixrows r" style="--d:140">
+      <div class="fr h"><span>размыто</span><span class="ar">&#8594;</span><span>конкретно</span></div>
+      <div class="fr"><span class="a">Помоги с проектом</span><span class="ar">&#8594;</span><span class="b">Придумай три идеи проекта по информатике</span></div>
+      <div class="fr"><span class="a">Сделай текст лучше</span><span class="ar">&#8594;</span><span class="b">Сократи мой текст вдвое, не меняя смысл</span></div>
+      <div class="fr"><span class="a">Что с кодом?</span><span class="ar">&#8594;</span><span class="b">Найди ошибку в этом коде и объясни, почему она возникла</span></div>
+    </div>
+    <p class="note r" style="--d:220">Рабочие глаголы: объясни, составь, сократи, проверь, найди ошибки, придумай.</p>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Контекст">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Контекст</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">запрос 1</div>
+        <h3>Объясни, что такое словарь в Python</h3>
+        <p>Модель не знает, кто спрашивает. Ответ будет «для всех»: длинно, с терминами, с примером на десять строк.</p>
+      </div>
+      <div class="card pick r" style="--d:150">
+        <div class="num">запрос 2</div>
+        <h3>Я знаю переменные, условия, циклы и списки, а словари ещё не проходил. Объясни, что такое словарь, на примере телефонной книги и покажи пример кода в пять строк</h3>
+        <p>Здесь есть уровень, сравнение и размер кода — ответ попадает в вас.</p>
+      </div>
+    </div>
+    <p class="note r" style="--d:230">Контекст — это кто вы, зачем нужен ответ, что уже знаете и что вам не подошло. Материал для работы — условие задачи, свой код, абзац из учебника — вставляйте прямо в запрос.</p>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Формат">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Формат</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:70">Если формат не указан, модель выберет сама — и почти всегда это несколько абзацев со вступлением.</p>
+    <div class="cards c4">
+      <div class="card r" style="--d:130"><div class="num">количество</div><h3>Сколько</h3><p>«пять пунктов», «три варианта»</p></div>
+      <div class="card r" style="--d:170"><div class="num">длина</div><h3>Как много</h3><p>«не больше 40 слов», «два предложения»</p></div>
+      <div class="card r" style="--d:210"><div class="num">структура</div><h3>Как устроено</h3><p>таблица, нумерованный список, диалог</p></div>
+      <div class="card r" style="--d:250"><div class="num">ограничения</div><h3>Чего не делать</h3><p>«без сложных терминов», «без восклицательных знаков»</p></div>
+    </div>
+    <div class="acc r" style="--d:320">Формат нужен не только людям. Ответ можно попросить в виде, который вставится в программу.</div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Роль меняет подачу">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Роль меняет подачу</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">роль 1</div>
+        <h3>«Ты строгий тренер по баскетболу»</h3>
+        <p>Переменная — это как коробка, в которую кладут мяч. Кладёшь один раз — лежит одно, не путай.</p>
+      </div>
+      <div class="card r" style="--d:150">
+        <div class="num">роль 2</div>
+        <h3>«Ты герой фэнтези-игры»</h3>
+        <p>Переменная — сумка странника. Назвал мешок «стрелы» — и все твои стрелы лежат там.</p>
+      </div>
+    </div>
+    <div class="acc-o r" style="--d:230">Роль подстраивает язык, а не знания: врачом модель от этого не становится.</div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Пример вместо правил">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 2</p>
+    <h2>Пример вместо правил</h2>
+  </header>
+  <div class="body">
+    <div class="prompt r" style="--d:70">
+      <span class="lbl">запрос</span>
+      Переписывай скучные фразы в стиле игровых заданий. Было: «Сделай домашнее задание». Стало: «Квест дня: победи босса по имени Домашка!» Было: «Убери комнату». Стало: «Миссия: вернуть порядок в зону отдыха». Теперь перепиши: «Помой посуду».
+    </div>
+    <div class="cards c2" style="gap:40px">
+      <div class="card r quiz" style="--d:170">
+        <div class="num">проверка</div>
+        <h3>Какое правило модель вывела из двух примеров?</h3>
+        <button class="ans-btn" type="button">Показать ответ</button>
+        <code class="ans">никакого: правила в запросе нет, она уловила стиль по образцам</code>
+      </div>
+      <div class="card r" style="--d:230">
+        <div class="num">что повторится</div>
+        <h3>Структура, длина, интонация</h3>
+        <p>Модель продолжает образец. Поэтому два-три примера работают лучше, чем абзац объяснений.</p>
+      </div>
+    </div>
+    <p class="note r" style="--d:290">Про примеры в запросах подробнее — на занятии 32.</p>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Дай материал">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Дай материал</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <div class="prompt mut r" style="--d:70">
+          <span class="lbl">материал в запросе</span>
+          В кружке робототехники занимаются 12 человек. Занятия проходят по средам в 15:30 в кабинете 214. Руководитель кружка — Мария Сергеевна. На занятия нужно приходить с ноутбуком, паяльник выдают в кабинете.
+        </div>
+        <p class="note r" style="--d:150">Модель уверенно сочиняет неправду. Один из способов это снизить — дать ей текст и попросить отвечать только по нему.</p>
+      </div>
+      <svg class="ill r" style="--d:130" viewBox="0 0 700 460" role="img" aria-label="Три вопроса: когда занятия и кто руководитель есть в тексте, вопрос про цену — нет">
+        <rect x="8" y="8" width="684" height="444" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="36" y="58" font-size="22" font-weight="700" fill="#0B3E7A">три вопроса по тексту</text>
+        <rect x="36" y="80" width="636" height="94" rx="16" fill="#E9F4FF"/>
+        <text x="60" y="118" font-size="21" fill="#38475A">Когда проходят занятия?</text>
+        <text x="60" y="152" font-size="20" font-weight="700" fill="#1E7EE8">в тексте есть: среда, 15:30, кабинет 214</text>
+        <rect x="36" y="188" width="636" height="94" rx="16" fill="#E9F4FF"/>
+        <text x="60" y="226" font-size="21" fill="#38475A">Кто руководитель?</text>
+        <text x="60" y="260" font-size="20" font-weight="700" fill="#1E7EE8">в тексте есть: Мария Сергеевна</text>
+        <rect x="36" y="296" width="636" height="94" rx="16" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+        <text x="60" y="334" font-size="21" fill="#38475A">Сколько стоит участие?</text>
+        <text x="60" y="368" font-size="20" font-weight="700" fill="#8A4A00">в тексте нет — и это сделано специально</text>
+        <text x="36" y="428" font-size="20" fill="#6E7E92">смотрим, что модель ответит на третий вопрос</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Отвечай только по тексту">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Отвечай только по тексту</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">без ограничения</div>
+        <h3>«Участие стоит 200 рублей в месяц»</h3>
+        <p>В тексте про цену ничего нет. Модель не сказала «не знаю» — она достроила ответ по вероятностям.</p>
+      </div>
+      <div class="card pick r" style="--d:150">
+        <div class="num">новый чат + ограничение</div>
+        <h3>«Отвечай только по тексту. Если в тексте нет ответа, напиши: в тексте этого нет»</h3>
+        <p>Модель отвечает: в тексте этого нет. Первый вопрос и второй — отвечает по делу.</p>
+      </div>
+    </div>
+    <p class="note r" style="--d:230">Уверенная выдумка называется <b>галлюцинацией</b>. Материал и ограничение снижают её риск, но гарантии не дают: ответ всё равно проверяем. Подробнее — на занятии 42.</p>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Первый ответ — черновик">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Первый ответ — черновик</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:70">С программой так же: первый запуск редко идеальный. Посмотрели результат, нашли причину, исправили. Что поправить в запросе — подскажет таблица.</p>
+    <div class="fixrows r" style="--d:140">
+      <div class="fr h"><span>что не так с ответом</span><span class="ar">&#8594;</span><span>что исправить в запросе</span></div>
+      <div class="fr"><span class="a">Слишком общий, «как у всех»</span><span class="ar">&#8594;</span><span class="b">Добавить контекст и конкретные требования</span></div>
+      <div class="fr"><span class="a">Слишком длинный или короткий</span><span class="ar">&#8594;</span><span class="b">Задать объём цифрой: «до 60 слов»</span></div>
+      <div class="fr"><span class="a">Слишком сложно или по-детски</span><span class="ar">&#8594;</span><span class="b">Написать, для кого ответ: «как для 6 класса»</span></div>
+      <div class="fr"><span class="a">Не та форма: текст вместо таблицы</span><span class="ar">&#8594;</span><span class="b">Указать формат</span></div>
+      <div class="fr"><span class="a">Совсем не то, что представляли</span><span class="ar">&#8594;</span><span class="b">Показать пример нужного результата</span></div>
+      <div class="fr"><span class="a">Модель выдумывает факты</span><span class="ar">&#8594;</span><span class="b">Дать материал и написать «отвечай только по тексту»</span></div>
+      <div class="fr"><span class="a">Модель не поняла задачу</span><span class="ar">&#8594;</span><span class="b">Разбить на шаги или попросить: «Задай мне три вопроса, прежде чем отвечать»</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide" data-title="Три правила итерации">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 3</p>
+    <h2>Три правила итерации</h2>
+  </header>
+  <div class="body">
+    <div class="steps g3">
+      <div class="step r" style="--d:70"><div class="no">1</div><h3>Меняйте одну-две вещи</h3><p>Поменяли всё сразу — непонятно, что именно помогло.</p></div>
+      <div class="step r" style="--d:150"><div class="no">2</div><h3>Не стирайте, а уточняйте</h3><p>В одном чате модель видит прошлые сообщения: достаточно написать «сделай короче».</p></div>
+      <div class="step r" style="--d:230"><div class="no">3</div><h3>Отправьте несколько раз</h3><p>Ответы отличаются. По одному запуску не понять: запрос удачный или повезло.</p></div>
+    </div>
+    <div class="chips r" style="--d:310">
+      <span class="chip">Сократи вдвое</span>
+      <span class="chip">Объясни проще</span>
+      <span class="chip">Дай три варианта: серьёзный, смешной и короткий</span>
+      <span class="chip">Что в твоём ответе может быть неправдой?</span>
+    </div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="slide" data-title="Что не стоит отправлять">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 4</p>
+    <h2>Что не стоит отправлять</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:70">То, что вы пишете в чат, может сохраняться на серверах сервиса. Правила хранения у каждого свои — проще не отправлять вообще.</p>
+    <div class="cards c3">
+      <div class="card r" style="--d:130"><div class="num">документы</div><h3>Паспорт, адрес, телефон</h3><p>Свои и тем более чужие.</p></div>
+      <div class="card r" style="--d:190"><div class="num">доступы</div><h3>Пароли и коды из СМС</h3><p>Ни одной причине «мне нужно проверить» верить нельзя.</p></div>
+      <div class="card r" style="--d:250"><div class="num">другие люди</div><h3>Фото и личные сведения</h3><p>Одноклассники, учителя, родственники — не наше дело.</p></div>
+    </div>
+    <div class="acc-o r" style="--d:320">Нужно разобрать личную ситуацию — обезличьте: «мой друг», «в соседнем городе».</div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide" data-title="Частые заблуждения">
+  <header class="sh r">
+    <p class="eyebrow">Теория · Блок 5</p>
+    <h2>Частые заблуждения</h2>
+  </header>
+  <div class="body">
+    <div class="myths">
+      <div class="myth r" style="--d:70"><div class="q">Чем длиннее запрос, тем лучше</div><p>Нужна не длина, а нужная информация: <b>задача, контекст, формат</b>. Лишние слова не помогают.</p></div>
+      <div class="myth r" style="--d:120"><div class="q">Есть секретные фразы, после которых модель умнеет</div><p>Фразы вроде «ты гений» дают небольшой и нестабильный эффект. Надёжнее описать задачу.</p></div>
+      <div class="myth r" style="--d:170"><div class="q">Плохой ответ — виновата модель</div><p>Часто дело в запросе. Но не всегда: модель ошибается и при хорошем запросе, поэтому <b>ответ проверяем</b>.</p></div>
+      <div class="myth r" style="--d:220"><div class="q">Хороший запрос гарантирует правильный ответ</div><p>Он делает ответ ближе к вашей задаче. Факты и расчёты всё равно проверяем сами.</p></div>
+      <div class="myth wide r" style="--d:270"><div class="q">Подобрал запрос один раз — работает всегда</div><p>Ответы случайны, а модели обновляются. Запрос стоит проверять заново, особенно если он важный.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-title="Раздел: Практика">
+  <header class="sh r">
+    <p class="eyebrow">Часть 2</p>
+    <h1>Практика</h1>
+  </header>
+  <div class="body">
+    <div class="cards c3">
+      <div class="card r" style="--d:70"><div class="num">задача 1 · в чате</div><h3>Два запроса — два ответа</h3><p>Тупая просьба и точный запрос. Сравниваем, что поменялось в ответе.</p></div>
+      <div class="card r" style="--d:110"><div class="num">задача 2 · в чате</div><h3>Кружок робототехники</h3><p>Три вопроса по одному тексту. Что модель придумает, а что честно не найдёт.</p></div>
+      <div class="card r" style="--d:150"><div class="num">задача 3 · VS Code</div><h3>Функция из чата</h3><p>Запрос на код → скопировали → запустили. Код из ответа проверяем запуском.</p></div>
+      <div class="card r" style="--d:190"><div class="num">задача 4 · VS Code</div><h3>Корень из двух</h3><p>Три способа и проверка, что это правда. Спойлер: проверка не сойдётся.</p></div>
+      <div class="card r" style="--d:230"><div class="num">задача 5 · в парах</div><h3>Улучшаем пять запросов</h3><p>Готовые «до» переписываем в «после» и проверяем друг друга.</p></div>
+    </div>
+    <div class="note r" style="--d:290">Файл для задач 3 и 4 — <b>lesson16.py</b>. Задачу 2 делаем в новом чате, чтобы модель не тянула ответы из задачи 1.</div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide" data-title="Задача 1: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Два запроса — два ответа</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card r" style="--d:70">
+        <div class="num">запрос 1</div>
+        <h3>Как выучить Python?</h3>
+        <p>Отправляем как есть, ничего не добавляя.</p>
+      </div>
+      <div class="card pick r" style="--d:150">
+        <div class="num">запрос 2</div>
+        <h3>Я в 10 классе, изучаю Python первую неделю: знаю переменные, условия и циклы. Хочу за месяц научиться писать простые программы. Составь список из 5 шагов и на каждый шаг — один источник. Не больше 100 слов.</h3>
+        <p>Есть уровень, цель, срок и формат ответа.</p>
+      </div>
+    </div>
+    <div class="acc r" style="--d:230">Сравниваем по трём вещам: <b>длина</b> (сколько экранов), <b>конкретность</b> (советы «учитесь» или «шаг 2: сделайте калькулятор») и <b>формат</b> (сплошной текст или список).</div>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide" data-title="Задача 1: разбор">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 1</p>
+    <h2>Что изменилось и почему</h2>
+  </header>
+  <div class="body">
+    <div class="check">
+      <div class="r" style="--d:70"><b>Первый запрос — вариант «по умолчанию».</b> Ответ годится любому и поэтому не годится точно никому: общие советы, много текста.</div>
+      <div class="r" style="--d:120"><b>Второй задал границу.</b> «10 класс, первая неделя, месяц, список из 5 шагов» — модель поняла, кому и зачем объясняет.</div>
+      <div class="r" style="--d:170"><b>У второго есть риск.</b> Источники модель может выдумать — её список надо проверять.</div>
+      <div class="r" style="--d:220"><b>Это тот же пример из теории.</b> Модель достраивает недостающее по вероятностям — в первом запросе недостающего было слишком много.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide" data-title="Задача 2: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Кружок робототехники</h2>
+  </header>
+  <div class="body">
+    <div class="prompt mut r" style="--d:70">
+      <span class="lbl">текст — вставляем в запрос целиком</span>
+      В кружке робототехники занимаются 12 человек. Занятия проходят по средам в 15:30 в кабинете 214. Руководитель кружка — Мария Сергеевна. На занятия нужно приходить с ноутбуком, паяльник выдают в кабинете. В этом месяце кружок готовит проект к городской выставке.
+    </div>
+    <div class="cards c3">
+      <div class="card r" style="--d:150"><div class="num">вопрос 1</div><h3>Когда проходят занятия?</h3><p>Ответ есть в тексте.</p></div>
+      <div class="card r" style="--d:200"><div class="num">вопрос 2</div><h3>Кто руководит кружком?</h3><p>Ответ есть в тексте.</p></div>
+      <div class="card r" style="--d:250"><div class="num">вопрос 3</div><h3>Сколько стоит участие?</h3><p>Ответа в тексте нет — и это специально.</p></div>
+    </div>
+    <div class="acc r" style="--d:320">Спрашиваем всё это одним сообщением — так видно, где модель держится текста, а где начинает сочинять.</div>
+  </div>
+</section>
+
+<!-- 23 -->
+<section class="slide" data-title="Задача 2: разбор">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 2</p>
+    <h2>Где модель выдумала, а где нет</h2>
+  </header>
+  <div class="body">
+    <div class="cards c2" style="gap:40px">
+      <div class="card pick r" style="--d:70"><div class="num">без ограничения</div><h3>Ответ на вопрос 3</h3><p>Скорее всего прозвучит конкретная сумма. В тексте числа нет — значит, оно придумано.</p></div>
+      <div class="card pick r" style="--d:150"><div class="num">с ограничением</div><h3>«Отвечай только по тексту. Если ответа нет — напиши: в тексте этого нет»</h3><p>Ответ меняется: вместо суммы — честное «в тексте этого нет».</p></div>
+    </div>
+    <div class="check">
+      <div class="r" style="--d:230"><b>Галлюцинация — это не «сломалась».</b> Модель делает то, что делает всегда: продолжает текст правдоподобно.</div>
+      <div class="r" style="--d:280"><b>Ограничение работает не всегда.</b> Иногда модель отвечает наугад даже с ним — поэтому ответ всё равно проверяем.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 24 -->
+<section class="slide" data-title="Задача 3: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Функция из чата</h2>
+  </header>
+  <div class="body">
+    <div class="prompt r" style="--d:70">
+      <span class="lbl">запрос</span>
+      Напиши функцию на Python, которая принимает список чисел и возвращает сумму чётных чисел. Без библиотек. Покажи, как вызвать функцию на списке из 5 чисел, и напиши, что должно вывестись.
+    </div>
+    <div class="steps g3">
+      <div class="step r" style="--d:150"><div class="no">1</div><h3>Скопировали</h3><p>Код из ответа — в файл lesson16.py, руками не переписываем.</p></div>
+      <div class="step r" style="--d:210"><div class="no">2</div><h3>Запустили</h3><p>Смотрим, что напечаталось. Совпало с обещанным в ответе?</p></div>
+      <div class="step r" style="--d:270"><div class="no">3</div><h3>Проверили край</h3><p>Пустой список, все числа нечётные. Так ловятся промахи.</p></div>
+    </div>
+    <div class="acc-o r" style="--d:340">Код из ответа — не проверенный код. Пока не запустили — это черновик.</div>
+  </div>
+</section>
+
+<!-- 25 -->
+<section class="slide" data-title="Задача 3: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Шаг 1: код из чата в файл</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="p31" style="--d:60">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def sum_even(numbers):</span><span class="ln" data-no="2">    total = 0</span><span class="ln" data-no="3">    for n in numbers:</span><span class="ln" data-no="4">        if n % 2 == 0:</span><span class="ln" data-no="5">            total += n</span><span class="ln" data-no="6">    return total</span><span class="ln" data-no="7">print(sum_even([3, 4, 10, 7, 11]))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <p class="note r" style="--d:260">Список в примере подобран не случайно: в нём есть чётные 4 и 10 и нечётные 3, 7, 11. По выводу видно, что функция взяла только чётные.</p>
+  </div>
+</section>
+
+<!-- 26 -->
+<section class="slide" data-title="Задача 3: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 3</p>
+    <h2>Проверка крайними случаями</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="p32" style="--d:60">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">def sum_even(numbers):</span><span class="ln" data-no="2">    return sum(n for n in numbers if n % 2 == 0)</span><span class="ln" data-no="3">print(sum_even([3, 4, 10, 7, 11]))</span><span class="ln" data-no="4">print(sum_even([]))</span><span class="ln" data-no="5">print(sum_even([1, 3, 5]))</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="check">
+      <div class="r" style="--d:260"><b>Ждали 16, получили 14?</b> Значит, ошиблись мы, а не модель: 4 + 10 = 14.</div>
+      <div class="r" style="--d:340"><b>Вывод.</b> Код модели проверяют запуском и крайними случаями — а не «на глаз».</div>
+    </div>
+  </div>
+</section>
+
+<!-- 27 -->
+<section class="slide" data-title="Задача 4: условие">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 4</p>
+    <h2>Корень из двух: три способа</h2>
+  </header>
+  <div class="body">
+    <div class="split">
+      <div class="notes">
+        <div class="prompt r" style="--d:70">
+          <span class="lbl">запрос</span>
+          Дай три разных способа на Python получить корень из 2. Для каждого способа напиши проверку, что результат действительно корень из 2, — например, возведение в квадрат. Покажи код, который печатает результат каждого способа и результат проверки.
+        </div>
+        <div class="acc-o r" style="--d:170">Хитрость задания: проверка через <b>==</b> не сойдётся. Не потому что ответ неверный, а потому что в Python так считаются дробные числа.</div>
+      </div>
+      <svg class="ill r" style="--d:200" viewBox="0 0 700 470" role="img" aria-label="Три способа: степень 0.5, sqrt из math и метод Ньютона — все дают одно и то же число">
+        <rect x="8" y="8" width="684" height="454" rx="26" fill="#F8FCFF" stroke="#DEEAF7" stroke-width="2"/>
+        <text x="36" y="56" font-size="21" font-weight="700" fill="#0B3E7A">три способа — одно число</text>
+        <rect x="36" y="80" width="190" height="64" rx="14" fill="#E9F4FF"/>
+        <text x="131" y="120" font-size="19" fill="#0B3E7A" text-anchor="middle">2 ** 0.5</text>
+        <rect x="36" y="162" width="190" height="64" rx="14" fill="#E9F4FF"/>
+        <text x="131" y="202" font-size="19" fill="#0B3E7A" text-anchor="middle">math.sqrt(2)</text>
+        <rect x="36" y="244" width="190" height="64" rx="14" fill="#E9F4FF"/>
+        <text x="131" y="284" font-size="19" fill="#0B3E7A" text-anchor="middle">метод Ньютона</text>
+        <path d="M234 112 h44 M234 194 h44 M234 276 h44" stroke="#A8D3FF" stroke-width="4" stroke-linecap="round"/>
+        <path d="M296 194 h30" stroke="#1E7EE8" stroke-width="4" stroke-linecap="round"/>
+        <path d="M318 180 l20 14 -20 14" fill="none" stroke="#1E7EE8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="352" y="138" width="312" height="112" rx="18" fill="#0B3E7A"/>
+        <text x="508" y="192" font-size="29" font-weight="700" fill="#FFFFFF" text-anchor="middle">1.4142135…</text>
+        <text x="508" y="224" font-size="18" fill="#A8D3FF" text-anchor="middle">одно и то же число</text>
+        <rect x="36" y="338" width="628" height="98" rx="16" fill="#FFF3E2" stroke="#FF8E00" stroke-width="2"/>
+        <text x="60" y="376" font-size="20" fill="#8A4A00">вопрос к себе: если все три способа дали одно число —</text>
+        <text x="60" y="408" font-size="20" font-weight="700" fill="#8A4A00">значит, ответ верный? проверяем, а не верим</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 28 -->
+<section class="slide" data-title="Задача 4: шаг 1">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 4</p>
+    <h2>Шаг 1: способ и проверка</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="p41" style="--d:60">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">from math import sqrt</span><span class="ln" data-no="2">root = sqrt(2)</span><span class="ln" data-no="3">print(root)</span><span class="ln" data-no="4">print(root * root)</span><span class="ln" data-no="5">print(root * root == 2)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <p class="note r" style="--d:250">Один способ — уже ответ. Но «докажи, что это правда» — вторая половина задания: без проверки число 1.4142… ничем не лучше любого другого.</p>
+  </div>
+</section>
+
+<!-- 29 -->
+<section class="slide" data-title="Задача 4: полное решение">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 4</p>
+    <h2>Полное решение: все три способа</h2>
+  </header>
+  <div class="body">
+    <div class="run r" data-run="p51" style="--d:60">
+      <div class="run-top">
+        <button class="run-btn" data-role="run" type="button">&#9654; Запустить</button>
+        
+      </div>
+      <div class="run-grid">
+        <pre class="run-code"><span class="ln" data-no="1">from math import sqrt</span><span class="ln" data-no="2">a = 2 ** 0.5</span><span class="ln" data-no="3">b = sqrt(2)</span><span class="ln" data-no="4">n = 1.5</span><span class="ln" data-no="5">for i in range(6):</span><span class="ln" data-no="6">    n = (n + 2 / n) / 2</span><span class="ln" data-no="7">print(a, b, n)</span><span class="ln" data-no="8">print(a * a)</span><span class="ln" data-no="9">print(a * a == 2)</span></pre>
+        <div class="run-console" data-role="console" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="check">
+      <div class="r" style="--d:270"><b>Ответ верный — а сравнение False:</b> у дробных чисел есть погрешность.</div>
+      <div class="r" style="--d:310"><b>Для запроса:</b> код от модели всё равно запускаем и читаем вывод сами.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 30 -->
+<section class="slide" data-title="Задача 5: улучшаем запрос">
+  <header class="sh r">
+    <p class="eyebrow">Практика · Задача 5</p>
+    <h2>Улучшаем пять запросов</h2>
+  </header>
+  <div class="body">
+    <p class="note r" style="--d:70">Работа в парах: один переписывает, второй проверяет — есть ли в новом запросе задача, контекст и формат.</p>
+    <div class="fixrows r" style="--d:140">
+      <div class="fr h"><span>было</span><span class="ar">&#8594;</span><span>стало</span></div>
+      <div class="fr"><span class="a">Объясни циклы</span><span class="ar">&#8594;</span><span class="b">Объясни цикл for так, будто мне 12 лет, на примере очереди в столовой — в 5 предложениях</span></div>
+      <div class="fr"><span class="a">Придумай название для игры</span><span class="ar">&#8594;</span><span class="b">Придумай 10 названий для игры про гонки на дронах. Списком, без описаний</span></div>
+      <div class="fr"><span class="a">Как сдать экзамен?</span><span class="ar">&#8594;</span><span class="b">Готовлюсь к ОГЭ по информатике за 3 недели, Python знаю на уровне циклов. Составь план: 3 задачи на каждый день</span></div>
+      <div class="fr"><span class="a">Переведи текст</span><span class="ar">&#8594;</span><span class="b">Переведи этот текст на английский, сохранив стиль. Незнакомые слова выпиши отдельным списком</span></div>
+      <div class="fr"><span class="a">Напиши сочинение</span><span class="ar">&#8594;</span><span class="b">Дай 5 тезисов по теме «Можно ли доверять нейросетям». Сочинение напишу сам, нужен только план</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 31 -->
+<section class="slide" data-title="Что изучили">
+  <header class="sh r">
+    <p class="eyebrow">Итоги</p>
+    <h2>Что изучили</h2>
+  </header>
+  <div class="body">
+    <div class="check">
+      <div class="r" style="--d:70"><b>Промпт.</b> Всё, что модель знает о вашей задаче, написано в тексте запроса. Пропуск она заполнит по вероятностям.</div>
+      <div class="r" style="--d:110"><b>Три части.</b> Задача глаголом, контекст (кто, зачем, что знаю), формат (сколько, как, чего не делать).</div>
+      <div class="r" style="--d:150"><b>Два усилителя.</b> Роль подстраивает подачу, пример задаёт образец. Знаний не добавляют.</div>
+      <div class="r" style="--d:190"><b>Материал.</b> Дали текст и сказали «отвечай только по нему» — риск выдумки меньше. Гарантии нет.</div>
+      <div class="r" style="--d:230"><b>Черновик.</b> Первый ответ — не результат: правим по одной вещи, уточняем в том же чате, отправляем заново.</div>
+      <div class="r" style="--d:270"><b>Свой код.</b> Код от модели запускаем и проверяем крайними случаями. Хороший запрос не гарантирует правильный ответ.</div>
+      <div class="r" style="--d:310"><b>Приватность.</b> Личные данные и чужие фото — не в чат. И «сделай за меня» учиться не помогает.</div>
+    </div>
+  </div>
+</section>
+
+    <div class="hud" aria-hidden="true">
+  <div class="bar"><i id="bar"></i></div>
+  <div class="cnt"><span id="num">01</span> / <span id="numTotal">31</span></div>
+</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var deck  = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var numEl = document.getElementById('num');
+  var barEl = document.getElementById('bar');
+  var total = slides.length, idx = 0;
+  document.getElementById('numTotal').textContent = String(total);
+
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+
+  function fit(){
+    var s = Math.min(stage.clientWidth / 1920, stage.clientHeight / 1080);
+    deck.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+
+  function paint(){
+    numEl.textContent = pad(idx + 1);
+    barEl.style.width = ((idx + 1) / total * 100) + '%';
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(total - 1, n));
+    if (n !== idx && window.stopRuns) { window.stopRuns(); }
+    if (n !== idx && window.resetQuiz) { window.resetQuiz(); }
+    if (n !== idx || !slides[n].classList.contains('active')) {
+      slides[idx].classList.remove('active');
+      idx = n;
+      slides[idx].classList.add('active');
+    }
+    paint();
+  }
+
+  function toggleFull(){
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+  }
+
+  window.addEventListener('resize', fit);
+
+  document.addEventListener('keydown', function(e){
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(idx + 1); }
+    else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp') { e.preventDefault(); go(idx - 1); }
+    else if (k === 'Home') { e.preventDefault(); go(0); }
+    else if (k === 'End') { e.preventDefault(); go(total - 1); }
+    else if (k === 'f' || k === 'F' || k === 'a' || k === 'A' || k === 'а' || k === 'А') { e.preventDefault(); toggleFull(); }
+    else if (k === 'Escape' && document.fullscreenElement) { document.exitFullscreen(); }
+  });
+
+  deck.addEventListener('click', function(e){
+    if (e.target.closest('.run, .quiz, .copybtn')) { return; }
+    var r = deck.getBoundingClientRect();
+    if (e.clientX - r.left < r.width / 2) { go(idx - 1); } else { go(idx + 1); }
+  });
+
+  var tx = 0;
+  deck.addEventListener('touchstart', function(e){ tx = e.touches[0].clientX; }, { passive: true });
+  deck.addEventListener('touchend', function(e){
+    var dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 60) { go(dx < 0 ? idx + 1 : idx - 1); }
+  });
+
+  fit();
+  paint();
+})();
+</script>
+
+<script>
+/* ===== ПЛЕЕРЫ ЗАПУСКА КОДА ===== */
+(function(){
+  var RUNS = {
+    "p31": [
+      {
+        "val": "one",
+        "label": "запуск файла lesson16.py",
+        "steps": [
+          {
+            "ln": 1,
+            "out": {
+              "t": "def sum_even(numbers): — функция создана"
+            },
+            "badge": "тело выполнится только при вызове"
+          },
+          {
+            "ln": 7,
+            "out": {
+              "t": "вызов sum_even([3, 4, 10, 7, 11]) → numbers = весь список"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "total = 0"
+            }
+          },
+          {
+            "ln": 3,
+            "out": {
+              "t": "идём по списку: 3, 4, 10, 7, 11"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "3 % 2 == 0 → False",
+              "kind": "false"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "4 % 2 == 0 → True",
+              "kind": "true"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "total = 4"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "10 % 2 == 0 → True",
+              "kind": "true"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "total = 14"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "7 % 2 == 0 → False",
+              "kind": "false"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "11 % 2 == 0 → False",
+              "kind": "false"
+            }
+          },
+          {
+            "ln": 6,
+            "out": {
+              "t": "return 14"
+            }
+          },
+          {
+            "ln": 7,
+            "out": {
+              "t": "печатает: 14",
+              "kind": "p"
+            }
+          }
+        ]
+      }
+    ],
+    "p32": [
+      {
+        "val": "one",
+        "label": "запуск файла lesson16.py",
+        "steps": [
+          {
+            "ln": 1,
+            "out": {
+              "t": "def sum_even(numbers): — функция создана"
+            },
+            "badge": "одна строка вместо пяти"
+          },
+          {
+            "ln": 3,
+            "out": {
+              "t": "список [3, 4, 10, 7, 11]: чётные — 4 и 10"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "sum собирает только чётные → 4 + 10 = 14"
+            }
+          },
+          {
+            "ln": 3,
+            "out": {
+              "t": "печатает: 14",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "пустой список — чётных нет"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "sum от пустого набора → 0"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "печатает: 0",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "все числа нечётные: 1, 3, 5"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "ни одно не прошло условие → 0"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "печатает: 0",
+              "kind": "p"
+            }
+          }
+        ]
+      }
+    ],
+    "p41": [
+      {
+        "val": "one",
+        "label": "запуск файла lesson16.py",
+        "steps": [
+          {
+            "ln": 1,
+            "out": {
+              "t": "from math import sqrt — берём функцию из модуля math"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "root = sqrt(2) → считаем корень"
+            }
+          },
+          {
+            "ln": 3,
+            "out": {
+              "t": "печатает: 1.4142135623730951",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "проверка: корень в квадрате должен дать 2"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "печатает: 2.0000000000000004",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "а это уже не 2 → сравнение даёт False",
+              "kind": "false"
+            }
+          }
+        ]
+      }
+    ],
+    "p51": [
+      {
+        "val": "one",
+        "label": "запуск файла lesson16.py",
+        "steps": [
+          {
+            "ln": 1,
+            "out": {
+              "t": "from math import sqrt"
+            }
+          },
+          {
+            "ln": 2,
+            "out": {
+              "t": "a = 2 ** 0.5 — возведение в степень 0.5"
+            }
+          },
+          {
+            "ln": 3,
+            "out": {
+              "t": "b = sqrt(2) — функция из math"
+            }
+          },
+          {
+            "ln": 4,
+            "out": {
+              "t": "n = 1.5 — первое приближение"
+            }
+          },
+          {
+            "ln": 5,
+            "out": {
+              "t": "уточняем шесть раз: n = (n + 2 / n) / 2"
+            }
+          },
+          {
+            "ln": 6,
+            "out": {
+              "t": "1.5 → 1.4166… → 1.41421… — сходится к корню"
+            }
+          },
+          {
+            "ln": 7,
+            "out": {
+              "t": "печатает: 1.4142135623730951 1.4142135623730951 1.414213562373095",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 8,
+            "out": {
+              "t": "печатает: 2.0000000000000004",
+              "kind": "p"
+            }
+          },
+          {
+            "ln": 9,
+            "out": {
+              "t": "печатает: False",
+              "kind": "p"
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  var STEP = 620;
+  var token = 0;
+  var busy = false, timers = [];
+
+  function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+  function esc(s){ return String(s).replace(/[&<>]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function wait(ms){ return new Promise(function(r){ timers.push(setTimeout(r, ms)); }); }
+  function line(root, no){ return root.querySelector('.ln[data-no="' + no + '"]'); }
+  function cons(root){ return root.querySelector('[data-role=console]'); }
+  function chips(root){ return root.querySelectorAll('.chip'); }
+  function btn(root){ return root.querySelector('[data-role=run]'); }
+
+  function add(node, html, cls){
+    if (!node) return;
+    var e = document.createElement('span');
+    e.className = cls + ' pop';
+    e.innerHTML = html;
+    node.appendChild(e);
+    node.scrollTop = node.scrollHeight;
+  }
+
+  function reset(root){
+    each(root.querySelectorAll('.ln'), function(l){ l.classList.remove('on', 'done', 'skip'); });
+    var c = cons(root); if (c) c.innerHTML = '';
+    var b = btn(root);  if (b) b.disabled = false;
+    each(chips(root), function(ch){ ch.disabled = false; });
+  }
+
+  function stopRuns(){
+    token++; busy = false;
+    each(timers, clearTimeout); timers = [];
+    each(document.querySelectorAll('.run'), reset);
+  }
+  window.stopRuns = stopRuns;
+
+  function scenario(root){
+    var list = RUNS[root.getAttribute('data-run')] || [];
+    var on = root.querySelector('.chip.on');
+    var val = on && on.getAttribute('data-val');
+    for (var i = 0; i < list.length; i++) { if (list[i].val === val) return list[i]; }
+    return list[0];
+  }
+
+  async function play(root){
+    if (busy) return;
+    var scen = scenario(root);
+    if (!scen) return;
+    busy = true;
+    var my = ++token;
+    reset(root);
+    var b = btn(root), c = cons(root);
+    if (b) b.disabled = true;
+    each(chips(root), function(ch){ ch.disabled = true; });
+    try {
+      add(c, '&#9654; ' + esc(scen.label || scen.val), 'cout-io');
+      each(scen.skip || [], function(no){ var l = line(root, no); if (l) l.classList.add('skip'); });
+      for (var i = 0; i < scen.steps.length; i++) {
+        if (my !== token) return;
+        var st = scen.steps[i], l = line(root, st.ln);
+        if (l) l.classList.add('on');
+        await wait(st.wait || STEP);
+        if (my !== token) return;
+        if (l) { l.classList.remove('on'); l.classList.add('done'); }
+        if (st.out)   add(c, st.out.t, 'cout' + (st.out.kind ? ' cout-' + st.out.kind : ''));
+        if (st.badge) add(c, esc(st.badge), 'cout-badge');
+      }
+    } finally {
+      if (my === token) {
+        busy = false;
+        if (b) b.disabled = false;
+        each(chips(root), function(ch){ ch.disabled = false; });
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var t = e.target, root = t.closest ? t.closest('.run') : null;
+    if (!root) return;
+    var chip = t.closest('.chip');
+    if (chip) {
+      each(chips(root), function(ch){ ch.classList.remove('on'); });
+      chip.classList.add('on');
+      chip.blur();
+      stopRuns();
+      return;
+    }
+    var rb = t.closest('[data-role=run]');
+    if (rb) { rb.blur(); play(root); }
+  });
+})();
+</script>
+<script>
+(function(){
+
+  function reveal(card){
+    if (!card) return;
+    card.classList.add('shown');
+    var b = card.querySelector('.ans-btn');
+    if (b) b.blur();
+  }
+
+  function resetQuiz(){
+    Array.prototype.forEach.call(document.querySelectorAll('.quiz.shown'), function(c){
+      c.classList.remove('shown');
+    });
+  }
+  window.resetQuiz = resetQuiz;
+
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var card = t.closest('.quiz');
+    if (card) reveal(card);
+  });
+})();
+</script>
+<script>
+/* копирование шаблона названия записи (слайд «Напоминалка») */
+(function(){
+  var btn = document.querySelector('.slide.rec .copybtn');
+  if (!btn) { return; }
+  var text = btn.getAttribute('data-copy') || '';
+  var lbl = btn.querySelector('.cb-lbl');
+  var base = lbl.textContent, t = 0;
+  function flash(ok){
+    btn.classList.toggle('ok', !!ok);
+    lbl.textContent = ok ? 'Скопировано' : 'Не удалось';
+    clearTimeout(t);
+    t = setTimeout(function(){ btn.classList.remove('ok'); lbl.textContent = base; }, 1900);
+  }
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly','');
+    ta.style.cssText = 'position:fixed; top:0; left:-9999px; opacity:0';
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  btn.addEventListener('click', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ flash(true); }, function(){ flash(fallback()); });
+    } else {
+      flash(fallback());
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -101,6 +101,7 @@ lessons:
   - n: 16
     title: "Промпт-инжиниринг"
     opens: 2026-12-14
+    presentation: classes/16-lessons/16-prompt-inzhiniring.html
     docs: classes/16-lessons/16-text.md
   - n: 17
     title: "Применение нейросетей"
